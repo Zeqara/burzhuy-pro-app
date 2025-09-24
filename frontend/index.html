@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Тайный агент BURЖУЙ</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+    <!-- Общий контейнер приложения -->
+    <div id="app-container">
+
+        <!-- Экран загрузки -->
+        <div id="loader" class="screen active"><div class="spinner"></div></div>
+
+        <!-- Экран входа / регистрации -->
+        <div id="auth-screen" class="screen">
+            <div class="auth-container">
+                <div id="login-view">
+                    <h2>Вход в систему</h2>
+                    <form id="login-form">
+                        <input type="tel" id="login-phone" placeholder="Номер телефона" required>
+                        <input type="password" id="login-password" placeholder="Пароль" required>
+                        <button type="submit" class="btn-primary">Войти</button>
+                    </form>
+                    <p class="auth-toggle">Нет аккаунта? <a href="#" id="show-register">Регистрация</a></p>
+                </div>
+                <div id="register-view" style="display: none;">
+                    <h2>Регистрация</h2>
+                    <form id="register-form">
+                        <input type="text" id="register-name" placeholder="Ваше имя" required>
+                        <input type="tel" id="register-phone" placeholder="Номер телефона" required>
+                        <input type="password" id="register-password" placeholder="Придумайте пароль" required>
+                        <button type="submit" class="btn-primary">Зарегистрироваться</button>
+                    </form>
+                    <p class="auth-toggle">Уже есть аккаунт? <a href="#" id="show-login">Войти</a></p>
+                </div>
+                 <p id="auth-error" class="error-message"></p>
+            </div>
+        </div>
+
+        <!-- Главное меню -->
+        <div id="main-menu-screen" class="screen">
+            <header>
+                <h2>Главное меню</h2>
+                <a href="#" id="logout-btn">Выйти</a>
+            </header>
+            <div class="menu-grid">
+                <button class="menu-btn" data-target="cooperation-screen">Начать сотрудничество</button>
+                <button class="menu-btn" data-target="instruction-screen">Инструкция</button>
+                <button class="menu-btn" data-target="support-screen">Тех. поддержка</button>
+                <button class="menu-btn" data-target="history-screen">История проверок</button>
+            </div>
+        </div>
+
+        <!-- Другие экраны (Инструкция, Поддержка и т.д.) -->
+        <div id="instruction-screen" class="screen page-screen">
+            <header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>Инструкция</h2></header>
+            <div class="content">
+                <p>Добро пожаловать, Тайный Агент! 🕵️‍♂️ Ваша миссия — помочь нам стать лучше.</p>
+                <p>📜 **Правила просты:** будьте объективны, внимательны и честны. Ваша работа напрямую влияет на качество нашего сервиса!</p>
+            </div>
+        </div>
+
+        <div id="support-screen" class="screen page-screen">
+             <header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>Тех. поддержка</h2></header>
+             <div class="content">
+                 <form id="support-form">
+                    <input type="text" id="support-name" placeholder="Ваше имя" required>
+                    <input type="tel" id="support-phone" placeholder="Номер телефона" required>
+                    <textarea id="support-message" placeholder="Опишите вашу проблему" required></textarea>
+                    <button type="submit" class="btn-primary">Отправить</button>
+                    <p id="support-status"></p>
+                 </form>
+             </div>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
