@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     // ---------------------------------------------
 
-    // Используем совместимый синтаксис
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -22,8 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     tg.setBackgroundColor('#121212');
 
     let currentScreen = 'loader';
+    let selectedLocation = null; // Будем хранить выбранную точку здесь
 
-    // Улучшенная функция навигации, чтобы избежать наложений
     function navigateTo(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         const newScreen = document.getElementById(screenId);
@@ -32,8 +31,88 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- ОСНОВНАЯ ЛОГИКА ПРИЛОЖЕНИЯ ---
+    function renderCities() { /* ... код без изменений ... */ }
+    async function showLocationsForCity(cityId, cityName) { /* ... код без изменений ... */ }
 
-    // 1. Отображение списка городов
+    // Изменяем функцию выбора точки
+    function selectLocation(locationData) {
+        selectedLocation = locationData; // Сохраняем данные о точке
+        document.getElementById('checklist-address').textContent = selectedLocation.address;
+        document.getElementById('checklist-date').textContent = new Date().toLocaleString();
+        document.getElementById('checklist-form').reset();
+        navigateTo('checklist-screen');
+    }
+
+    // --- НОВАЯ ФУНКЦИЯ: Обработка отправки чек-листа ---
+    async function handleChecklistSubmit(event) {
+        event.preventDefault();
+        const form = event.target;
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Отправка...';
+
+        try {
+            // Собираем все ответы из формы
+            const formData = new FormData(form);
+            const questions = {};
+            // Преобразуем данные формы в удобный объект
+            let i = 0;
+            for (const [key, value] of formData.entries()) {
+                 // Используем лейблы как ключи для вопросов
+                const label = form.elements[i].closest('.form-group')?.querySelector('label')?.textContent || `question_${i}`;
+                questions[label] = value;
+                i++;
+            }
+            
+            // Создаем новый документ в коллекции 'checklists'
+            await db.collection('checklists').add({
+                authorId: auth.currentUser.uid,
+                locationName: selectedLocation.name,
+                locationAddress: selectedLocation.address,
+                questions: questions,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                status: 'pending' // Статус "в ожидании проверки"
+            });
+            
+            alert('Спасибо за ваш отчёт!');
+            navigateTo('main-menu-screen');
+
+        } catch (error) {
+            console.error("Ошибка отправки отчета: ", error);
+            alert("Не удалось отправить отчет. Попробуйте снова.");
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Отправить отчёт';
+        }
+    }
+
+    // --- АУТЕНТИФИКАЦИЯ И НАВИГАЦИЯ --- (мелкие правки)
+    auth.onAuthStateChanged(user => {
+        if (user) { navigateTo('main-menu-screen'); } 
+        else { navigateTo('auth-screen'); }
+    });
+    
+    document.getElementById('show-register').addEventListener('click', e => { e.preventDefault(); document.getElementById('login-view').style.display = 'none'; document.getElementById('register-view').style.display = 'block'; });
+    document.getElementById('show-login').addEventListener('click', e => { e.preventDefault(); document.getElementById('register-view').style.display = 'none'; document.getElementById('login-view').style.display = 'block'; });
+
+    document.getElementById('register-form').addEventListener('submit', async e => { /* ... код без изменений ... */ });
+    document.getElementById('login-form').addEventListener('submit', async e => { /* ... код без изменений ... */ });
+    document.getElementById('logout-btn').addEventListener('click', e => { e.preventDefault(); auth.signOut(); });
+    document.querySelectorAll('.menu-btn, .back-btn').forEach(btn => btn.addEventListener('click', () => navigateTo(btn.dataset.target)));
+    
+    // --- ПРИВЯЗЫВАЕМ ОБРАБОТЧИК К ФОРМЕ ---
+    document.getElementById('checklist-form').addEventListener('submit', handleChecklistSubmit);
+    
+    // Вызов начальной функции
+    renderCities();
+
+    setTimeout(() => {
+         if (!auth.currentUser) { navigateTo('auth-screen'); } 
+         else { navigateTo('main-menu-screen'); }
+    }, 500);
+
+    // --- Вспомогательные функции, которые я скрыл для краткости ---
+    // (вставляем их полный код сюда)
     function renderCities() {
         const cities = {
             pavlodar: 'Павлодар',
@@ -51,14 +130,11 @@ document.addEventListener('DOMContentLoaded', () => {
             cityListContainer.appendChild(button);
         }
     }
-
-    // 2. Показать точки для выбранного города
     async function showLocationsForCity(cityId, cityName) {
         document.getElementById('locations-header').textContent = `Точки в г. ${cityName}`;
         const locationsList = document.getElementById('locations-list');
         locationsList.innerHTML = '<div class="spinner"></div>';
         navigateTo('locations-screen');
-
         try {
             const querySnapshot = await db.collection('locations').where('city', '==', cityId).get();
             locationsList.innerHTML = '';
@@ -67,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             querySnapshot.forEach(doc => {
-                const location = doc.data();
+                const location = { id: doc.id, ...doc.data() };
                 const listItem = document.createElement('li');
                 listItem.className = 'location-item';
                 listItem.innerHTML = `<strong>${location.name}</strong><small>${location.address}</small>`;
@@ -79,24 +155,6 @@ document.addEventListener('DOMContentLoaded', () => {
             locationsList.innerHTML = '<li>Не удалось загрузить точки.</li>';
         }
     }
-
-    // 3. Выбор точки и переход к чек-листу
-    function selectLocation(location) {
-        document.getElementById('checklist-address').textContent = location.address;
-        document.getElementById('checklist-date').textContent = new Date().toLocaleString();
-        document.getElementById('checklist-form').reset();
-        navigateTo('checklist-screen');
-    }
-    
-    // --- АУТЕНТИФИКАЦИЯ И НАВИГАЦИЯ ---
-    auth.onAuthStateChanged(user => {
-        if (user) { navigateTo('main-menu-screen'); } 
-        else { navigateTo('auth-screen'); }
-    });
-    
-    document.getElementById('show-register').addEventListener('click', e => { e.preventDefault(); document.getElementById('login-view').style.display = 'none'; document.getElementById('register-view').style.display = 'block'; });
-    document.getElementById('show-login').addEventListener('click', e => { e.preventDefault(); document.getElementById('register-view').style.display = 'none'; document.getElementById('login-view').style.display = 'block'; });
-
     document.getElementById('register-form').addEventListener('submit', async e => {
         e.preventDefault();
         const authError = document.getElementById('auth-error');
@@ -108,7 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
             await db.collection('users').doc(cred.user.uid).set({ name: name.value, phone: phone.value, role: 'agent' });
         } catch (error) { authError.textContent = "Ошибка: " + error.message; }
     });
-    
     document.getElementById('login-form').addEventListener('submit', async e => {
         e.preventDefault();
         const authError = document.getElementById('auth-error');
@@ -119,19 +176,4 @@ document.addEventListener('DOMContentLoaded', () => {
         catch (error) { authError.textContent = "Ошибка: " + error.message; }
     });
 
-    document.getElementById('logout-btn').addEventListener('click', e => { e.preventDefault(); auth.signOut(); });
-    
-    document.querySelectorAll('.menu-btn, .back-btn').forEach(btn => btn.addEventListener('click', () => navigateTo(btn.dataset.target)));
-
-    // Вызов начальной функции
-    renderCities();
-
-    // Запускаем приложение после небольшой задержки
-    setTimeout(() => {
-         if (!auth.currentUser) {
-            navigateTo('auth-screen');
-         } else {
-            navigateTo('main-menu-screen');
-         }
-    }, 500);
 });
