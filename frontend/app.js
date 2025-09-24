@@ -1,14 +1,41 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // ЗАМЕНИТЕ НА АДРЕС ВАШЕГО БЭКЕНДА С RENDER
-    const API_BASE_URL = 'https://your-backend-url.onrender.com';
+    // --- ШАГ 1: ВСТАВЬТЕ ВАШИ КЛЮЧИ FIREBASE СЮДА ---
+    const firebaseConfig = {
+        apiKey: "AIzaSy...",
+        authDomain: "your-project-id.firebaseapp.com",
+        projectId: "your-project-id",
+        storageBucket: "your-project-id.appspot.com",
+        messagingSenderId: "...",
+        appId: "1:..."
+    };
+    // ----------------------------------------------------
 
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-    tg.setHeaderColor('#121212');
-    tg.setBackgroundColor('#121212');
+    // Инициализация Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    const screens = document.querySelectorAll('.screen');
-    let currentScreen = 'loader';
+    // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAEEIRVkDj2MTSoI_P7iNtdGqj3Rn_GW-A",
+  authDomain: "burzhuy-pro-app.firebaseapp.com",
+  projectId: "burzhuy-pro-app",
+  storageBucket: "burzhuy-pro-app.firebasestorage.app",
+  messagingSenderId: "621600130598",
+  appId: "1:621600130598:web:5991bcf446b7b0cff088e7",
+  measurementId: "G-WBLLKPFF6B"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
     // Функция для плавной смены экранов
     function navigateTo(screenId) {
@@ -25,14 +52,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- ЛОГИКА АУТЕНТИФИКАЦИИ ---
-    const token = localStorage.getItem('authToken');
-    if (token) {
-        // Если есть токен, сразу показываем главное меню
-        setTimeout(() => navigateTo('main-menu-screen'), 500);
-    } else {
-        setTimeout(() => navigateTo('auth-screen'), 500);
-    }
+    // --- ЛОГИКА АУТЕНТИФИКАЦИИ FIREBASE ---
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            // Пользователь вошел в систему
+            console.log("Пользователь вошел:", user.uid);
+            navigateTo('main-menu-screen');
+        } else {
+            // Пользователь вышел
+            console.log("Пользователь вышел.");
+            navigateTo('auth-screen');
+        }
+    });
 
     // Переключение между входом и регистрацией
     document.getElementById('show-register').addEventListener('click', (e) => {
@@ -50,25 +81,29 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('register-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const authError = document.getElementById('auth-error');
+        const name = document.getElementById('register-name').value;
+        const phone = document.getElementById('register-phone').value;
+        const password = document.getElementById('register-password').value;
+
+        // Используем email как логин, добавляя фиктивный домен
+        const email = `${phone}@agent.burzhuy`; 
         authError.textContent = '';
-        const data = {
-            name: document.getElementById('register-name').value,
-            phone: document.getElementById('register-phone').value,
-            password: document.getElementById('register-password').value
-        };
 
         try {
-            const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+
+            // Сохраняем доп. информацию в Firestore
+            await db.collection('users').doc(user.uid).set({
+                name: name,
+                phone: phone,
+                role: 'agent',
+                registeredAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            if (!res.ok) throw new Error('Ошибка регистрации');
-            // После успешной регистрации можно сразу залогинить пользователя или попросить войти
-            alert('Регистрация успешна! Теперь вы можете войти.');
-            document.getElementById('show-login').click(); // Показать форму входа
+
+            // Система автоматически перекинет на главный экран через onAuthStateChanged
         } catch (error) {
-            authError.textContent = error.message;
+            authError.textContent = "Ошибка регистрации: " + error.message;
         }
     });
     
@@ -76,68 +111,58 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const authError = document.getElementById('auth-error');
+        const phone = document.getElementById('login-phone').value;
+        const password = document.getElementById('login-password').value;
+        const email = `${phone}@agent.burzhuy`;
         authError.textContent = '';
-        const data = {
-            phone: document.getElementById('login-phone').value,
-            password: document.getElementById('login-password').value
-        };
 
         try {
-            const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            const result = await res.json();
-            if (!res.ok) throw new Error(result.message || 'Ошибка входа');
-            
-            localStorage.setItem('authToken', result.token);
-            localStorage.setItem('user', JSON.stringify(result.user));
-            navigateTo('main-menu-screen');
-
+            await auth.signInWithEmailAndPassword(email, password);
+            // Система автоматически перекинет на главный экран
         } catch (error) {
-            authError.textContent = error.message;
+            authError.textContent = "Ошибка входа: " + error.message;
         }
     });
 
     // Выход из системы
     document.getElementById('logout-btn').addEventListener('click', (e) => {
         e.preventDefault();
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-        navigateTo('auth-screen');
+        auth.signOut();
     });
 
-    // --- НАВИГАЦИЯ ПО ПРИЛОЖЕНИЮ ---
+    // --- НАВИГАЦИЯ ПО ПРИЛОЖЕНИЮ --- (остается без изменений)
     document.querySelectorAll('.menu-btn, .back-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            const targetScreen = btn.dataset.target;
-            navigateTo(targetScreen);
+            navigateTo(btn.dataset.target);
         });
     });
 
-    // --- ФОРМА ПОДДЕРЖКИ ---
+    // --- ФОРМА ПОДДЕРЖКИ С FIREBASE ---
     document.getElementById('support-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const status = document.getElementById('support-status');
         status.textContent = "Отправка...";
-        const data = {
-            name: document.getElementById('support-name').value,
-            phone: document.getElementById('support-phone').value,
-            message: document.getElementById('support-message').value,
-        };
+        
         try {
-            const res = await fetch(`${API_BASE_URL}/api/app/support`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+            await db.collection('supportTickets').add({
+                name: document.getElementById('support-name').value,
+                phone: document.getElementById('support-phone').value,
+                message: document.getElementById('support-message').value,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                userId: auth.currentUser ? auth.currentUser.uid : 'guest'
             });
-            const result = await res.json();
-            if (!res.ok) throw new Error(result.message);
-            status.textContent = result.message;
+
+            status.textContent = "Ваше обращение отправлено!";
             e.target.reset();
         } catch (error) {
             status.textContent = `Ошибка: ${error.message}`;
         }
     });
+
+    // Первичный запуск
+    setTimeout(() => {
+         if (!auth.currentUser) {
+            navigateTo('auth-screen');
+         }
+    }, 500);
 });
