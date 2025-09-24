@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- ВАШИ КЛЮЧИ FIREBASE ---
+    // --- ВАЖНО: Вставьте ВАШ firebaseConfig сюда ---
     const firebaseConfig = {
       apiKey: "AIzaSyAEEIRVkDj2MTSoI_P7iNtdGqj3Rn_GW-A",
       authDomain: "burzhuy-pro-app.firebaseapp.com",
@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
       appId: "1:621600130598:web:5991bcf446b7b0cff088e7",
       measurementId: "G-WBLLKPFF6B"
     };
-    // ----------------------------
+    // ---------------------------------------------
 
-    // Инициализация Firebase (старый, совместимый синтаксис)
+    // Используем совместимый синтаксис
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -21,116 +21,117 @@ document.addEventListener('DOMContentLoaded', () => {
     tg.setHeaderColor('#121212');
     tg.setBackgroundColor('#121212');
 
-    const screens = document.querySelectorAll('.screen');
     let currentScreen = 'loader';
 
+    // Улучшенная функция навигации, чтобы избежать наложений
     function navigateTo(screenId) {
-        const oldScreen = document.getElementById(currentScreen);
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         const newScreen = document.getElementById(screenId);
-        
-        if (oldScreen && newScreen) {
-            oldScreen.classList.add('exit-left');
-            setTimeout(() => {
-                oldScreen.classList.remove('active', 'exit-left');
-                newScreen.classList.add('active');
-                currentScreen = screenId;
-            }, 400);
+        if (newScreen) newScreen.classList.add('active');
+        currentScreen = screenId;
+    }
+
+    // --- ОСНОВНАЯ ЛОГИКА ПРИЛОЖЕНИЯ ---
+
+    // 1. Отображение списка городов
+    function renderCities() {
+        const cities = {
+            pavlodar: 'Павлодар',
+            ekibastuz: 'Экибастуз',
+            oskemen: 'Усть-Каменогорск'
+        };
+        const cityListContainer = document.getElementById('city-list');
+        cityListContainer.innerHTML = '';
+        for (const cityId in cities) {
+            const button = document.createElement('button');
+            button.className = 'menu-btn city-btn';
+            button.dataset.cityId = cityId;
+            button.textContent = cities[cityId];
+            button.addEventListener('click', () => showLocationsForCity(cityId, cities[cityId]));
+            cityListContainer.appendChild(button);
         }
     }
 
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            console.log("Пользователь вошел:", user.uid);
-            navigateTo('main-menu-screen');
-        } else {
-            console.log("Пользователь вышел.");
-            navigateTo('auth-screen');
-        }
-    });
-
-    document.getElementById('show-register').addEventListener('click', (e) => {
-        e.preventDefault();
-        document.getElementById('login-view').style.display = 'none';
-        document.getElementById('register-view').style.display = 'block';
-    });
-    document.getElementById('show-login').addEventListener('click', (e) => {
-        e.preventDefault();
-        document.getElementById('register-view').style.display = 'none';
-        document.getElementById('login-view').style.display = 'block';
-    });
-
-    document.getElementById('register-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const authError = document.getElementById('auth-error');
-        const name = document.getElementById('register-name').value;
-        const phone = document.getElementById('register-phone').value;
-        const password = document.getElementById('register-password').value;
-        const email = `${phone}@agent.burzhuy`; 
-        authError.textContent = '';
+    // 2. Показать точки для выбранного города
+    async function showLocationsForCity(cityId, cityName) {
+        document.getElementById('locations-header').textContent = `Точки в г. ${cityName}`;
+        const locationsList = document.getElementById('locations-list');
+        locationsList.innerHTML = '<div class="spinner"></div>';
+        navigateTo('locations-screen');
 
         try {
-            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-            const user = userCredential.user;
-            await db.collection('users').doc(user.uid).set({
-                name: name,
-                phone: phone,
-                role: 'agent',
-                registeredAt: firebase.firestore.FieldValue.serverTimestamp()
+            const querySnapshot = await db.collection('locations').where('city', '==', cityId).get();
+            locationsList.innerHTML = '';
+            if (querySnapshot.empty) {
+                locationsList.innerHTML = '<li>Нет доступных точек.</li>';
+                return;
+            }
+            querySnapshot.forEach(doc => {
+                const location = doc.data();
+                const listItem = document.createElement('li');
+                listItem.className = 'location-item';
+                listItem.innerHTML = `<strong>${location.name}</strong><small>${location.address}</small>`;
+                listItem.addEventListener('click', () => selectLocation(location));
+                locationsList.appendChild(listItem);
             });
         } catch (error) {
-            authError.textContent = "Ошибка регистрации: " + error.message;
+            console.error("Ошибка загрузки точек: ", error);
+            locationsList.innerHTML = '<li>Не удалось загрузить точки.</li>';
         }
+    }
+
+    // 3. Выбор точки и переход к чек-листу
+    function selectLocation(location) {
+        document.getElementById('checklist-address').textContent = location.address;
+        document.getElementById('checklist-date').textContent = new Date().toLocaleString();
+        document.getElementById('checklist-form').reset();
+        navigateTo('checklist-screen');
+    }
+    
+    // --- АУТЕНТИФИКАЦИЯ И НАВИГАЦИЯ ---
+    auth.onAuthStateChanged(user => {
+        if (user) { navigateTo('main-menu-screen'); } 
+        else { navigateTo('auth-screen'); }
     });
     
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
+    document.getElementById('show-register').addEventListener('click', e => { e.preventDefault(); document.getElementById('login-view').style.display = 'none'; document.getElementById('register-view').style.display = 'block'; });
+    document.getElementById('show-login').addEventListener('click', e => { e.preventDefault(); document.getElementById('register-view').style.display = 'none'; document.getElementById('login-view').style.display = 'block'; });
+
+    document.getElementById('register-form').addEventListener('submit', async e => {
         e.preventDefault();
         const authError = document.getElementById('auth-error');
-        const phone = document.getElementById('login-phone').value;
-        const password = document.getElementById('login-password').value;
-        const email = `${phone}@agent.burzhuy`;
+        const { name, phone, password } = e.target.elements;
+        const email = `${phone.value}@agent.burzhuy`; 
         authError.textContent = '';
-
         try {
-            await auth.signInWithEmailAndPassword(email, password);
-        } catch (error) {
-            authError.textContent = "Ошибка входа: " + error.message;
-        }
+            const cred = await auth.createUserWithEmailAndPassword(email, password.value);
+            await db.collection('users').doc(cred.user.uid).set({ name: name.value, phone: phone.value, role: 'agent' });
+        } catch (error) { authError.textContent = "Ошибка: " + error.message; }
     });
-
-    document.getElementById('logout-btn').addEventListener('click', (e) => {
+    
+    document.getElementById('login-form').addEventListener('submit', async e => {
         e.preventDefault();
-        auth.signOut();
+        const authError = document.getElementById('auth-error');
+        const { phone, password } = e.target.elements;
+        const email = `${phone.value}@agent.burzhuy`;
+        authError.textContent = '';
+        try { await auth.signInWithEmailAndPassword(email, password.value); } 
+        catch (error) { authError.textContent = "Ошибка: " + error.message; }
     });
 
-    document.querySelectorAll('.menu-btn, .back-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            navigateTo(btn.dataset.target);
-        });
-    });
+    document.getElementById('logout-btn').addEventListener('click', e => { e.preventDefault(); auth.signOut(); });
+    
+    document.querySelectorAll('.menu-btn, .back-btn').forEach(btn => btn.addEventListener('click', () => navigateTo(btn.dataset.target)));
 
-    document.getElementById('support-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const status = document.getElementById('support-status');
-        status.textContent = "Отправка...";
-        
-        try {
-            await db.collection('supportTickets').add({
-                name: document.getElementById('support-name').value,
-                phone: document.getElementById('support-phone').value,
-                message: document.getElementById('support-message').value,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                userId: auth.currentUser ? auth.currentUser.uid : 'guest'
-            });
-            status.textContent = "Ваше обращение отправлено!";
-            e.target.reset();
-        } catch (error) {
-            status.textContent = `Ошибка: ${error.message}`;
-        }
-    });
+    // Вызов начальной функции
+    renderCities();
 
+    // Запускаем приложение после небольшой задержки
     setTimeout(() => {
          if (!auth.currentUser) {
             navigateTo('auth-screen');
+         } else {
+            navigateTo('main-menu-screen');
          }
     }, 500);
 });
