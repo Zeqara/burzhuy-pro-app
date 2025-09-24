@@ -36,11 +36,17 @@ body {
     align-items: center;
     justify-content: center;
     transform: translateX(100%);
-    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    /* --- ИСПРАВЛЕНО ЗДЕСЬ --- */
+    visibility: hidden;
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s, visibility 0.4s;
 }
 
 .screen.active {
     transform: translateX(0);
+    /* --- ИСПРАВЛЕНО ЗДЕСЬ --- */
+    visibility: visible;
+    opacity: 1;
 }
 
 .screen.exit-left {
