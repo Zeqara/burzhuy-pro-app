@@ -54,6 +54,26 @@
                 <button class="menu-btn" data-target="history-screen">История проверок</button>
             </div>
         </div>
+        
+        <!-- НОВЫЙ ЭКРАН ВЫБОРА ГОРОДА -->
+        <div id="cooperation-screen" class="screen page-screen">
+            <header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>Выберите город</h2></header>
+            <div class="content">
+                <div class="menu-grid">
+                    <button class="menu-btn city-btn" data-city="pavlodar">Павлодар</button>
+                    <button class="menu-btn city-btn" data-city="ekibastuz">Экибастуз</button>
+                    <button class="menu-btn city-btn" data-city="oskemen">Усть-Каменогорск</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ЭКРАН ИСТОРИИ ПРОВЕРОК (ПОКА ПУСТОЙ) -->
+        <div id="history-screen" class="screen page-screen">
+            <header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>История проверок</h2></header>
+            <div class="content">
+                <p>Здесь будет отображаться список ваших завершенных проверок.</p>
+            </div>
+        </div>
 
         <!-- Другие экраны (Инструкция, Поддержка и т.д.) -->
         <div id="instruction-screen" class="screen page-screen">
@@ -78,12 +98,12 @@
         </div>
 
     </div>
-    
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-
+    
     <!-- Наш скрипт -->
     <script type="module" src="app.js"></script>
 </body>
