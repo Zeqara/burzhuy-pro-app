@@ -1,7 +1,14 @@
 // =================================================================
 // КОНФИГУРАЦИЯ И ИНИЦИАЛИЗАЦИЯ FIREBASE
 // =================================================================
-const firebaseConfig = { apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc", authDomain: "burzhuy-pro-v2.firebaseapp.com", projectId: "burzhuy-pro-v2", storageBucket: "burzhuy-pro-v2.appspot.com", messagingSenderId: "627105413900", appId: "1:627105413900:web:3a02e926867ff76e256729" };
+const firebaseConfig = {
+    apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc",
+    authDomain: "burzhuy-pro-v2.firebaseapp.com", // <-- ИСПРАВЛЕНО
+    projectId: "burzhuy-pro-v2",
+    storageBucket: "burzhuy-pro-v2.appspot.com",
+    messagingSenderId: "627105413900",
+    appId: "1:627105413900:web:3a02e926867ff76e256729"
+};
 const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
@@ -19,53 +26,107 @@ const cityListContainer = document.getElementById('city-list'), locationsListCon
 const checklistForm = document.getElementById('checklist-form');
 const checklistAddress = document.getElementById('checklist-address');
 const checklistDate = document.getElementById('checklist-date');
-let currentChecklistPoint = null; // Переменная для хранения данных о выбранной точке
+let currentChecklistPoint = null;
 
 // =================================================================
 // ГЛАВНАЯ ФУНКЦИЯ НАВИГАЦИИ
 // =================================================================
-function showScreen(screenId) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); const targetScreen = document.getElementById(screenId); if (targetScreen) targetScreen.classList.add('active'); }
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const targetScreen = document.getElementById(screenId);
+    if (targetScreen) targetScreen.classList.add('active');
+}
 
 // =================================================================
-// ЛОГИКА АВТОРИЗАЦИИ (без изменений)
+// ЛОГИКА АВТОРИЗАЦИИ
 // =================================================================
 showRegisterLink.addEventListener('click', e => { e.preventDefault(); loginView.style.display = 'none'; registerView.style.display = 'block'; });
 showLoginLink.addEventListener('click', e => { e.preventDefault(); registerView.style.display = 'none'; loginView.style.display = 'block'; });
-registerForm.addEventListener('submit', e => { e.preventDefault(); const name = registerNameInput.value, email = registerEmailInput.value, password = registerPasswordInput.value, phone = registerPhoneInput.value; if (!name || !email || !password || !phone) return alert('Пожалуйста, заполните все поля!'); auth.createUserWithEmailAndPassword(email, password).then(cred => db.collection('users').doc(cred.user.uid).set({ name, phone, email, role: 'guest' })).then(() => { alert('Регистрация прошла успешно!'); registerForm.reset(); showLoginLink.click(); }).catch(err => alert(`Ошибка: ${err.message}`)); });
-loginForm.addEventListener('submit', e => { e.preventDefault(); const email = loginEmailInput.value, password = loginPasswordInput.value; if (!email || !password) return alert('Введите email и пароль.'); auth.signInWithEmailAndPassword(email, password).catch(err => { if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(err.code)) { alert('Неверный логин или пароль.'); } else { alert(`Ошибка: ${err.message}`); } }); });
+registerForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = registerNameInput.value, email = registerEmailInput.value, password = registerPasswordInput.value, phone = registerPhoneInput.value;
+    if (!name || !email || !password || !phone) return alert('Пожалуйста, заполните все поля!');
+    auth.createUserWithEmailAndPassword(email, password)
+        .then(cred => db.collection('users').doc(cred.user.uid).set({ name, phone, email, role: 'guest' }))
+        .then(() => { alert('Регистрация прошла успешно!'); registerForm.reset(); showLoginLink.click(); })
+        .catch(err => alert(`Ошибка: ${err.message}`));
+});
+loginForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const email = loginEmailInput.value, password = loginPasswordInput.value;
+    if (!email || !password) return alert('Введите email и пароль.');
+    auth.signInWithEmailAndPassword(email, password)
+        .catch(err => {
+            if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(err.code)) {
+                alert('Неверный логин или пароль.');
+            } else {
+                alert(`Ошибка: ${err.message}`);
+            }
+        });
+});
 
 // =================================================================
-// ЛОГИКА НАВИГАЦИИ (без изменений)
+// ЛОГИКА НАВИГАЦИИ
 // =================================================================
 menuButtons.forEach(b => b.addEventListener('click', () => showScreen(b.dataset.target)));
 backButtons.forEach(b => b.addEventListener('click', () => showScreen(b.dataset.target)));
 logoutBtn.addEventListener('click', e => { e.preventDefault(); auth.signOut().catch(err => alert(`Ошибка: ${err.message}`)); });
 
 // =================================================================
-// ЛОГИКА ЭКРАНА "НАЧАТЬ СОТРУДНИЧЕСТВО" (с изменениями)
+// ЛОГИКА "НАЧАТЬ СОТРУДНИЧЕСТВО"
 // =================================================================
-function renderCityButtons() { const cities = ["Павлодар", "Экибастуз", "Усть-Каменогорск"]; cityListContainer.innerHTML = ''; cities.forEach(city => { const button = document.createElement('button'); button.className = 'menu-btn'; button.textContent = city; button.addEventListener('click', () => renderLocationsForCity(city)); cityListContainer.appendChild(button); }); }
-function renderLocationsForCity(cityName) { locationsHeader.textContent = `Точки в г. ${cityName}`; locationsListContainer.innerHTML = '<div class="spinner"></div>'; showScreen('locations-screen'); db.collection('trading_points').where('city', '==', cityName).get().then(snapshot => { locationsListContainer.innerHTML = ''; if (snapshot.empty) { locationsListContainer.innerHTML = '<p>Нет доступных точек.</p>'; return; } snapshot.forEach(doc => { const point = doc.data(); const li = document.createElement('li'); li.className = 'location-item'; li.innerHTML = `<strong>${point.name}</strong><small>${point.address}</small>`; li.addEventListener('click', () => openChecklistFor(point)); // <-- ИЗМЕНЕНИЕ ЗДЕСЬ locationsListContainer.appendChild(li); }); }).catch(error => { console.error("Ошибка: ", error); locationsListContainer.innerHTML = '<p>Не удалось загрузить точки.</p>'; }); }
-
-// =================================================================
-// НОВЫЙ КОД: ЛОГИКА ЧЕК-ЛИСТА
-// =================================================================
-// Открывает экран чек-листа и заполняет его данными
-function openChecklistFor(pointData) {
-    currentChecklistPoint = pointData; // Сохраняем инфо о точке
-    checklistAddress.textContent = pointData.address;
-    checklistDate.textContent = new Date().toLocaleString('ru-RU');
-    checklistForm.reset(); // Очищаем форму от старых данных
-    showScreen('checklist-screen');
+function renderCityButtons() {
+    const cities = ["Павлодар", "Экибастуз", "Усть-Каменогорск"];
+    cityListContainer.innerHTML = '';
+    cities.forEach(city => {
+        const button = document.createElement('button');
+        button.className = 'menu-btn';
+        button.textContent = city;
+        button.addEventListener('click', () => renderLocationsForCity(city));
+        cityListContainer.appendChild(button);
+    });
+}
+function renderLocationsForCity(cityName) {
+    locationsHeader.textContent = `Точки в г. ${cityName}`;
+    locationsListContainer.innerHTML = '<div class="spinner"></div>';
+    showScreen('locations-screen');
+    db.collection('trading_points').where('city', '==', cityName).get()
+        .then(snapshot => {
+            locationsListContainer.innerHTML = '';
+            if (snapshot.empty) {
+                locationsListContainer.innerHTML = '<p>Нет доступных точек.</p>';
+                return;
+            }
+            snapshot.forEach(doc => {
+                const point = doc.data();
+                const li = document.createElement('li');
+                li.className = 'location-item';
+                li.innerHTML = `<strong>${point.name}</strong><small>${point.address}</small>`;
+                li.addEventListener('click', () => openChecklistFor(point));
+                locationsListContainer.appendChild(li);
+            });
+        })
+        .catch(error => {
+            console.error("Ошибка: ", error);
+            locationsListContainer.innerHTML = '<p>Не удалось загрузить точки.</p>';
+        });
 }
 
-// Обработка отправки формы чек-листа
-checklistForm.addEventListener('submit', (e) => {
+// =================================================================
+// ЛОГИКА ЧЕК-ЛИСТА
+// =================================================================
+function openChecklistFor(pointData) {
+    currentChecklistPoint = pointData;
+    checklistAddress.textContent = pointData.address;
+    checklistDate.textContent = new Date().toLocaleString('ru-RU');
+    checklistForm.reset();
+    showScreen('checklist-screen');
+}
+checklistForm.addEventListener('submit', e => {
     e.preventDefault();
     const user = auth.currentUser;
     if (!user) return alert('Ошибка: вы не авторизованы.');
-
-    // Собираем все данные из формы в один объект
+    
     const reportData = {
         userId: user.uid,
         userEmail: user.email,
@@ -83,14 +144,12 @@ checklistForm.addEventListener('submit', (e) => {
             q8_food_rating: document.getElementById('checklist-q8-food-rating').value,
             q9_comments: document.getElementById('checklist-q9-comments').value,
         }
-        // TODO: Добавить ссылки на загруженные фото
     };
     
-    // Сохраняем отчет в базу данных в новую коллекцию 'reports'
     db.collection('reports').add(reportData)
         .then(() => {
             alert('Спасибо за ваш отчёт ✅ На проверку отчёта уходит до 12 часов (будние дни).');
-            showScreen('main-menu-screen'); // Возвращаем на главный экран
+            showScreen('main-menu-screen');
         })
         .catch(error => {
             console.error("Ошибка при отправке отчета: ", error);
@@ -99,13 +158,13 @@ checklistForm.addEventListener('submit', (e) => {
 });
 
 // =================================================================
-// ГЛАВНЫЙ КОНТРОЛЛЕР (с изменениями)
+// ГЛАВНЫЙ КОНТРОЛЛЕР
 // =================================================================
 auth.onAuthStateChanged(user => {
     if (user) {
         showScreen('main-menu-screen');
-        renderCityButtons(); // Генерируем кнопки городов после входа
+        renderCityButtons();
     } else {
         showScreen('auth-screen');
     }
-});```
+});
