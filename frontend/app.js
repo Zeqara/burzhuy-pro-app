@@ -23,11 +23,12 @@ function showScreen(screenId) {
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Элементы
-    const phoneForm = document.getElementById('phone-form'), codeForm = document.getElementById('code-form'), profileSetupForm = document.getElementById('profile-setup-form'), mainMenuList = document.getElementById('main-menu-list');
+    const phoneForm = document.getElementById('phone-form'), codeForm = document.getElementById('code-form'), profileSetupForm = document.getElementById('profile-setup-form');
     const phoneInput = document.getElementById('phone-input'), codeInput = document.getElementById('code-input'), profileNameInput = document.getElementById('profile-name-input');
     const sendCodeBtn = document.getElementById('send-code-btn');
     const phoneView = document.getElementById('phone-view'), codeView = document.getElementById('code-view');
     const userNameDisplay = document.getElementById('user-name-display'), logoutBtn = document.getElementById('logout-btn');
+    const adminMenuBtn = document.getElementById('admin-menu-btn'); // <-- Находим новую кнопку
     const scheduleForm = document.getElementById('schedule-form'), scheduleLocationSelect = document.getElementById('schedule-location-select'), scheduleDateInput = document.getElementById('schedule-date-input'), timeSlotsContainer = document.getElementById('time-slots-container'), addSlotBtn = document.getElementById('add-slot-btn'), scheduleUrgentCheckbox = document.getElementById('schedule-urgent-checkbox'), scheduleList = document.getElementById('schedule-list');
     const scheduleCardsList = document.getElementById('schedule-cards-list'), noSchedulesView = document.getElementById('no-schedules-view'), lottieAnimationContainer = document.getElementById('lottie-animation'), slotsList = document.getElementById('slots-list'), slotLocationTitle = document.getElementById('slot-location-title');
     const dashboardInfoContainer = document.getElementById('dashboard-info-container');
@@ -75,39 +76,24 @@ document.addEventListener('DOMContentLoaded', () => {
             db.collection('users').doc(user.uid).get().then(doc => {
                 if (doc.exists) {
                     const userData = doc.data();
-                    setupUIForUser(userData); // <-- ИЗМЕНЕНИЕ
+                    userNameDisplay.textContent = userData.fullName;
+                    if (userData.role === 'admin') {
+                        adminMenuBtn.style.display = 'flex';
+                    } else {
+                        adminMenuBtn.style.display = 'none';
+                    }
+                    loadUserDashboard(user.uid);
                     showScreen('main-menu-screen');
                 } else {
                     showScreen('profile-setup-screen');
                 }
             });
         } else {
-            setupUIForUser(null); // <-- ИЗМЕНЕНИЕ
+            adminMenuBtn.style.display = 'none'; // Скрываем кнопку при выходе
             if(phoneView && codeView) { phoneView.style.display = 'block'; codeView.style.display = 'none'; }
             showScreen('auth-screen');
         }
     });
-
-    function setupUIForUser(userData) {
-        // Управляем админ-панелью
-        const existingAdminButton = document.getElementById('admin-menu-btn');
-        if (existingAdminButton) existingAdminButton.remove();
-
-        if (userData && userData.role === 'admin') {
-            const adminButton = document.createElement('li');
-            adminButton.id = 'admin-menu-btn';
-            adminButton.className = 'menu-list-item';
-            adminButton.innerHTML = `<i class="icon fa-solid fa-user-shield"></i><div><strong>Панель Администратора</strong><small>Управление графиком проверок</small></div>`;
-            adminButton.addEventListener('click', () => { loadLocationsForAdmin(); renderSchedules(); showScreen('admin-schedule-screen'); });
-            if (mainMenuList) mainMenuList.appendChild(adminButton);
-        }
-
-        // Управляем дашбордом
-        if (userData) {
-            userNameDisplay.textContent = userData.fullName;
-            loadUserDashboard(auth.currentUser.uid);
-        }
-    }
     
     if(logoutBtn) logoutBtn.addEventListener('click', () => {
         if(dashboardUpdateInterval) clearInterval(dashboardUpdateInterval);
@@ -115,6 +101,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- ЛОГИКА АДМИН-ПАНЕЛИ ---
+    if (adminMenuBtn) {
+        adminMenuBtn.addEventListener('click', () => { 
+            loadLocationsForAdmin(); 
+            renderSchedules(); 
+            showScreen('admin-schedule-screen'); 
+        });
+    }
+
     async function loadLocationsForAdmin() {
         if (!scheduleLocationSelect) return;
         const snapshot = await db.collection('locations').get();
