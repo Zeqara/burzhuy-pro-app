@@ -186,13 +186,34 @@ document.addEventListener('DOMContentLoaded', () => {
         scheduleCardsList.innerHTML = '<div class="spinner"></div>';
         noSchedulesView.style.display = 'none';
 
+        const user = auth.currentUser;
+        if (!user) return;
+        const existingBookingSnapshot = await db.collection('timeSlots').where('bookedBy', '==', user.uid).where('status', '==', 'забронирован').get();
+        if (!existingBookingSnapshot.empty) {
+            scheduleCardsList.innerHTML = '';
+            noSchedulesView.innerHTML = `<div id="lottie-animation-booked"></div><h3>У вас уже есть активная проверка</h3><p>Завершите ее, прежде чем записываться на новую. Информация о ней находится на главном экране.</p>`;
+            noSchedulesView.style.display = 'block';
+            if (document.getElementById('lottie-animation-booked')) {
+                lottie.loadAnimation({ container: document.getElementById('lottie-animation-booked'), renderer: 'svg', loop: false, autoplay: true, path: 'https://assets10.lottiefiles.com/packages/lf20_u4j3xm6g.json' });
+            }
+            return;
+        }
+
         const now = new Date(); now.setHours(0,0,0,0);
         const snapshot = await db.collection('schedule').where('date', '>=', now).get();
         const schedules = [];
         snapshot.forEach(doc => schedules.push({ id: doc.id, ...doc.data() }));
         schedules.sort((a, b) => (a.isUrgent && !b.isUrgent) ? -1 : (!a.isUrgent && b.isUrgent) ? 1 : a.date.toMillis() - b.date.toMillis());
 
-        if (schedules.length === 0) { scheduleCardsList.innerHTML = ''; noSchedulesView.style.display = 'block'; return; }
+        if (schedules.length === 0) {
+            scheduleCardsList.innerHTML = '';
+            noSchedulesView.innerHTML = `<div id="lottie-animation"></div><h3>Пока нет доступных проверок</h3><p>Отличная работа! Все задания выполнены. Как только появятся новые, вы увидите их здесь.</p>`;
+            noSchedulesView.style.display = 'block';
+             if (document.getElementById('lottie-animation')) {
+                lottie.loadAnimation({ container: document.getElementById('lottie-animation'), renderer: 'svg', loop: false, autoplay: true, path: 'https://assets10.lottiefiles.com/packages/lf20_u4j3xm6g.json' });
+            }
+            return;
+        }
         
         let cardsHTML = '';
         schedules.forEach(s => {
@@ -209,14 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
         slotLocationTitle.textContent = locationTitle;
         slotsList.innerHTML = '<div class="spinner"></div>';
 
-        const user = auth.currentUser;
-        if (!user) return;
-        const existingBookingSnapshot = await db.collection('timeSlots').where('bookedBy', '==', user.uid).where('status', '==', 'забронирован').get();
-        if (!existingBookingSnapshot.empty) {
-            slotsList.innerHTML = '<p>У вас уже есть одна активная запись. Завершите ее, прежде чем записываться на новую.</p>';
-            return;
-        }
-
         const snapshot = await db.collection('timeSlots').where('scheduleId', '==', scheduleId).where('status', '==', 'свободен').get();
         if (snapshot.empty) { slotsList.innerHTML = '<p>К сожалению, все свободные места на эту дату уже заняты.</p>'; return; }
         
@@ -225,6 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
         slotsList.innerHTML = slotsHTML;
         document.querySelectorAll('.time-slot').forEach(s => s.addEventListener('click', async () => {
             if (!confirm('Вы уверены, что хотите записаться на это время?')) return;
+            const user = auth.currentUser; if (!user) return;
             const userDoc = await db.collection('users').doc(user.uid).get();
             await db.collection('timeSlots').doc(s.dataset.slotId).update({ status: 'забронирован', bookedBy: user.uid, agentName: userDoc.data().fullName });
             alert('Вы успешно записаны!');
