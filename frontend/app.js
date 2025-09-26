@@ -23,17 +23,16 @@ function showScreen(screenId) {
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Элементы
-    const phoneForm = document.getElementById('phone-form'), codeForm = document.getElementById('code-form'), profileSetupForm = document.getElementById('profile-setup-form');
+    const phoneForm = document.getElementById('phone-form'), codeForm = document.getElementById('code-form'), profileSetupForm = document.getElementById('profile-setup-form'), mainMenuList = document.getElementById('main-menu-list');
     const phoneInput = document.getElementById('phone-input'), codeInput = document.getElementById('code-input'), profileNameInput = document.getElementById('profile-name-input');
     const sendCodeBtn = document.getElementById('send-code-btn');
     const phoneView = document.getElementById('phone-view'), codeView = document.getElementById('code-view');
     const userNameDisplay = document.getElementById('user-name-display'), logoutBtn = document.getElementById('logout-btn');
-    const adminMenuContainer = document.getElementById('admin-menu-container'), scheduleForm = document.getElementById('schedule-form'), scheduleLocationSelect = document.getElementById('schedule-location-select'), scheduleDateInput = document.getElementById('schedule-date-input'), timeSlotsContainer = document.getElementById('time-slots-container'), addSlotBtn = document.getElementById('add-slot-btn'), scheduleUrgentCheckbox = document.getElementById('schedule-urgent-checkbox'), scheduleList = document.getElementById('schedule-list');
+    const scheduleForm = document.getElementById('schedule-form'), scheduleLocationSelect = document.getElementById('schedule-location-select'), scheduleDateInput = document.getElementById('schedule-date-input'), timeSlotsContainer = document.getElementById('time-slots-container'), addSlotBtn = document.getElementById('add-slot-btn'), scheduleUrgentCheckbox = document.getElementById('schedule-urgent-checkbox'), scheduleList = document.getElementById('schedule-list');
     const scheduleCardsList = document.getElementById('schedule-cards-list'), noSchedulesView = document.getElementById('no-schedules-view'), lottieAnimationContainer = document.getElementById('lottie-animation'), slotsList = document.getElementById('slots-list'), slotLocationTitle = document.getElementById('slot-location-title');
     const dashboardInfoContainer = document.getElementById('dashboard-info-container');
     const checklistForm = document.getElementById('checklist-form'), checklistAddress = document.getElementById('checklist-address'), checklistDate = document.getElementById('checklist-date');
 
-    let currentUserRole = 'guest';
     const recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
 
     if(lottieAnimationContainer) {
@@ -76,22 +75,39 @@ document.addEventListener('DOMContentLoaded', () => {
             db.collection('users').doc(user.uid).get().then(doc => {
                 if (doc.exists) {
                     const userData = doc.data();
-                    currentUserRole = userData.role || 'guest';
-                    userNameDisplay.textContent = userData.fullName;
-                    setupAdminUI();
-                    loadUserDashboard(user.uid);
+                    setupUIForUser(userData); // <-- ИЗМЕНЕНИЕ
                     showScreen('main-menu-screen');
                 } else {
                     showScreen('profile-setup-screen');
                 }
             });
         } else {
-            currentUserRole = 'guest';
-            setupAdminUI();
+            setupUIForUser(null); // <-- ИЗМЕНЕНИЕ
             if(phoneView && codeView) { phoneView.style.display = 'block'; codeView.style.display = 'none'; }
             showScreen('auth-screen');
         }
     });
+
+    function setupUIForUser(userData) {
+        // Управляем админ-панелью
+        const existingAdminButton = document.getElementById('admin-menu-btn');
+        if (existingAdminButton) existingAdminButton.remove();
+
+        if (userData && userData.role === 'admin') {
+            const adminButton = document.createElement('li');
+            adminButton.id = 'admin-menu-btn';
+            adminButton.className = 'menu-list-item';
+            adminButton.innerHTML = `<i class="icon fa-solid fa-user-shield"></i><div><strong>Панель Администратора</strong><small>Управление графиком проверок</small></div>`;
+            adminButton.addEventListener('click', () => { loadLocationsForAdmin(); renderSchedules(); showScreen('admin-schedule-screen'); });
+            if (mainMenuList) mainMenuList.appendChild(adminButton);
+        }
+
+        // Управляем дашбордом
+        if (userData) {
+            userNameDisplay.textContent = userData.fullName;
+            loadUserDashboard(auth.currentUser.uid);
+        }
+    }
     
     if(logoutBtn) logoutBtn.addEventListener('click', () => {
         if(dashboardUpdateInterval) clearInterval(dashboardUpdateInterval);
@@ -99,18 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- ЛОГИКА АДМИН-ПАНЕЛИ ---
-    function setupAdminUI() {
-        if (!adminMenuContainer) return;
-        adminMenuContainer.innerHTML = '';
-        if (currentUserRole === 'admin') {
-            const adminButton = document.createElement('li');
-            adminButton.className = 'menu-list-item';
-            adminButton.innerHTML = `<i class="icon fa-solid fa-user-shield"></i><div><strong>Панель Администратора</strong><small>Управление графиком проверок</small></div>`;
-            adminButton.addEventListener('click', () => { loadLocationsForAdmin(); renderSchedules(); showScreen('admin-schedule-screen'); });
-            adminMenuContainer.appendChild(adminButton);
-        }
-    }
-
     async function loadLocationsForAdmin() {
         if (!scheduleLocationSelect) return;
         const snapshot = await db.collection('locations').get();
@@ -207,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (schedules.length === 0) {
             scheduleCardsList.innerHTML = '';
-            noSchedulesView.innerHTML = `<div id="lottie-animation"></div><h3>Пока нет доступных проверок</h3><p>Отличная работа! Все задания выполнены. Как только появятся новые, вы увидите их здесь.</p>`;
+            noSchedulesView.innerHTML = `<div id="lottie-animation"></div><h3>Пока нет доступных проверок</h3><p>Отличная работа! Все задания выполнены.</p>`;
             noSchedulesView.style.display = 'block';
              if (document.getElementById('lottie-animation')) {
                 lottie.loadAnimation({ container: document.getElementById('lottie-animation'), renderer: 'svg', loop: false, autoplay: true, path: 'https://assets10.lottiefiles.com/packages/lf20_u4j3xm6g.json' });
@@ -229,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!slotsList || !slotLocationTitle) return;
         slotLocationTitle.textContent = locationTitle;
         slotsList.innerHTML = '<div class="spinner"></div>';
-
+        
         const snapshot = await db.collection('timeSlots').where('scheduleId', '==', scheduleId).where('status', '==', 'свободен').get();
         if (snapshot.empty) { slotsList.innerHTML = '<p>К сожалению, все свободные места на эту дату уже заняты.</p>'; return; }
         
