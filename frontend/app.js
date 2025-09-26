@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logout-btn'), menuButtons = document.querySelectorAll('.menu-btn'), backButtons = document.querySelectorAll('.back-btn');
     const cityListContainer = document.getElementById('city-list'), locationsListContainer = document.getElementById('locations-list'), locationsHeader = document.getElementById('locations-header');
     const checklistForm = document.getElementById('checklist-form'), checklistAddress = document.getElementById('checklist-address'), checklistDate = document.getElementById('checklist-date');
+    const historyListContainer = document.getElementById('history-list');
     let currentChecklistPoint = null;
 
     // ЛОГИКА АВТОРИЗАЦИИ
@@ -34,7 +35,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) { loginForm.addEventListener('submit', e => { e.preventDefault(); const m = loginEmailInput.value, p = loginPasswordInput.value; if (!m || !p) return alert('Введите email и пароль.'); auth.signInWithEmailAndPassword(m, p).catch(err => { if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(err.code)) { alert('Неверный логин или пароль.'); } else { alert(`Ошибка: ${err.message}`); } }); }); }
 
     // ЛОГИКА НАВИГАЦИИ
-    menuButtons.forEach(b => b.addEventListener('click', () => showScreen(b.dataset.target)));
+    menuButtons.forEach(b => {
+        b.addEventListener('click', () => {
+            const targetScreenId = b.dataset.target;
+            if (targetScreenId === 'history-screen') {
+                renderHistory();
+            }
+            showScreen(targetScreenId);
+        });
+    });
     backButtons.forEach(b => b.addEventListener('click', () => showScreen(b.dataset.target)));
     if (logoutBtn) { logoutBtn.addEventListener('click', e => { e.preventDefault(); auth.signOut().catch(err => alert(`Ошибка: ${err.message}`)); }); }
 
@@ -44,17 +53,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ЛОГИКА ЧЕК-ЛИСТА
     function openChecklistFor(pointData) { if (!checklistAddress || !checklistDate || !checklistForm) return; currentChecklistPoint = pointData; checklistAddress.textContent = pointData.address; checklistDate.textContent = new Date().toLocaleString('ru-RU'); checklistForm.reset(); showScreen('checklist-screen'); }
-    if (checklistForm) {
-        checklistForm.addEventListener('submit', e => {
-            e.preventDefault();
-            const user = auth.currentUser;
-            if (!user) return alert('Ошибка: вы не авторизованы.');
-            const reportData = { userId: user.uid, userEmail: user.email, pointName: currentChecklistPoint.name, pointAddress: currentChecklistPoint.address, checkDate: new Date(), status: 'pending', answers: { q1_appearance: document.getElementById('checklist-q1-appearance').value, q2_cleanliness: document.getElementById('checklist-q2-cleanliness').value, q3_greeting: document.getElementById('checklist-q3-greeting').value, q4_upsell: document.getElementById('checklist-q4-upsell').value, q5_actions: document.getElementById('checklist-q5-actions').value, q6_handout: document.getElementById('checklist-q6-handout').value, q7_order_eval: document.getElementById('checklist-q7-order-eval').value, q8_food_rating: document.getElementById('checklist-q8-food-rating').value, q9_comments: document.getElementById('checklist-q9-comments').value, } };
-            db.collection('reports').add(reportData).then(() => {
-                alert('Спасибо за ваш отчёт ✅ На проверку отчёта уходит до 12 часов (будние дни).');
-                showScreen('main-menu-screen');
-            }).catch(error => { console.error("Ошибка при отправке отчета: ", error); alert('Не удалось отправить отчет.'); });
-        });
+    if (checklistForm) { checklistForm.addEventListener('submit', e => { e.preventDefault(); const user = auth.currentUser; if (!user) return alert('Ошибка: вы не авторизованы.'); const reportData = { userId: user.uid, userEmail: user.email, pointName: currentChecklistPoint.name, pointAddress: currentChecklistPoint.address, checkDate: new Date(), status: 'pending', answers: { q1_appearance: document.getElementById('checklist-q1-appearance').value, q2_cleanliness: document.getElementById('checklist-q2-cleanliness').value, q3_greeting: document.getElementById('checklist-q3-greeting').value, q4_upsell: document.getElementById('checklist-q4-upsell').value, q5_actions: document.getElementById('checklist-q5-actions').value, q6_handout: document.getElementById('checklist-q6-handout').value, q7_order_eval: document.getElementById('checklist-q7-order-eval').value, q8_food_rating: document.getElementById('checklist-q8-food-rating').value, q9_comments: document.getElementById('checklist-q9-comments').value, } }; db.collection('reports').add(reportData).then(() => { alert('Спасибо за ваш отчёт ✅'); showScreen('main-menu-screen'); }).catch(error => { console.error("Ошибка: ", error); alert('Не удалось отправить отчет.'); }); }); }
+    
+    // ЛОГИКА ЭКРАНА "ИСТОРИЯ ПРОВЕРОК"
+    function renderHistory() {
+        if (!historyListContainer) return;
+        const user = auth.currentUser;
+        if (!user) return;
+
+        historyListContainer.innerHTML = '<div class="spinner"></div>';
+
+        db.collection('reports').where('userId', '==', user.uid).orderBy('checkDate', 'desc').get()
+            .then(snapshot => {
+                historyListContainer.innerHTML = '';
+                if (snapshot.empty) {
+                    historyListContainer.innerHTML = '<p>Вы еще не отправили ни одного отчета.</p>';
+                    return;
+                }
+                snapshot.forEach(doc => {
+                    const report = doc.data();
+                    const date = report.checkDate.toDate().toLocaleString('ru-RU');
+                    const li = document.createElement('li');
+                    li.className = 'location-item';
+                    li.innerHTML = `<strong>${report.pointAddress}</strong><small>Дата: ${date} - Статус: ${report.status}</small>`;
+                    historyListContainer.appendChild(li);
+                });
+            })
+            .catch(error => {
+                console.error("Ошибка при загрузке истории: ", error);
+                historyListContainer.innerHTML = '<p>Не удалось загрузить историю проверок.</p>';
+            });
     }
 
     // ГЛАВНЫЙ КОНТРОЛЛЕР
@@ -66,4 +94,4 @@ document.addEventListener('DOMContentLoaded', () => {
             showScreen('auth-screen');
         }
     });
-});
+});```
