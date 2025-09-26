@@ -5,7 +5,7 @@ const firebaseConfig = { apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc", auth
 const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-let confirmationResult = null; // Глобальная переменная для хранения результата подтверждения
+let confirmationResult = null; 
 
 // =================================================================
 // ГЛАВНАЯ ФУНКЦИЯ: НАВИГАЦИЯ
@@ -20,7 +20,7 @@ function showScreen(screenId) {
 // ИНИЦИАЛИЗАЦИЯ ВСЕГО ПРИЛОЖЕНИЯ
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DOM Элементы для новой аутентификации ---
+    // --- DOM Элементы ---
     const phoneForm = document.getElementById('phone-form');
     const phoneInput = document.getElementById('phone-input');
     const sendCodeBtn = document.getElementById('send-code-btn');
@@ -33,40 +33,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const userNameDisplay = document.getElementById('user-name-display');
     const logoutBtn = document.getElementById('logout-btn');
 
-    // Настраиваем невидимую reCAPTCHA
     const recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
         'size': 'invisible'
     });
 
-    // --- ЛОГИКА АУТЕНТИФИКАЦИИ ПО ТЕЛЕФОНУ ---
-    
-    // Шаг 1: Отправка кода на телефон
+    // --- ЛОГИКА АУТЕНТИФИКАЦИИ ПО ТЕЛЕФОН ---
     phoneForm.addEventListener('submit', (e) => {
         e.preventDefault();
         
-        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-        // 1. Берем значение из поля ввода
         let rawPhoneNumber = phoneInput.value;
-        // 2. Убираем все, кроме цифр
         let digitsOnly = rawPhoneNumber.replace(/\D/g, '');
-        // 3. Если номер начинается с 8, заменяем на 7 (стандарт для РФ/КЗ)
         if (digitsOnly.startsWith('8')) {
             digitsOnly = '7' + digitsOnly.substring(1);
         }
-        // 4. Собираем итоговый номер в международном формате
         const formattedPhoneNumber = `+${digitsOnly}`;
         
-        // 5. Проверяем итоговую длину
         if (digitsOnly.length < 11) {
             alert('Пожалуйста, введите полный номер телефона.');
             return;
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         sendCodeBtn.disabled = true;
         sendCodeBtn.textContent = 'Отправка...';
 
-        auth.signInWithPhoneNumber(formattedPhoneNumber, recaptchaVerifier) // Используем отформатированный номер
+        auth.signInWithPhoneNumber(formattedPhoneNumber, recaptchaVerifier)
             .then(result => {
                 confirmationResult = result;
                 phoneView.style.display = 'none';
@@ -74,8 +64,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('СМС-код отправлен на ваш номер.');
             })
             .catch(err => {
-                console.error("Ошибка reCAPTCHA или отправки SMS:", err);
-                alert(`Ошибка отправки кода. Убедитесь, что номер введен правильно, и попробуйте обновить страницу.`);
+                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                // Мы выводим полную техническую ошибку от Firebase
+                console.error("Firebase Error:", err);
+                alert(`Произошла ошибка: \nКод: ${err.code}\nСообщение: ${err.message}`);
+                // --- КОНЕЦ ИЗМЕНЕНИЯ ---
             })
             .finally(() => {
                 sendCodeBtn.disabled = false;
@@ -83,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     });
 
-    // Шаг 2: Проверка СМС-кода
+    // Остальная часть файла без изменений...
     codeForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const code = codeInput.value;
@@ -91,20 +84,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!confirmationResult) return alert('Сначала запросите код.');
 
         confirmationResult.confirm(code)
-            .then(result => {
-                // Пользователь успешно вошел. Дальнейшую логику обработает onAuthStateChanged.
-            })
+            .then(result => {})
             .catch(err => {
                 alert(`Неверный код. Попробуйте еще раз.`);
             });
     });
     
-    // Шаг 3: Сохранение профиля нового пользователя
     profileSetupForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const user = auth.currentUser;
         const fullName = profileNameInput.value.trim();
-
         if (!user || !fullName) return alert('Введите ваше имя и фамилию.');
 
         db.collection('users').doc(user.uid).set({
@@ -121,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- ГЛАВНЫЙ КОНТРОЛЛЕР СОСТОЯНИЯ ПОЛЬЗОВАТЕЛЯ ---
     auth.onAuthStateChanged(user => {
         if (user) {
             const userRef = db.collection('users').doc(user.uid);
@@ -143,13 +131,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Выход из системы
     logoutBtn.addEventListener('click', (e) => {
         e.preventDefault();
         auth.signOut();
     });
 
-    // --- Логика навигации по меню (остается без изменений) ---
     const menuButtons = document.querySelectorAll('.menu-btn');
     menuButtons.forEach(b => { 
         b.addEventListener('click', () => { 
