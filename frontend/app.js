@@ -30,6 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminReportsList = document.getElementById('admin-reports-list');
     const adminDetailAddress = document.getElementById('admin-detail-address'), adminDetailUser = document.getElementById('admin-detail-user'), adminDetailDate = document.getElementById('admin-detail-date'), adminDetailStatus = document.getElementById('admin-detail-status'), adminDetailPhotos = document.getElementById('admin-detail-photos');
     const adminDetailAnswers = { q1: document.getElementById('admin-detail-q1'), q2: document.getElementById('admin-detail-q2'), q3: document.getElementById('admin-detail-q3'), q4: document.getElementById('admin-detail-q4'), q5: document.getElementById('admin-detail-q5'), q6: document.getElementById('admin-detail-q6'), q7: document.getElementById('admin-detail-q7'), q8: document.getElementById('admin-detail-q8'), q9: document.getElementById('admin-detail-q9'), };
+    const approveBtn = document.getElementById('admin-action-approve');
+    const rejectBtn = document.getElementById('admin-action-reject');
     let currentChecklistPoint = null;
     let currentUserRole = 'guest';
     let currentReportId = null;
@@ -54,49 +56,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (checklistForm) { checklistForm.addEventListener('submit', async e => { e.preventDefault(); const user = auth.currentUser; if (!user) return alert('Ошибка: вы не авторизованы.'); const submitButton = checklistForm.querySelector('button[type="submit"]'); submitButton.disabled = true; submitButton.textContent = 'Отправка...'; const photoFiles = document.getElementById('checklist-photos').files; const uploadPromises = []; for (const file of photoFiles) { const filePath = `reports/${user.uid}/${Date.now()}_${file.name}`; const fileRef = storage.ref(filePath); uploadPromises.push(fileRef.put(file).then(() => fileRef.getDownloadURL())); } try { const imageUrls = await Promise.all(uploadPromises); const reportData = { userId: user.uid, userEmail: user.email, pointName: currentChecklistPoint.name, pointAddress: currentChecklistPoint.address, checkDate: new Date(), status: 'pending', imageUrls: imageUrls, answers: { q1_appearance: document.getElementById('checklist-q1-appearance').value, q2_cleanliness: document.getElementById('checklist-q2-cleanliness').value, q3_greeting: document.getElementById('checklist-q3-greeting').value, q4_upsell: document.getElementById('checklist-q4-upsell').value, q5_actions: document.getElementById('checklist-q5-actions').value, q6_handout: document.getElementById('checklist-q6-handout').value, q7_order_eval: document.getElementById('checklist-q7-order-eval').value, q8_food_rating: document.getElementById('checklist-q8-food-rating').value, q9_comments: document.getElementById('checklist-q9-comments').value, } }; await db.collection('reports').add(reportData); alert('Спасибо за ваш отчёт ✅'); showScreen('main-menu-screen'); } catch (error) { console.error("Ошибка: ", error); alert('Не удалось отправить отчет.'); } finally { submitButton.disabled = false; submitButton.textContent = 'Отправить отчёт'; } }); }
     
     // ЛОГИКА ИСТОРИИ
-    function renderHistory() { if (!historyListContainer) return; const user = auth.currentUser; if (!user) return; historyListContainer.innerHTML = '<div class="spinner"></div>'; db.collection('reports').where('userId', '==', user.uid).orderBy('checkDate', 'desc').get().then(snap => { historyListContainer.innerHTML = ''; if (snap.empty) { historyListContainer.innerHTML = '<p>Вы еще не отправили ни одного отчета.</p>'; return; } snap.forEach(doc => { const report = doc.data(); const date = report.checkDate.toDate().toLocaleString('ru-RU'); const statusText = report.status === 'pending' ? 'в ожидании' : report.status; const li = document.createElement('li'); li.className = 'location-item'; li.innerHTML = `<strong>${report.pointAddress}</strong><small>Дата: ${date} - Статус: ${statusText}</small>`; historyListContainer.appendChild(li); }); }).catch(err => { console.error(err); historyListContainer.innerHTML = '<p>Не удалось загрузить историю.</p>'; }); }
+    function renderHistory() { if (!historyListContainer) return; const user = auth.currentUser; if (!user) return; historyListContainer.innerHTML = '<div class="spinner"></div>'; db.collection('reports').where('userId', '==', user.uid).orderBy('checkDate', 'desc').get().then(snap => { historyListContainer.innerHTML = ''; if (snap.empty) { historyListContainer.innerHTML = '<p>Вы еще не отправили ни одного отчета.</p>'; return; } snap.forEach(doc => { const report = doc.data(); const date = report.checkDate.toDate().toLocaleString('ru-RU'); const statusText = report.status === 'pending' ? 'в ожидании' : report.status === 'approved' ? 'принят' : report.status === 'rejected' ? 'отклонен' : report.status; const li = document.createElement('li'); li.className = 'location-item'; li.innerHTML = `<strong>${report.pointAddress}</strong><small>Дата: ${date} - Статус: ${statusText}</small>`; historyListContainer.appendChild(li); }); }).catch(err => { console.error(err); historyListContainer.innerHTML = '<p>Не удалось загрузить историю.</p>'; }); }
     
     // ЛОГИКА АДМИНКИ
     function setupAdminButton() { if (!adminMenuContainer) return; adminMenuContainer.innerHTML = ''; if (currentUserRole === 'admin') { const btn = document.createElement('button'); btn.className = 'menu-btn'; btn.textContent = 'Админ-панель'; btn.addEventListener('click', () => { renderAllReports(); showScreen('admin-screen'); }); adminMenuContainer.appendChild(btn); } }
-    function renderAllReports() { if (!adminReportsList) return; adminReportsList.innerHTML = '<div class="spinner"></div>'; db.collection('reports').orderBy('checkDate', 'desc').get().then(snap => { adminReportsList.innerHTML = ''; if (snap.empty) { adminReportsList.innerHTML = '<p>Пока нет ни одного отчета.</p>'; return; } snap.forEach(doc => { const report = doc.data(); const date = report.checkDate.toDate().toLocaleString('ru-RU'); const statusText = report.status === 'pending' ? 'в ожидании' : report.status; const li = document.createElement('li'); li.className = 'location-item'; li.innerHTML = `<strong>${report.pointAddress}</strong><small>Пользователь: ${report.userEmail}</small><small>Дата: ${date} - Статус: ${statusText}</small>`; li.addEventListener('click', () => openAdminReportDetail(doc.id)); adminReportsList.appendChild(li); }); }).catch(err => { console.error(err); adminReportsList.innerHTML = '<p>Не удалось загрузить отчеты.</p>'; }); }
-    function openAdminReportDetail(reportId) {
-        showScreen('admin-report-detail-screen');
-        currentReportId = reportId; // Сохраняем ID текущего отчета
-        const detailsContainer = document.querySelector('#admin-report-detail-screen .report-details');
-        detailsContainer.style.opacity = '0.5'; // Делаем блок полупрозрачным на время загрузки
-        
-        db.collection('reports').doc(reportId).get().then(doc => {
-            if (!doc.exists) { alert('Ошибка: отчет не найден!'); return; }
-            const report = doc.data();
-            adminDetailAddress.textContent = report.pointAddress;
-            adminDetailUser.textContent = report.userEmail;
-            adminDetailDate.textContent = report.checkDate.toDate().toLocaleString('ru-RU');
-            adminDetailStatus.textContent = report.status === 'pending' ? 'в ожидании' : report.status;
-            adminDetailAnswers.q1.textContent = report.answers.q1_appearance;
-            adminDetailAnswers.q2.textContent = report.answers.q2_cleanliness;
-            adminDetailAnswers.q3.textContent = report.answers.q3_greeting;
-            adminDetailAnswers.q4.textContent = report.answers.q4_upsell;
-            adminDetailAnswers.q5.textContent = report.answers.q5_actions;
-            adminDetailAnswers.q6.textContent = report.answers.q6_handout;
-            adminDetailAnswers.q7.textContent = report.answers.q7_order_eval;
-            adminDetailAnswers.q8.textContent = report.answers.q8_food_rating;
-            adminDetailAnswers.q9.textContent = report.answers.q9_comments || '—';
-            adminDetailPhotos.innerHTML = '';
-            if (report.imageUrls && report.imageUrls.length > 0) {
-                report.imageUrls.forEach(url => {
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.target = '_blank';
-                    link.innerHTML = `<img src="${url}" style="max-width: 100%; border-radius: 8px; margin-top: 10px;">`;
-                    adminDetailPhotos.appendChild(link);
-                });
-            } else {
-                adminDetailPhotos.innerHTML = '<p>Фотографии не были прикреплены.</p>';
-            }
-        }).catch(error => { console.error("Ошибка:", error); alert("Не удалось загрузить детали отчета."); })
-        .finally(() => { detailsContainer.style.opacity = '1'; }); // Возвращаем обычную видимость
+    function renderAllReports() { if (!adminReportsList) return; adminReportsList.innerHTML = '<div class="spinner"></div>'; db.collection('reports').orderBy('checkDate', 'desc').get().then(snap => { adminReportsList.innerHTML = ''; if (snap.empty) { adminReportsList.innerHTML = '<p>Пока нет ни одного отчета.</p>'; return; } snap.forEach(doc => { const report = doc.data(); const date = report.checkDate.toDate().toLocaleString('ru-RU'); const statusText = report.status === 'pending' ? 'в ожидании' : report.status === 'approved' ? 'принят' : report.status === 'rejected' ? 'отклонен' : report.status; const li = document.createElement('li'); li.className = 'location-item'; li.innerHTML = `<strong>${report.pointAddress}</strong><small>Пользователь: ${report.userEmail}</small><small>Дата: ${date} - Статус: ${statusText}</small>`; li.addEventListener('click', () => openAdminReportDetail(doc.id)); adminReportsList.appendChild(li); }); }).catch(err => { console.error(err); adminReportsList.innerHTML = '<p>Не удалось загрузить отчеты.</p>'; }); }
+    function openAdminReportDetail(reportId) { showScreen('admin-report-detail-screen'); currentReportId = reportId; const detailsContainer = document.querySelector('#admin-report-detail-screen .report-details'); detailsContainer.style.opacity = '0.5'; db.collection('reports').doc(reportId).get().then(doc => { if (!doc.exists) { alert('Ошибка: отчет не найден!'); return; } const report = doc.data(); const statusText = report.status === 'pending' ? 'в ожидании' : report.status === 'approved' ? 'принят' : report.status === 'rejected' ? 'отклонен' : report.status; adminDetailAddress.textContent = report.pointAddress; adminDetailUser.textContent = report.userEmail; adminDetailDate.textContent = report.checkDate.toDate().toLocaleString('ru-RU'); adminDetailStatus.textContent = statusText; adminDetailAnswers.q1.textContent = report.answers.q1_appearance; adminDetailAnswers.q2.textContent = report.answers.q2_cleanliness; adminDetailAnswers.q3.textContent = report.answers.q3_greeting; adminDetailAnswers.q4.textContent = report.answers.q4_upsell; adminDetailAnswers.q5.textContent = report.answers.q5_actions; adminDetailAnswers.q6.textContent = report.answers.q6_handout; adminDetailAnswers.q7.textContent = report.answers.q7_order_eval; adminDetailAnswers.q8.textContent = report.answers.q8_food_rating; adminDetailAnswers.q9.textContent = report.answers.q9_comments || '—'; adminDetailPhotos.innerHTML = ''; if (report.imageUrls && report.imageUrls.length > 0) { report.imageUrls.forEach(url => { const link = document.createElement('a'); link.href = url; link.target = '_blank'; link.innerHTML = `<img src="${url}" style="max-width: 100%; border-radius: 8px; margin-top: 10px;">`; adminDetailPhotos.appendChild(link); }); } else { adminDetailPhotos.innerHTML = '<p>Фотографии не были прикреплены.</p>'; } }).catch(error => { console.error("Ошибка:", error); alert("Не удалось загрузить детали отчета."); }).finally(() => { detailsContainer.style.opacity = '1'; }); }
+    
+    // НОВАЯ ЛОГИКА ДЛЯ КНОПОК
+    if (approveBtn) { approveBtn.addEventListener('click', () => updateReportStatus(currentReportId, 'approved')); }
+    if (rejectBtn) { rejectBtn.addEventListener('click', () => updateReportStatus(currentReportId, 'rejected')); }
+    
+    function updateReportStatus(reportId, newStatus) {
+        if (!reportId) return;
+        db.collection('reports').doc(reportId).update({ status: newStatus })
+            .then(() => {
+                alert(`Статус отчета изменен на "${newStatus}"`);
+                renderAllReports(); // Обновляем список отчетов
+                showScreen('admin-screen'); // Возвращаемся к списку
+            })
+            .catch(error => {
+                console.error("Ошибка при обновлении статуса: ", error);
+                alert("Не удалось изменить статус отчета.");
+            });
     }
-    // TODO: Добавить логику для кнопок "Принять" / "Отклонить"
 
     // ГЛАВНЫЙ КОНТРОЛЛЕР
     auth.onAuthStateChanged(user => {
