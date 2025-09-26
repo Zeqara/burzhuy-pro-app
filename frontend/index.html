@@ -13,21 +13,78 @@
 <body>
 
     <div id="app-container">
-        <!-- ... (все экраны до cooperation-screen остаются без изменений) ... -->
+        
+        <div id="loader" class="screen active"><div class="spinner"></div></div>
 
+        <!-- ЭКРАНЫ АВТОРИЗАЦИИ -->
+        <div id="auth-screen" class="screen">
+            <div class="auth-container">
+                <div id="phone-view">
+                    <h2>Вход или Регистрация</h2>
+                    <p class="auth-toggle" style="margin-bottom: 20px; color: var(--text-secondary);">Введите ваш номер телефона для входа или создания нового аккаунта.</p>
+                    <form id="phone-form"><div class="form-group"><input type="tel" id="phone-input" placeholder="+7 (999) 999-99-99" required></div><button type="submit" id="send-code-btn" class="btn-primary">Получить код</button></form>
+                </div>
+                <div id="code-view" style="display: none;">
+                    <h2>Подтверждение</h2>
+                    <p class="auth-toggle" style="margin-bottom: 20px; color: var(--text-secondary);">Мы отправили СМС-код на ваш номер. Введите его ниже.</p>
+                    <form id="code-form"><div class="form-group"><input type="text" id="code-input" placeholder="Код из СМС" required></div><button type="submit" class="btn-primary">Войти</button></form>
+                </div>
+            </div>
+        </div>
+        <div id="profile-setup-screen" class="screen">
+            <div class="auth-container">
+                <h2>Завершение регистрации</h2>
+                <p class="auth-toggle" style="margin-bottom: 20px; color: var(--text-secondary);">Пожалуйста, укажите ваше имя и фамилию.</p>
+                <form id="profile-setup-form"><div class="form-group"><label>Имя и Фамилия</label><input type="text" id="profile-name-input" placeholder="Иван Иванов" required></div><button type="submit" class="btn-primary">Сохранить и войти</button></form>
+            </div>
+        </div>
+        
+        <!-- ДАШБОРД -->
+        <div id="main-menu-screen" class="screen">
+            <div class="dashboard-header"><div class="avatar">Б</div><h2 id="user-name-display">BURЖУЙ</h2><p>Тайный агент</p></div>
+            <div class="content">
+                <ul class="menu-list">
+                    <li class="menu-list-item menu-btn" data-target="cooperation-screen">
+                        <i class="icon fa-solid fa-calendar-check"></i>
+                        <div><strong>Записаться на проверку</strong><small>Выбрать доступную точку и время</small></div>
+                    </li>
+                    <li class="menu-list-item menu-btn" data-target="history-screen">
+                        <i class="icon fa-solid fa-list-check"></i>
+                        <div><strong>История проверок</strong><small>Посмотреть статусы отчетов</small></div>
+                    </li>
+                    <li class="menu-list-item menu-btn" data-target="instruction-screen">
+                        <i class="icon fa-solid fa-book-open"></i>
+                        <div><strong>Инструкция</strong><small>Правила и требования</small></div>
+                    </li>
+                </ul>
+                <div id="admin-menu-container" style="margin-top: 15px;"></div>
+                <button id="logout-btn">Выйти из аккаунта</button>
+            </div>
+        </div>
+
+        <!-- ПАНЕЛЬ АДМИНИСТРАТОРА -->
+        <div id="admin-schedule-screen" class="screen">
+            <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Управление графиком</h2></header>
+            <div class="content scrollable">
+                <form id="schedule-form">
+                    <h3>Создать новую проверку</h3>
+                    <div class="form-group"><label>Выберите торговую точку</label><select id="schedule-location-select" required></select></div>
+                    <div class="form-group"><label>Дата проверки</label><input type="date" id="schedule-date-input" required></div>
+                    <div class="form-group"><label>Временные слоты (например, 12:00-14:00)</label><div id="time-slots-container"></div><button type="button" id="add-slot-btn" class="btn-secondary">Добавить слот</button></div>
+                    <div class="form-group urgent-checkbox"><input type="checkbox" id="schedule-urgent-checkbox"><label for="schedule-urgent-checkbox">🔥 Срочная проверка</label></div>
+                    <button type="submit" class="btn-primary">Опубликовать проверку</button>
+                </form>
+                <hr style="margin: 40px 0;">
+                <h3>Запланированные проверки</h3>
+                <div id="schedule-list"></div>
+            </div>
+        </div>
+        
         <!-- ЭКРАН ЗАПИСИ НА ПРОВЕРКУ -->
         <div id="cooperation-screen" class="screen">
-            <header>
-                <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-                <h2>Доступные проверки</h2>
-            </header>
+            <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Доступные проверки</h2></header>
             <div class="content scrollable">
-                <!-- Контейнер для списка проверок. JS заполнит его. -->
-                <ul id="schedule-cards-list" class="menu-list">
-                    <!-- Сюда будут вставляться карточки проверок -->
-                </ul>
-
-                <!-- НОВЫЙ БЛОК "ПУСТЫШКА" С АНИМАЦИЕЙ (по умолчанию скрыт) -->
+                <ul id="schedule-cards-list" class="menu-list"></ul>
                 <div id="no-schedules-view" class="empty-state" style="display: none;">
                     <div id="lottie-animation"></div>
                     <h3>Пока нет доступных проверок</h3>
@@ -35,22 +92,20 @@
                 </div>
             </div>
         </div>
-        
-        <!-- НОВЫЙ ЭКРАН: ВЫБОР ВРЕМЕННОГО СЛОТА -->
+
+        <!-- ЭКРАН ВЫБОРА ВРЕМЕНИ -->
         <div id="time-slots-screen" class="screen">
-            <header>
-                <button class="back-btn" data-target="cooperation-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-                <h2>Выберите время</h2>
-            </header>
+            <header><button class="back-btn" data-target="cooperation-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Выберите время</h2></header>
             <div class="content scrollable">
-                <h3 id="slot-location-title"></h3>
-                <ul id="slots-list" class="menu-list">
-                    <!-- JS будет вставлять сюда доступные слоты -->
-                </ul>
+                <h3 id="slot-location-title" style="text-align: center; margin-bottom: 20px;"></h3>
+                <ul id="slots-list" class="menu-list"></ul>
             </div>
         </div>
 
-        <!-- ... (все остальные экраны остаются без изменений) ... -->
+        <!-- Остальные экраны -->
+        <div id="history-screen" class="screen"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>История проверок</h2></header><div class="content scrollable"><ul id="history-list" class="locations-list"></ul></div></div>
+        <div id="instruction-screen" class="screen"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Инструкция</h2></header><div class="content scrollable"><p>Здесь будет текст инструкции...</p></div></div>
+        
     </div>
     
     <div id="recaptcha-container"></div>
