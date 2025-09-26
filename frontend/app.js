@@ -43,13 +43,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Шаг 1: Отправка кода на телефон
     phoneForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const phoneNumber = phoneInput.value;
-        if (!phoneNumber || phoneNumber.length < 11) return alert('Введите корректный номер телефона.');
         
+        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+        // 1. Берем значение из поля ввода
+        let rawPhoneNumber = phoneInput.value;
+        // 2. Убираем все, кроме цифр
+        let digitsOnly = rawPhoneNumber.replace(/\D/g, '');
+        // 3. Если номер начинается с 8, заменяем на 7 (стандарт для РФ/КЗ)
+        if (digitsOnly.startsWith('8')) {
+            digitsOnly = '7' + digitsOnly.substring(1);
+        }
+        // 4. Собираем итоговый номер в международном формате
+        const formattedPhoneNumber = `+${digitsOnly}`;
+        
+        // 5. Проверяем итоговую длину
+        if (digitsOnly.length < 11) {
+            alert('Пожалуйста, введите полный номер телефона.');
+            return;
+        }
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
         sendCodeBtn.disabled = true;
         sendCodeBtn.textContent = 'Отправка...';
 
-        auth.signInWithPhoneNumber(phoneNumber, recaptchaVerifier)
+        auth.signInWithPhoneNumber(formattedPhoneNumber, recaptchaVerifier) // Используем отформатированный номер
             .then(result => {
                 confirmationResult = result;
                 phoneView.style.display = 'none';
@@ -58,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(err => {
                 console.error("Ошибка reCAPTCHA или отправки SMS:", err);
-                alert(`Ошибка отправки кода. Убедитесь, что номер введен в правильном формате (например, +79991234567) и попробуйте обновить страницу.`);
+                alert(`Ошибка отправки кода. Убедитесь, что номер введен правильно, и попробуйте обновить страницу.`);
             })
             .finally(() => {
                 sendCodeBtn.disabled = false;
@@ -76,7 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmationResult.confirm(code)
             .then(result => {
                 // Пользователь успешно вошел. Дальнейшую логику обработает onAuthStateChanged.
-                // Ничего дополнительно здесь делать не нужно.
             })
             .catch(err => {
                 alert(`Неверный код. Попробуйте еще раз.`);
@@ -94,12 +110,9 @@ document.addEventListener('DOMContentLoaded', () => {
         db.collection('users').doc(user.uid).set({
             fullName: fullName,
             phone: user.phoneNumber,
-            role: 'guest' // По умолчанию все новые пользователи - гости
+            role: 'guest'
         })
         .then(() => {
-            // После сохранения профиля, onAuthStateChanged снова сработает
-            // и перенаправит на главный экран, так как документ теперь существует.
-            // Для плавности можно сделать это вручную.
             userNameDisplay.textContent = fullName;
             showScreen('main-menu-screen');
         })
@@ -111,22 +124,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ГЛАВНЫЙ КОНТРОЛЛЕР СОСТОЯНИЯ ПОЛЬЗОВАТЕЛЯ ---
     auth.onAuthStateChanged(user => {
         if (user) {
-            // Пользователь вошел в систему. Проверяем, есть ли его профиль в Firestore.
             const userRef = db.collection('users').doc(user.uid);
             userRef.get().then(doc => {
                 if (doc.exists) {
-                    // Профиль существует. Это старый пользователь.
                     const userData = doc.data();
-                    userNameDisplay.textContent = userData.fullName; // Показываем имя на дашборде
+                    userNameDisplay.textContent = userData.fullName;
                     showScreen('main-menu-screen');
-                    // Тут в будущем будет логика для админа
                 } else {
-                    // Профиля нет. Это новый пользователь.
                     showScreen('profile-setup-screen');
                 }
             });
         } else {
-            // Пользователь не вошел в систему. Показываем экран входа.
             phoneView.style.display = 'block';
             codeView.style.display = 'none';
             phoneForm.reset();
@@ -154,5 +162,4 @@ document.addEventListener('DOMContentLoaded', () => {
     backButtons.forEach(b => { 
         b.addEventListener('click', () => showScreen(b.dataset.target)); 
     });
-
 });
