@@ -7,7 +7,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 let confirmationResult = null;
-let currentCheckData = null; // Для хранения данных текущей проверки
+let currentCheckData = null;
 
 // =================================================================
 // ГЛАВНАЯ ФУНКЦИЯ: НАВИГАЦИЯ
@@ -144,11 +144,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function renderSchedules() {
         if (!scheduleList) return;
+        scheduleList.innerHTML = '<div class="spinner"></div>';
         const snapshot = await db.collection('schedule').orderBy('date', 'desc').get();
         if(snapshot.empty) { scheduleList.innerHTML = '<p>Запланированных проверок пока нет.</p>'; return; }
         let listHTML = '';
-        snapshot.forEach(doc => { const s = doc.data(); const date = s.date.toDate().toLocaleDateString('ru-RU'); listHTML += `<div class="schedule-item ${s.isUrgent ? 'urgent' : ''}"><strong>${s.locationName}</strong><small>${date} ${s.isUrgent ? '🔥' : ''}</small></div>`; });
+        snapshot.forEach(doc => {
+            const s = doc.data();
+            const date = s.date.toDate().toLocaleDateString('ru-RU');
+            listHTML += `<div class="schedule-item ${s.isUrgent ? 'urgent' : ''}"><div><strong>${s.locationName}</strong><small>${date} ${s.isUrgent ? '🔥' : ''}</small></div><button class="delete-schedule-btn" data-id="${doc.id}">Удалить</button></div>`;
+        });
         scheduleList.innerHTML = listHTML;
+        document.querySelectorAll('.delete-schedule-btn').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const scheduleId = e.target.dataset.id;
+                if (confirm('Вы уверены, что хотите удалить эту проверку и все связанные с ней временные слоты?')) {
+                    await deleteSchedule(scheduleId);
+                }
+            });
+        });
+    }
+
+    async function deleteSchedule(scheduleId) {
+        try {
+            await db.collection('schedule').doc(scheduleId).delete();
+            const slotsSnapshot = await db.collection('timeSlots').where('scheduleId', '==', scheduleId).get();
+            const batch = db.batch();
+            slotsSnapshot.forEach(doc => { batch.delete(doc.ref); });
+            await batch.commit();
+            alert('Проверка успешно удалена.');
+            renderSchedules();
+        } catch (error) {
+            console.error('Ошибка удаления проверки:', error);
+            alert('Не удалось удалить проверку.');
+        }
     }
 
     // --- ЛОГИКА АГЕНТА: ЗАПИСЬ НА ПРОВЕРКУ ---
@@ -181,6 +209,14 @@ document.addEventListener('DOMContentLoaded', () => {
         slotLocationTitle.textContent = locationTitle;
         slotsList.innerHTML = '<div class="spinner"></div>';
 
+        const user = auth.currentUser;
+        if (!user) return;
+        const existingBookingSnapshot = await db.collection('timeSlots').where('bookedBy', '==', user.uid).where('status', '==', 'забронирован').get();
+        if (!existingBookingSnapshot.empty) {
+            slotsList.innerHTML = '<p>У вас уже есть одна активная запись. Завершите ее, прежде чем записываться на новую.</p>';
+            return;
+        }
+
         const snapshot = await db.collection('timeSlots').where('scheduleId', '==', scheduleId).where('status', '==', 'свободен').get();
         if (snapshot.empty) { slotsList.innerHTML = '<p>К сожалению, все свободные места на эту дату уже заняты.</p>'; return; }
         
@@ -189,7 +225,6 @@ document.addEventListener('DOMContentLoaded', () => {
         slotsList.innerHTML = slotsHTML;
         document.querySelectorAll('.time-slot').forEach(s => s.addEventListener('click', async () => {
             if (!confirm('Вы уверены, что хотите записаться на это время?')) return;
-            const user = auth.currentUser; if (!user) return;
             const userDoc = await db.collection('users').doc(user.uid).get();
             await db.collection('timeSlots').doc(s.dataset.slotId).update({ status: 'забронирован', bookedBy: user.uid, agentName: userDoc.data().fullName });
             alert('Вы успешно записаны!');
