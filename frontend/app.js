@@ -20,7 +20,6 @@ function showScreen(screenId) {
 // ИНИЦИАЛИЗАЦИЯ ВСЕГО ПРИЛОЖЕНИЯ
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
-
     // DOM Элементы
     const loginView = document.getElementById('login-view'), registerView = document.getElementById('register-view'), loginForm = document.getElementById('login-form'), registerForm = document.getElementById('register-form'), showRegisterLink = document.getElementById('show-register'), showLoginLink = document.getElementById('show-login'), loginEmailInput = document.getElementById('login-email'), loginPasswordInput = document.getElementById('login-password'), registerNameInput = document.getElementById('register-name'), registerEmailInput = document.getElementById('register-email'), registerPasswordInput = document.getElementById('register-password'), registerPhoneInput = document.getElementById('register-phone');
     const logoutBtn = document.getElementById('logout-btn'), menuButtons = document.querySelectorAll('.menu-btn'), backButtons = document.querySelectorAll('.back-btn');
@@ -29,8 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyListContainer = document.getElementById('history-list');
     const adminMenuContainer = document.getElementById('admin-menu-container');
     const adminReportsList = document.getElementById('admin-reports-list');
+    const adminDetailAddress = document.getElementById('admin-detail-address'), adminDetailUser = document.getElementById('admin-detail-user'), adminDetailDate = document.getElementById('admin-detail-date'), adminDetailStatus = document.getElementById('admin-detail-status'), adminDetailPhotos = document.getElementById('admin-detail-photos');
+    const adminDetailAnswers = { q1: document.getElementById('admin-detail-q1'), q2: document.getElementById('admin-detail-q2'), q3: document.getElementById('admin-detail-q3'), q4: document.getElementById('admin-detail-q4'), q5: document.getElementById('admin-detail-q5'), q6: document.getElementById('admin-detail-q6'), q7: document.getElementById('admin-detail-q7'), q8: document.getElementById('admin-detail-q8'), q9: document.getElementById('admin-detail-q9'), };
     let currentChecklistPoint = null;
     let currentUserRole = 'guest';
+    let currentReportId = null;
 
     // ЛОГИКА АВТОРИЗАЦИИ
     if (showRegisterLink) { showRegisterLink.addEventListener('click', e => { e.preventDefault(); loginView.style.display = 'none'; registerView.style.display = 'block'; }); }
@@ -56,7 +58,45 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // ЛОГИКА АДМИНКИ
     function setupAdminButton() { if (!adminMenuContainer) return; adminMenuContainer.innerHTML = ''; if (currentUserRole === 'admin') { const btn = document.createElement('button'); btn.className = 'menu-btn'; btn.textContent = 'Админ-панель'; btn.addEventListener('click', () => { renderAllReports(); showScreen('admin-screen'); }); adminMenuContainer.appendChild(btn); } }
-    function renderAllReports() { if (!adminReportsList) return; adminReportsList.innerHTML = '<div class="spinner"></div>'; db.collection('reports').orderBy('checkDate', 'desc').get().then(snap => { adminReportsList.innerHTML = ''; if (snap.empty) { adminReportsList.innerHTML = '<p>Пока нет ни одного отчета.</p>'; return; } snap.forEach(doc => { const report = doc.data(); const date = report.checkDate.toDate().toLocaleString('ru-RU'); const statusText = report.status === 'pending' ? 'в ожидании' : report.status; const li = document.createElement('li'); li.className = 'location-item'; li.innerHTML = `<strong>${report.pointAddress}</strong><small>Пользователь: ${report.userEmail}</small><small>Дата: ${date} - Статус: ${statusText}</small>`; adminReportsList.appendChild(li); }); }).catch(err => { console.error(err); adminReportsList.innerHTML = '<p>Не удалось загрузить отчеты.</p>'; }); }
+    function renderAllReports() { if (!adminReportsList) return; adminReportsList.innerHTML = '<div class="spinner"></div>'; db.collection('reports').orderBy('checkDate', 'desc').get().then(snap => { adminReportsList.innerHTML = ''; if (snap.empty) { adminReportsList.innerHTML = '<p>Пока нет ни одного отчета.</p>'; return; } snap.forEach(doc => { const report = doc.data(); const date = report.checkDate.toDate().toLocaleString('ru-RU'); const statusText = report.status === 'pending' ? 'в ожидании' : report.status; const li = document.createElement('li'); li.className = 'location-item'; li.innerHTML = `<strong>${report.pointAddress}</strong><small>Пользователь: ${report.userEmail}</small><small>Дата: ${date} - Статус: ${statusText}</small>`; li.addEventListener('click', () => openAdminReportDetail(doc.id)); adminReportsList.appendChild(li); }); }).catch(err => { console.error(err); adminReportsList.innerHTML = '<p>Не удалось загрузить отчеты.</p>'; }); }
+    function openAdminReportDetail(reportId) {
+        showScreen('admin-report-detail-screen');
+        currentReportId = reportId; // Сохраняем ID текущего отчета
+        const detailsContainer = document.querySelector('#admin-report-detail-screen .report-details');
+        detailsContainer.style.opacity = '0.5'; // Делаем блок полупрозрачным на время загрузки
+        
+        db.collection('reports').doc(reportId).get().then(doc => {
+            if (!doc.exists) { alert('Ошибка: отчет не найден!'); return; }
+            const report = doc.data();
+            adminDetailAddress.textContent = report.pointAddress;
+            adminDetailUser.textContent = report.userEmail;
+            adminDetailDate.textContent = report.checkDate.toDate().toLocaleString('ru-RU');
+            adminDetailStatus.textContent = report.status === 'pending' ? 'в ожидании' : report.status;
+            adminDetailAnswers.q1.textContent = report.answers.q1_appearance;
+            adminDetailAnswers.q2.textContent = report.answers.q2_cleanliness;
+            adminDetailAnswers.q3.textContent = report.answers.q3_greeting;
+            adminDetailAnswers.q4.textContent = report.answers.q4_upsell;
+            adminDetailAnswers.q5.textContent = report.answers.q5_actions;
+            adminDetailAnswers.q6.textContent = report.answers.q6_handout;
+            adminDetailAnswers.q7.textContent = report.answers.q7_order_eval;
+            adminDetailAnswers.q8.textContent = report.answers.q8_food_rating;
+            adminDetailAnswers.q9.textContent = report.answers.q9_comments || '—';
+            adminDetailPhotos.innerHTML = '';
+            if (report.imageUrls && report.imageUrls.length > 0) {
+                report.imageUrls.forEach(url => {
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.target = '_blank';
+                    link.innerHTML = `<img src="${url}" style="max-width: 100%; border-radius: 8px; margin-top: 10px;">`;
+                    adminDetailPhotos.appendChild(link);
+                });
+            } else {
+                adminDetailPhotos.innerHTML = '<p>Фотографии не были прикреплены.</p>';
+            }
+        }).catch(error => { console.error("Ошибка:", error); alert("Не удалось загрузить детали отчета."); })
+        .finally(() => { detailsContainer.style.opacity = '1'; }); // Возвращаем обычную видимость
+    }
+    // TODO: Добавить логику для кнопок "Принять" / "Отклонить"
 
     // ГЛАВНЫЙ КОНТРОЛЛЕР
     auth.onAuthStateChanged(user => {
