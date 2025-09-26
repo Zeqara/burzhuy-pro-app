@@ -38,6 +38,39 @@
         <div id="instruction-screen" class="screen page-screen"><header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>Инструкция</h2></header><div class="content scrollable"><p>Приветствую тебя в проекте "Тайный агент BURЖУЙ"! 🧨</p><p>Спасибо, что решил(а) помочь нам стать лучше и обеспечить себе вкусный обед за наш счёт. 🍔☕</p><p>👉 Напоминаю: анкету заполняем только один раз, для следующих проверок просто пиши сюда.</p><h4>Как проходит проверка:</h4><ol><li>Покупку совершаешь за свой счёт (не забудь сохранить чек);</li><li>После проверки отправляешь чек-лист + фото;</li><li>После принятия отчёта деньги переводятся тебе обратно на карту.</li></ol><p>❗❗ Компенсация возможна только при корректной и полной сдаче материалов.</p><h4>Основные правила:</h4><ul><li>Веди себя естественно, не раскрывай, что ты тайный агент;</li><li>Следуй инструкции и чек-листу;</li><li>Делай четкие фото по списку ниже (без вспышки, без звука камеры);</li><li>После проверки в течении двух часов отправь чек-лист + фото;</li><li>Если не можешь провести проверку — обязательно заранее предупреди.</li></ul></div></div>
         <div id="support-screen" class="screen page-screen"><header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>Тех. поддержка</h2></header><div class="content"><form id="support-form"><input type="text" id="support-name" placeholder="Ваше имя" required><input type="tel" id="support-phone" placeholder="Номер телефона" required><textarea id="support-message" placeholder="Опишите вашу проблему" required></textarea><button type="submit" class="btn-primary">Отправить</button><p id="support-status"></p></form></div></div>
         <div id="admin-screen" class="screen page-screen"><header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>Все отчеты</h2></header><div class="content scrollable"><ul id="admin-reports-list" class="locations-list"></ul></div></div>
+        
+        <div id="admin-report-detail-screen" class="screen page-screen">
+            <header><button class="back-btn" data-target="admin-screen">Назад</button><h2>Детали отчета</h2></header>
+            <div class="content scrollable">
+                <div class="report-details">
+                    <p><strong>Адрес:</strong> <span id="admin-detail-address"></span></p>
+                    <p><strong>Пользователь:</strong> <span id="admin-detail-user"></span></p>
+                    <p><strong>Дата:</strong> <span id="admin-detail-date"></span></p>
+                    <p><strong>Статус:</strong> <span id="admin-detail-status"></span></p>
+                    <hr>
+                    <h4>Ответы на вопросы:</h4>
+                    <div class="form-group"><label>Чистота и внешний вид:</label><p id="admin-detail-q1"></p></div>
+                    <div class="form-group"><label>Чистота внутри:</label><p id="admin-detail-q2"></p></div>
+                    <div class="form-group"><label>Приветствие и поведение:</label><p id="admin-detail-q3"></p></div>
+                    <div class="form-group"><label>Предложение дополнений:</label><p id="admin-detail-q4"></p></div>
+                    <div class="form-group"><label>Действия после заказа:</label><p id="admin-detail-q5"></p></div>
+                    <div class="form-group"><label>Выдача заказа:</label><p id="admin-detail-q6"></p></div>
+                    <div class="form-group"><label>Оценка заказа:</label><p id="admin-detail-q7"></p></div>
+                    <div class="form-group"><label>Оценка блюда №1 (1–5):</label><p id="admin-detail-q8"></p></div>
+                    <div class="form-group"><label>Дополнительные замечания:</label><p id="admin-detail-q9"></p></div>
+                    <hr>
+                    <h4>Прикрепленные фото:</h4>
+                    <div id="admin-detail-photos"></div>
+                    <hr>
+                    <h4>Действия:</h4>
+                    <div id="admin-detail-actions" class="menu-grid">
+                        <button id="admin-action-approve" class="menu-btn" style="background-color: #28a745;">Принять</button>
+                        <button id="admin-action-reject" class="menu-btn" style="background-color: #dc3545;">Отклонить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
