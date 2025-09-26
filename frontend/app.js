@@ -19,30 +19,23 @@ function showScreen(screenId) {
 // ИНИЦИАЛИЗАЦИЯ ВСЕГО ПРИЛОЖЕНИЯ
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
-
     // ПОЛУЧЕНИЕ ЭЛЕМЕНТОВ (DOM)
     const loginView = document.getElementById('login-view'), registerView = document.getElementById('register-view'), loginForm = document.getElementById('login-form'), registerForm = document.getElementById('register-form'), showRegisterLink = document.getElementById('show-register'), showLoginLink = document.getElementById('show-login'), loginEmailInput = document.getElementById('login-email'), loginPasswordInput = document.getElementById('login-password'), registerNameInput = document.getElementById('register-name'), registerEmailInput = document.getElementById('register-email'), registerPasswordInput = document.getElementById('register-password'), registerPhoneInput = document.getElementById('register-phone');
     const logoutBtn = document.getElementById('logout-btn'), menuButtons = document.querySelectorAll('.menu-btn'), backButtons = document.querySelectorAll('.back-btn');
     const cityListContainer = document.getElementById('city-list'), locationsListContainer = document.getElementById('locations-list'), locationsHeader = document.getElementById('locations-header');
     
-    // =================================================================
     // ЛОГИКА АВТОРИЗАЦИИ
-    // =================================================================
     if (showRegisterLink) { showRegisterLink.addEventListener('click', e => { e.preventDefault(); loginView.style.display = 'none'; registerView.style.display = 'block'; }); }
     if (showLoginLink) { showLoginLink.addEventListener('click', e => { e.preventDefault(); registerView.style.display = 'none'; loginView.style.display = 'block'; }); }
     if (registerForm) { registerForm.addEventListener('submit', e => { e.preventDefault(); const n = registerNameInput.value, m = registerEmailInput.value, p = registerPasswordInput.value, t = registerPhoneInput.value; if (!n || !m || !p || !t) return alert('Заполните все поля!'); auth.createUserWithEmailAndPassword(m, p).then(c => db.collection('users').doc(c.user.uid).set({ name: n, phone: t, email: m, role: 'guest' })).then(() => { alert('Успешно!'); registerForm.reset(); showLoginLink.click(); }).catch(err => alert(`Ошибка: ${err.message}`)); }); }
     if (loginForm) { loginForm.addEventListener('submit', e => { e.preventDefault(); const m = loginEmailInput.value, p = loginPasswordInput.value; if (!m || !p) return alert('Введите email и пароль.'); auth.signInWithEmailAndPassword(m, p).catch(err => { if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(err.code)) { alert('Неверный логин или пароль.'); } else { alert(`Ошибка: ${err.message}`); } }); }); }
 
-    // =================================================================
     // ЛОГИКА НАВИГАЦИИ
-    // =================================================================
     menuButtons.forEach(b => b.addEventListener('click', () => showScreen(b.dataset.target)));
     backButtons.forEach(b => b.addEventListener('click', () => showScreen(b.dataset.target)));
     if (logoutBtn) { logoutBtn.addEventListener('click', e => { e.preventDefault(); auth.signOut().catch(err => alert(`Ошибка: ${err.message}`)); }); }
 
-    // =================================================================
-    // НОВЫЙ КОД: ЛОГИКА ДЛЯ "НАЧАТЬ СОТРУДНИЧЕСТВО"
-    // =================================================================
+    // ЛОГИКА ДЛЯ "НАЧАТЬ СОТРУДНИЧЕСТВО"
     function renderCityButtons() {
         if (!cityListContainer) return;
         const cities = ["Павлодар", "Экибастуз", "Усть-Каменогорск"];
@@ -71,20 +64,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 li.innerHTML = `<strong>${point.name}</strong><small>${point.address}</small>`;
                 li.addEventListener('click', () => {
                     alert('Переход к чек-листу для точки: ' + point.name);
-                    // Здесь будет логика для Фазы 3
                 });
                 locationsListContainer.appendChild(li);
             });
         }).catch(error => { console.error("Ошибка: ", error); locationsListContainer.innerHTML = '<p>Не удалось загрузить точки.</p>'; });
     }
 
-    // =================================================================
     // ГЛАВНЫЙ КОНТРОЛЛЕР
-    // =================================================================
     auth.onAuthStateChanged(user => {
         if (user) {
             showScreen('main-menu-screen');
-            renderCityButtons(); // <-- ВАЖНО: Создаем кнопки городов сразу после входа
+            renderCityButtons();
         } else {
             showScreen('auth-screen');
         }
