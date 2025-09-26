@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         locationsHeader.textContent = `Точки в г. ${cityName}`;
         locationsListContainer.innerHTML = '<div class="spinner"></div>';
         showScreen('locations-screen');
-        db.collection('trading_points').where('city', '==', cityName).get().then(snapshot => {
+        db.collection('locations').where('city', '==', cityName).get().then(snapshot => {
             locationsListContainer.innerHTML = '';
             if (snapshot.empty) { locationsListContainer.innerHTML = '<p>Нет доступных точек.</p>'; return; }
             snapshot.forEach(doc => {
