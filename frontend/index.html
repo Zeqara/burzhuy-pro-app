@@ -48,9 +48,6 @@
             <div class="content scrollable"><ul id="locations-list" class="locations-list"></ul></div>
         </div>
         
-        <!-- ================================================ -->
-        <!-- УБЕДИТЕСЬ, ЧТО ЭТОТ БЛОК СОВПАДАЕТ -->
-        <!-- ================================================ -->
         <div id="checklist-screen" class="screen page-screen">
             <header><button class="back-btn" data-target="locations-screen">Назад</button><h2>Чек-лист</h2></header>
             <div class="content scrollable">
@@ -72,7 +69,18 @@
             </div>
         </div>
         
-        <div id="history-screen" class="screen page-screen"><header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>История проверок</h2></header><div class="content"><p>Здесь будет список ваших проверок.</p></div></div>
+        <!-- ================================================ -->
+        <!-- ЭТОТ БЛОК ОБНОВЛЕН -->
+        <!-- ================================================ -->
+        <div id="history-screen" class="screen page-screen">
+            <header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>История проверок</h2></header>
+            <div class="content scrollable">
+                <ul id="history-list" class="locations-list">
+                    <!-- Сюда JavaScript будет вставлять историю проверок -->
+                </ul>
+            </div>
+        </div>
+        
         <div id="instruction-screen" class="screen page-screen"><header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>Инструкция</h2></header><div class="content scrollable"><p>Текст инструкции...</p></div></div>
         <div id="support-screen" class="screen page-screen"><header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>Тех. поддержка</h2></header><div class="content"><form id="support-form"><!-- ... --></form></div></div>
     </div>
