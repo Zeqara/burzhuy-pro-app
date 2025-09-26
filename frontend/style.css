@@ -43,7 +43,7 @@ select { -webkit-appearance: none; -moz-appearance: none; appearance: none; back
 .schedule-item.urgent { border-left: 4px solid var(--primary-color-start); box-shadow: 0 0 10px rgba(229, 45, 39, 0.2); }
 .schedule-card.urgent { border-color: var(--primary-color-start); }
 .empty-state { text-align: center; margin-top: 50px; color: var(--text-secondary); }
-.empty-state #lottie-animation { width: 150px; height: 150px; margin: 0 auto; }
+.empty-state #lottie-animation, .empty-state #lottie-animation-booked { width: 150px; height: 150px; margin: 0 auto; }
 .empty-state h3 { color: var(--text-primary); font-size: 20px; margin-top: 20px; margin-bottom: 10px; }
 .empty-state p { max-width: 300px; margin: 0 auto; line-height: 1.5; }
 .next-check-card { background-color: var(--surface-color); border: 1px solid var(--primary-color-start); border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center; box-shadow: 0 0 15px rgba(229, 45, 39, 0.2); }
