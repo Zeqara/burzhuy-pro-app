@@ -1,164 +1,205 @@
-// ... (начало файла с конфигурацией Firebase и аутентификацией остается без изменений) ...
+// =================================================================
+// КОНФИГУРАЦИЯ И ИНИЦИАЛИЗАЦИЯ FIREBASE
+// =================================================================
+const firebaseConfig = { apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc", authDomain: "burzhuy-pro-v2.firebaseapp.com", projectId: "burzhuy-pro-v2", storageBucket: "burzhuy-pro-v2.appspot.com", messagingSenderId: "627105413900", appId: "1:627105413900:web:3a02e926867ff76e256729" };
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+let confirmationResult = null;
 
+// =================================================================
+// ГЛАВНАЯ ФУНКЦИЯ: НАВИГАЦИЯ
+// =================================================================
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const targetScreen = document.getElementById(screenId);
+    if (targetScreen) targetScreen.classList.add('active');
+}
+
+// =================================================================
+// ИНИЦИАЛИЗАЦИЯ ВСЕГО ПРИЛОЖЕНИЯ
+// =================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // ... (все DOM-элементы и логика до setupAdminUI остаются без изменений) ...
+    // DOM Элементы
+    const phoneForm = document.getElementById('phone-form'), codeForm = document.getElementById('code-form'), profileSetupForm = document.getElementById('profile-setup-form');
+    const phoneInput = document.getElementById('phone-input'), codeInput = document.getElementById('code-input'), profileNameInput = document.getElementById('profile-name-input');
+    const sendCodeBtn = document.getElementById('send-code-btn');
+    const phoneView = document.getElementById('phone-view'), codeView = document.getElementById('code-view');
+    const userNameDisplay = document.getElementById('user-name-display'), logoutBtn = document.getElementById('logout-btn');
+    const adminMenuContainer = document.getElementById('admin-menu-container'), scheduleForm = document.getElementById('schedule-form'), scheduleLocationSelect = document.getElementById('schedule-location-select'), scheduleDateInput = document.getElementById('schedule-date-input'), timeSlotsContainer = document.getElementById('time-slots-container'), addSlotBtn = document.getElementById('add-slot-btn'), scheduleUrgentCheckbox = document.getElementById('schedule-urgent-checkbox'), scheduleList = document.getElementById('schedule-list');
+    const scheduleCardsList = document.getElementById('schedule-cards-list'), noSchedulesView = document.getElementById('no-schedules-view'), lottieAnimationContainer = document.getElementById('lottie-animation'), slotsList = document.getElementById('slots-list'), slotLocationTitle = document.getElementById('slot-location-title');
+    
+    let currentUserRole = 'guest';
+    const recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
 
-    // --- НОВЫЕ DOM ЭЛЕМЕНТЫ ДЛЯ ЭТАПА 3 ---
-    const scheduleCardsList = document.getElementById('schedule-cards-list');
-    const noSchedulesView = document.getElementById('no-schedules-view');
-    const lottieAnimationContainer = document.getElementById('lottie-animation');
-    const slotsList = document.getElementById('slots-list');
-    const slotLocationTitle = document.getElementById('slot-location-title');
-
-    // Запускаем анимацию один раз
     if(lottieAnimationContainer) {
-        lottie.loadAnimation({
-            container: lottieAnimationContainer,
-            renderer: 'svg',
-            loop: false,
-            autoplay: true,
-            path: 'https://assets10.lottiefiles.com/packages/lf20_u4j3xm6g.json' // Ссылка на анимацию
-        });
+        lottie.loadAnimation({ container: lottieAnimationContainer, renderer: 'svg', loop: false, autoplay: true, path: 'https://assets10.lottiefiles.com/packages/lf20_u4j3xm6g.json' });
     }
 
-    // --- ЛОГИКА ЭТАПА 3: ЗАПИСЬ НА ПРОВЕРКУ ---
+    // --- АУТЕНТИФИКАЦИЯ ---
+    if(phoneForm) phoneForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        let rawPhoneNumber = phoneInput.value, digitsOnly = rawPhoneNumber.replace(/\D/g, '');
+        if (digitsOnly.startsWith('8')) digitsOnly = '7' + digitsOnly.substring(1);
+        const formattedPhoneNumber = `+${digitsOnly}`;
+        if (digitsOnly.length < 11) return alert('Пожалуйста, введите полный номер телефона.');
+        sendCodeBtn.disabled = true; sendCodeBtn.textContent = 'Отправка...';
+        auth.signInWithPhoneNumber(formattedPhoneNumber, recaptchaVerifier)
+            .then(result => { confirmationResult = result; phoneView.style.display = 'none'; codeView.style.display = 'block'; alert('СМС-код отправлен на ваш номер.'); })
+            .catch(err => { console.error("Firebase Error:", err); alert(`Произошла ошибка: \nКод: ${err.code}\nСообщение: ${err.message}`); })
+            .finally(() => { sendCodeBtn.disabled = false; sendCodeBtn.textContent = 'Получить код'; });
+    });
+
+    if(codeForm) codeForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const code = codeInput.value;
+        if (!code || !confirmationResult) return;
+        confirmationResult.confirm(code).catch(err => alert(`Неверный код.`));
+    });
+
+    if(profileSetupForm) profileSetupForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const user = auth.currentUser, fullName = profileNameInput.value.trim();
+        if (!user || !fullName) return;
+        db.collection('users').doc(user.uid).set({ fullName: fullName, phone: user.phoneNumber, role: 'guest' })
+            .then(() => { userNameDisplay.textContent = fullName; showScreen('main-menu-screen'); })
+            .catch(err => alert(`Не удалось сохранить профиль.`));
+    });
+
+    // --- ГЛАВНЫЙ КОНТРОЛЛЕР ---
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            db.collection('users').doc(user.uid).get().then(doc => {
+                if (doc.exists) {
+                    const userData = doc.data();
+                    currentUserRole = userData.role || 'guest';
+                    userNameDisplay.textContent = userData.fullName;
+                    setupAdminUI();
+                    showScreen('main-menu-screen');
+                } else {
+                    showScreen('profile-setup-screen');
+                }
+            });
+        } else {
+            currentUserRole = 'guest';
+            setupAdminUI();
+            if(phoneView && codeView) { phoneView.style.display = 'block'; codeView.style.display = 'none'; }
+            showScreen('auth-screen');
+        }
+    });
     
-    // 1. Главная функция для отображения доступных проверок
+    if(logoutBtn) logoutBtn.addEventListener('click', () => auth.signOut());
+
+    // --- ЛОГИКА АДМИН-ПАНЕЛИ ---
+    function setupAdminUI() {
+        if (!adminMenuContainer) return;
+        adminMenuContainer.innerHTML = '';
+        if (currentUserRole === 'admin') {
+            const adminButton = document.createElement('li');
+            adminButton.className = 'menu-list-item';
+            adminButton.innerHTML = `<i class="icon fa-solid fa-user-shield"></i><div><strong>Панель Администратора</strong><small>Управление графиком проверок</small></div>`;
+            adminButton.addEventListener('click', () => { loadLocationsForAdmin(); renderSchedules(); showScreen('admin-schedule-screen'); });
+            adminMenuContainer.appendChild(adminButton);
+        }
+    }
+
+    async function loadLocationsForAdmin() {
+        if (!scheduleLocationSelect) return;
+        const snapshot = await db.collection('locations').get();
+        let optionsHTML = '<option value="" disabled selected>-- Выберите точку --</option>';
+        snapshot.forEach(doc => { const loc = doc.data(); optionsHTML += `<option value="${doc.id}" data-name="${loc.name}" data-address="${loc.address}">${loc.name} (${loc.address})</option>`; });
+        scheduleLocationSelect.innerHTML = optionsHTML;
+    }
+
+    function addSlotInput() {
+        const slotDiv = document.createElement('div');
+        slotDiv.className = 'time-slot-input';
+        slotDiv.innerHTML = `<input type="time" class="slot-start" required> - <input type="time" class="slot-end" required><button type="button" class="remove-slot-btn">×</button>`;
+        if(timeSlotsContainer) timeSlotsContainer.appendChild(slotDiv);
+        slotDiv.querySelector('.remove-slot-btn').addEventListener('click', () => slotDiv.remove());
+    }
+    if(addSlotBtn) { addSlotBtn.addEventListener('click', addSlotInput); addSlotInput(); }
+
+    if(scheduleForm) scheduleForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const selOpt = scheduleLocationSelect.options[scheduleLocationSelect.selectedIndex];
+        const locationId = selOpt.value, locationName = selOpt.dataset.name, locationAddress = selOpt.dataset.address, date = scheduleDateInput.value, isUrgent = scheduleUrgentCheckbox.checked;
+        const timeSlots = Array.from(document.querySelectorAll('.time-slot-input')).map(s => ({ start: s.querySelector('.slot-start').value, end: s.querySelector('.slot-end').value })).filter(ts => ts.start && ts.end);
+        if (!locationId || !date || timeSlots.length === 0) return alert('Заполните все поля.');
+        const scheduleDocRef = await db.collection('schedule').add({ locationId, locationName, locationAddress, date: new Date(date), isUrgent });
+        const batch = db.batch();
+        timeSlots.forEach(slot => { const slotDocRef = db.collection('timeSlots').doc(); batch.set(slotDocRef, { scheduleId: scheduleDocRef.id, startTime: slot.start, endTime: slot.end, status: 'свободен', bookedBy: null, agentName: null }); });
+        await batch.commit();
+        alert('Проверка добавлена!');
+        scheduleForm.reset(); timeSlotsContainer.innerHTML = ''; addSlotInput(); renderSchedules();
+    });
+
+    async function renderSchedules() {
+        if (!scheduleList) return;
+        const snapshot = await db.collection('schedule').orderBy('date', 'desc').get();
+        if(snapshot.empty) { scheduleList.innerHTML = '<p>Запланированных проверок пока нет.</p>'; return; }
+        let listHTML = '';
+        snapshot.forEach(doc => { const s = doc.data(); const date = s.date.toDate().toLocaleDateString('ru-RU'); listHTML += `<div class="schedule-item ${s.isUrgent ? 'urgent' : ''}"><strong>${s.locationName}</strong><small>${date} ${s.isUrgent ? '🔥' : ''}</small></div>`; });
+        scheduleList.innerHTML = listHTML;
+    }
+
+    // --- ЛОГИКА АГЕНТА: ЗАПИСЬ НА ПРОВЕРКУ ---
     async function renderAvailableSchedules() {
-        if (!scheduleCardsList || !noSchedulesView) return;
         showScreen('cooperation-screen');
+        if (!scheduleCardsList || !noSchedulesView) return;
         scheduleCardsList.innerHTML = '<div class="spinner"></div>';
         noSchedulesView.style.display = 'none';
 
-        try {
-            const now = new Date();
-            const snapshot = await db.collection('schedule').where('date', '>=', now).get();
-            
-            const schedules = [];
-            snapshot.forEach(doc => {
-                schedules.push({ id: doc.id, ...doc.data() });
-            });
+        const now = new Date(); now.setHours(0,0,0,0);
+        const snapshot = await db.collection('schedule').where('date', '>=', now).get();
+        const schedules = [];
+        snapshot.forEach(doc => schedules.push({ id: doc.id, ...doc.data() }));
+        schedules.sort((a, b) => (a.isUrgent && !b.isUrgent) ? -1 : (!a.isUrgent && b.isUrgent) ? 1 : a.date.toMillis() - b.date.toMillis());
 
-            // Сортировка: сначала горящие, потом по дате
-            schedules.sort((a, b) => {
-                if (a.isUrgent && !b.isUrgent) return -1;
-                if (!a.isUrgent && b.isUrgent) return 1;
-                return a.date.toMillis() - b.date.toMillis();
-            });
-
-            if (schedules.length === 0) {
-                scheduleCardsList.innerHTML = '';
-                noSchedulesView.style.display = 'block';
-                return;
-            }
-
-            let cardsHTML = '';
-            for (const schedule of schedules) {
-                const date = schedule.date.toDate().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-                const urgentClass = schedule.isUrgent ? 'urgent' : '';
-                cardsHTML += `
-                    <li class="menu-list-item schedule-card ${urgentClass}" data-schedule-id="${schedule.id}" data-location-title="${schedule.locationName} (${date})">
-                        ${schedule.isUrgent ? '<i class="icon fa-solid fa-fire"></i>' : '<i class="icon fa-solid fa-calendar-day"></i>'}
-                        <div>
-                            <strong>${schedule.locationName}</strong>
-                            <small>${schedule.locationAddress} - <b>${date}</b></small>
-                        </div>
-                    </li>
-                `;
-            }
-            scheduleCardsList.innerHTML = cardsHTML;
-
-            // Добавляем обработчики кликов на новые карточки
-            document.querySelectorAll('.schedule-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const scheduleId = card.dataset.scheduleId;
-                    const locationTitle = card.dataset.locationTitle;
-                    renderTimeSlots(scheduleId, locationTitle);
-                });
-            });
-
-        } catch (error) {
-            console.error("Ошибка загрузки доступных проверок:", error);
-            scheduleCardsList.innerHTML = '';
-            noSchedulesView.style.display = 'block'; // Показываем пустышку и при ошибке
-        }
+        if (schedules.length === 0) { scheduleCardsList.innerHTML = ''; noSchedulesView.style.display = 'block'; return; }
+        
+        let cardsHTML = '';
+        schedules.forEach(s => {
+            const date = s.date.toDate().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+            cardsHTML += `<li class="menu-list-item schedule-card ${s.isUrgent ? 'urgent' : ''}" data-schedule-id="${s.id}" data-location-title="${s.locationName} (${date})"><i class="icon fa-solid ${s.isUrgent ? 'fa-fire' : 'fa-calendar-day'}"></i><div><strong>${s.locationName}</strong><small>${s.locationAddress} - <b>${date}</b></small></div></li>`;
+        });
+        scheduleCardsList.innerHTML = cardsHTML;
+        document.querySelectorAll('.schedule-card').forEach(c => c.addEventListener('click', () => renderTimeSlots(c.dataset.scheduleId, c.dataset.locationTitle)));
     }
 
-    // 2. Функция для отображения временных слотов для выбранной проверки
     async function renderTimeSlots(scheduleId, locationTitle) {
-        if (!slotsList || !slotLocationTitle) return;
         showScreen('time-slots-screen');
+        if (!slotsList || !slotLocationTitle) return;
         slotLocationTitle.textContent = locationTitle;
         slotsList.innerHTML = '<div class="spinner"></div>';
 
-        try {
-            const snapshot = await db.collection('timeSlots')
-                .where('scheduleId', '==', scheduleId)
-                .where('status', '==', 'свободен')
-                .get();
+        const snapshot = await db.collection('timeSlots').where('scheduleId', '==', scheduleId).where('status', '==', 'свободен').get();
+        if (snapshot.empty) { slotsList.innerHTML = '<p>К сожалению, все свободные места на эту дату уже заняты.</p>'; return; }
+        
+        let slotsHTML = '';
+        snapshot.forEach(doc => { const s = doc.data(); slotsHTML += `<li class="menu-list-item time-slot" data-slot-id="${doc.id}"><i class="icon fa-solid fa-clock"></i><div><strong>${s.startTime} - ${s.endTime}</strong></div></li>`; });
+        slotsList.innerHTML = slotsHTML;
+        document.querySelectorAll('.time-slot').forEach(s => s.addEventListener('click', async () => {
+            if (!confirm('Вы уверены, что хотите записаться на это время?')) return;
+            const user = auth.currentUser; if (!user) return;
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            await db.collection('timeSlots').doc(s.dataset.slotId).update({ status: 'забронирован', bookedBy: user.uid, agentName: userDoc.data().fullName });
+            alert('Вы успешно записаны!');
+            showScreen('main-menu-screen');
+        }));
+    }
 
-            if (snapshot.empty) {
-                slotsList.innerHTML = '<p>К сожалению, все свободные места на эту дату уже заняты.</p>';
-                return;
-            }
-
-            let slotsHTML = '';
-            snapshot.forEach(doc => {
-                const slot = doc.data();
-                slotsHTML += `
-                    <li class="menu-list-item time-slot" data-slot-id="${doc.id}">
-                        <i class="icon fa-solid fa-clock"></i>
-                        <div><strong>${slot.startTime} - ${slot.endTime}</strong></div>
-                    </li>
-                `;
-            });
-            slotsList.innerHTML = slotsHTML;
-
-            // Добавляем обработчики кликов на слоты
-            document.querySelectorAll('.time-slot').forEach(slot => {
-                slot.addEventListener('click', async () => {
-                    const slotId = slot.dataset.slotId;
-                    const user = auth.currentUser;
-                    if (!user) return alert('Ошибка: вы не авторизованы.');
-
-                    const confirmBooking = confirm('Вы уверены, что хотите записаться на это время?');
-                    if (confirmBooking) {
-                        try {
-                            const userDoc = await db.collection('users').doc(user.uid).get();
-                            const agentName = userDoc.data().fullName;
-
-                            await db.collection('timeSlots').doc(slotId).update({
-                                status: 'забронирован',
-                                bookedBy: user.uid,
-                                agentName: agentName
-                            });
-                            alert('Вы успешно записаны на проверку! Информация появится на главном экране.');
-                            showScreen('main-menu-screen');
-                        } catch (error) {
-                            console.error("Ошибка записи на слот:", error);
-                            alert('Не удалось записаться. Возможно, кто-то только что занял это время. Попробуйте снова.');
-                            renderTimeSlots(scheduleId, locationTitle); // Обновляем список
-                        }
-                    }
-                });
-            });
-
-        } catch (error) {
-            console.error("Ошибка загрузки слотов:", error);
-            slotsList.innerHTML = '<p>Не удалось загрузить временные слоты.</p>';
+    // --- НАВИГАЦИЯ ---
+    const menuButtons = document.querySelectorAll('.menu-btn');
+    menuButtons.forEach(b => b.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = b.dataset.target;
+        if (target === 'cooperation-screen') {
+            renderAvailableSchedules();
+        } else {
+            showScreen(target);
         }
-    }
-
-    // --- ОБНОВЛЕНИЕ СТАРЫХ ОБРАБОТЧИКОВ ---
-    
-    // Обновляем обработчик для кнопки "Записаться на проверку"
-    const cooperationBtn = document.querySelector('[data-target="cooperation-screen"]');
-    if(cooperationBtn) {
-        cooperationBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            renderAvailableSchedules(); // <--- Теперь она запускает нашу новую функцию
-        });
-    }
-
-    // ... (весь остальной код остается без изменений) ...
+    }));
+    const backButtons = document.querySelectorAll('.back-btn');
+    backButtons.forEach(b => b.addEventListener('click', () => showScreen(b.dataset.target)));
 });
