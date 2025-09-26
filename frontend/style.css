@@ -16,7 +16,8 @@ header h2 { margin: 0; font-size: 22px; font-weight: 600; }
 .menu-list, .locations-list { list-style: none; padding: 0; margin: 0; width: 100%; display: flex; flex-direction: column; gap: 15px; }
 .menu-list-item, .location-item { background-color: var(--surface-color); padding: 20px; border-radius: 12px; cursor: pointer; transition: background-color 0.2s, transform 0.2s; display: flex; align-items: center; border: 1px solid var(--border-color); }
 .menu-list-item:hover, .location-item:hover { background-color: var(--surface-color-hover); transform: translateY(-2px); }
-.menu-list-item .icon { font-size: 20px; margin-right: 20px; color: var(--primary-color-start); width: 24px; text-align: center; }
+.menu-list-item .icon { font-size: 20px; margin-right: 15px; color: var(--primary-color-start); width: 24px; text-align: center; }
+.menu-list-item div { white-space: normal; }
 .menu-list-item strong, .location-item strong { font-size: 16px; font-weight: 500; display: block; margin-bottom: 2px; }
 .menu-list-item small, .location-item small { font-size: 14px; color: var(--text-secondary); display: block; }
 .form-group { margin-bottom: 20px; }
@@ -50,3 +51,5 @@ select { -webkit-appearance: none; -moz-appearance: none; appearance: none; back
 .next-check-card strong { display: block; font-size: 20px; margin: 5px 0 15px 0; color: var(--text-primary); }
 .next-check-card p { margin: 5px 0; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; gap: 10px; }
 .next-check-card .btn-primary { margin-top: 20px; }
+.delete-schedule-btn { background-color: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; transition: background-color 0.2s; }
+.delete-schedule-btn:hover { background-color: #cc0000; }
