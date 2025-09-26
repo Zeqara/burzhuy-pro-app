@@ -1,16 +1,26 @@
 /* =================================================================
-   ГЛОБАЛЬНЫЕ НАСТРОЙКИ И ПЕРЕМЕННЫЕ (КАК НА VESLA)
+   НОВЫЙ ДИЗАЙН В СТИЛЕ VESLA (КРАСНО-ЧЕРНАЯ ТЕМА)
    ================================================================= */
 :root {
-    --bg-color: #121212;
-    --surface-color: #1e1e1e;
-    --primary-color: #00aaff;
-    --text-primary: #ffffff;
-    --text-secondary: #aaaaaa;
-    --border-color: #333333;
-    --error-color: #ff4d4d;
+    --bg-color: #121212; /* Почти черный фон */
+    --surface-color: #1e1e1e; /* Цвет карточек и полей ввода */
+    --surface-color-hover: #2a2a2a; /* Цвет при наведении */
+    --border-color: #333333; /* Цвет границ */
+    
+    --primary-color-start: #e52d27; /* Начало красного градиента */
+    --primary-color-end: #b31217;   /* Конец красного градиента */
+
+    --text-primary: #ffffff; /* Основной белый текст */
+    --text-secondary: #aaaaaa; /* Вторичный серый текст */
+    
+    --status-pending: #ffc107; /* Статус "в ожидании" - желтый */
+    --status-approved: #28a745; /* Статус "принят" - зеленый */
+    --status-rejected: #dc3545;  /* Статус "отклонен" - красный */
 }
 
+/* =================================================================
+   ГЛОБАЛЬНЫЕ СТИЛИ
+   ================================================================= */
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -24,6 +34,8 @@ body {
    КОНТЕЙНЕРЫ И ЭКРАНЫ
    ================================================================= */
 #app-container {
+    max-width: 480px; /* Ограничиваем ширину для мобильного вида */
+    margin: 0 auto;
     position: relative;
     width: 100vw;
     height: 100vh;
@@ -38,12 +50,12 @@ body {
     height: 100%;
     box-sizing: border-box;
     padding: 20px;
-    display: none; /* Скрываем по умолчанию */
+    display: none;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
+    justify-content: flex-start; /* Все экраны начинаются сверху */
 }
 
 .screen.active {
@@ -51,14 +63,9 @@ body {
     opacity: 1;
 }
 
-.page-screen {
-    justify-content: flex-start;
-    padding-top: 80px; /* Оставляем место для хедера */
-}
-
 .content {
     width: 100%;
-    max-width: 600px;
+    margin-top: 20px;
 }
 
 .scrollable {
@@ -70,115 +77,127 @@ body {
 /* =================================================================
    ХЕДЕР И НАВИГАЦИЯ
    ================================================================= */
-.page-screen header, #main-menu-screen header {
+header {
     width: 100%;
-    max-width: 640px; /* 600px контент + 20px паддинги */
     display: flex;
-    justify-content: space-between;
+    justify-content: center; /* Центрируем заголовок */
     align-items: center;
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 20px;
-    box-sizing: border-box;
+    padding: 10px 0;
+    position: relative;
 }
 
-.page-screen header {
-    justify-content: center;
+header h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
 }
 
 .back-btn {
     position: absolute;
-    left: 20px;
+    left: 0;
     background: none;
     border: none;
-    color: var(--text-primary);
+    color: var(--text-secondary);
     font-size: 16px;
     cursor: pointer;
+    text-decoration: none;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-#logout-btn {
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-size: 14px;
-    position: absolute;
-    right: 20px;
-    cursor: pointer;
+.back-btn:hover {
+    color: var(--text-primary);
 }
 
 /* =================================================================
-   ЭЛЕМЕНТЫ ФОРМ
+   НОВЫЙ ДАШБОРД (ГЛАВНОЕ МЕНЮ)
    ================================================================= */
-.auth-container {
-    width: 100%;
-    max-width: 350px;
-}
-
-h2 {
+.dashboard-header {
     text-align: center;
-    font-weight: 600;
-    margin-bottom: 30px;
+    margin: 20px 0 30px 0;
 }
 
-input[type="email"],
-input[type="password"],
-input[type="text"],
-input[type="tel"],
-input[type="number"],
-select,
-textarea {
+.dashboard-header .avatar {
+    width: 80px;
+    height: 80px;
     background-color: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 15px;
-    color: var(--text-primary);
-    font-size: 16px;
-    width: 100%;
-    box-sizing: border-box;
-    margin-bottom: 15px;
-    transition: border-color 0.2s;
-}
-
-input:focus, select:focus, textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-}
-
-.btn-primary {
-    background: var(--primary-color);
-    color: var(--text-primary);
-    border: none;
-    border-radius: 8px;
-    padding: 15px;
-    font-size: 16px;
+    border-radius: 50%;
+    margin: 0 auto 15px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
     font-weight: bold;
-    cursor: pointer;
-    width: 100%;
-    transition: background-color 0.2s;
+    color: var(--primary-color-start);
+    border: 2px solid var(--border-color);
 }
 
-.btn-primary:hover {
-    background-color: #0099e6;
+.dashboard-header h2 {
+    margin: 0;
+    font-size: 28px;
 }
 
-.btn-primary:disabled {
-    background-color: #555;
-    cursor: not-allowed;
-}
-
-.auth-toggle {
-    font-size: 14px;
-    text-align: center;
-    margin-top: 20px;
+.dashboard-header p {
+    margin: 5px 0 0 0;
     color: var(--text-secondary);
+    font-size: 16px;
 }
 
-.auth-toggle a {
-    color: var(--primary-color);
-    text-decoration: none;
+/* =================================================================
+   СПИСКИ И КАРТОЧКИ (КАК В VESLA)
+   ================================================================= */
+.menu-list, .locations-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
+.menu-list-item, .location-item {
+    background-color: var(--surface-color);
+    padding: 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border-color);
+}
+
+.menu-list-item:hover, .location-item:hover {
+    background-color: var(--surface-color-hover);
+    transform: translateY(-2px);
+}
+
+.menu-list-item .icon {
+    font-size: 20px;
+    margin-right: 20px;
+    color: var(--primary-color-start);
+    width: 24px;
+    text-align: center;
+}
+
+.menu-list-item strong, .location-item strong {
+    font-size: 16px;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.menu-list-item small, .location-item small {
+    font-size: 14px;
+    color: var(--text-secondary);
+    display: block;
+}
+
+/* =================================================================
+   ЭЛЕМЕНТЫ ФОРМ (СТИЛЬ VESLA)
+   ================================================================= */
 .form-group {
     margin-bottom: 20px;
 }
@@ -190,97 +209,82 @@ input:focus, select:focus, textarea:focus {
     font-size: 14px;
 }
 
-/* =================================================================
-   МЕНЮ И СПИСКИ
-   ================================================================= */
-.menu-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    width: 100%;
-    max-width: 500px;
-}
-
-.menu-btn {
+input[type="email"],
+input[type="password"],
+input[type="text"],
+input[type="tel"],
+input[type="number"],
+textarea {
     background-color: var(--surface-color);
     border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 20px;
     border-radius: 12px;
-    font-size: 16px;
-    text-align: center;
-    min-height: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s;
-}
-
-.menu-btn:hover {
-    background-color: #2a2a2a;
-    border-color: #555;
-}
-
-.locations-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    width: 100%;
-}
-
-.location-item {
-    background-color: var(--surface-color);
     padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.location-item:hover {
-    background-color: #2a2a2a;
-}
-
-.location-item strong {
-    display: block;
+    color: var(--text-primary);
     font-size: 16px;
-    margin-bottom: 4px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
 }
 
-.location-item small {
+input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary-color-start);
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, var(--primary-color-start), var(--primary-color-end));
+    color: var(--text-primary);
+    border: none;
+    border-radius: 12px;
+    padding: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-align: center;
     display: block;
-    color: var(--text-secondary);
-    font-size: 14px;
+    text-decoration: none;
 }
 
+.btn-primary:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(229, 45, 39, 0.3);
+}
+
+.btn-primary:disabled {
+    background: #555;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
 
 /* =================================================================
    ПРОЧЕЕ
    ================================================================= */
+#logout-btn {
+    color: var(--text-secondary);
+    background-color: transparent;
+    border: none;
+    font-size: 16px;
+    margin-top: 30px;
+    cursor: pointer;
+    width: 100%;
+    padding: 10px;
+}
+#logout-btn:hover {
+    color: var(--primary-color-start);
+}
+
 .spinner {
     width: 50px;
     height: 50px;
     border: 5px solid var(--border-color);
-    border-top-color: var(--primary-color);
+    border-top-color: var(--primary-color-start);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
     to { transform: rotate(360deg); }
-}
-
-hr {
-    border: none;
-    border-top: 1px solid var(--border-color);
-    margin: 30px 0;
-}
-
-/* Стили для детального отчета админа */
-.report-details p {
-    background-color: var(--surface-color);
-    padding: 10px;
-    border-radius: 5px;
-    border-left: 3px solid var(--primary-color);
 }
