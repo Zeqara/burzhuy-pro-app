@@ -1,12 +1,4 @@
-/* =================================================================
-   НОВЫЙ ДИЗАЙН В СТИЛЕ VESLA (КРАСНО-ЧЕРНАЯ ТЕМА)
-   ================================================================= */
-:root {
-    --bg-color: #121212; --surface-color: #1e1e1e; --surface-color-hover: #2a2a2a; --border-color: #333333;
-    --primary-color-start: #e52d27; --primary-color-end: #b31217;
-    --text-primary: #ffffff; --text-secondary: #aaaaaa;
-    --status-pending: #ffc107; --status-approved: #28a745; --status-rejected: #dc3545;
-}
+:root { --bg-color: #121212; --surface-color: #1e1e1e; --surface-color-hover: #2a2a2a; --border-color: #333333; --primary-color-start: #e52d27; --primary-color-end: #b31217; --text-primary: #ffffff; --text-secondary: #aaaaaa; --status-pending: #ffc107; --status-approved: #28a745; --status-rejected: #dc3545; }
 body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text-primary); }
 #app-container { max-width: 480px; margin: 0 auto; position: relative; width: 100vw; height: 100vh; overflow: hidden; }
 .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; padding: 20px; display: none; flex-direction: column; align-items: center; opacity: 0; transition: opacity 0.3s ease-in-out; justify-content: flex-start; }
@@ -33,7 +25,7 @@ input, textarea, select { background-color: var(--surface-color); border: 1px so
 input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary-color-start); }
 .btn-primary { background: linear-gradient(45deg, var(--primary-color-start), var(--primary-color-end)); color: var(--text-primary); border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; transition: transform 0.2s, box-shadow 0.2s; text-align: center; display: block; text-decoration: none; }
 .btn-primary:hover { transform: scale(1.02); box-shadow: 0 4px 15px rgba(229, 45, 39, 0.3); }
-.btn-primary:disabled { background: #555; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-primary:disabled { background: #555; cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.6; }
 #logout-btn { color: var(--text-secondary); background-color: transparent; border: none; font-size: 16px; margin-top: 30px; cursor: pointer; width: 100%; padding: 10px; }
 #logout-btn:hover { color: var(--primary-color-start); }
 .spinner { width: 50px; height: 50px; border: 5px solid var(--border-color); border-top-color: var(--primary-color-start); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -53,3 +45,8 @@ select { -webkit-appearance: none; -moz-appearance: none; appearance: none; back
 .empty-state #lottie-animation { width: 150px; height: 150px; margin: 0 auto; }
 .empty-state h3 { color: var(--text-primary); font-size: 20px; margin-top: 20px; margin-bottom: 10px; }
 .empty-state p { max-width: 300px; margin: 0 auto; line-height: 1.5; }
+.next-check-card { background-color: var(--surface-color); border: 1px solid var(--primary-color-start); border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center; box-shadow: 0 0 15px rgba(229, 45, 39, 0.2); }
+.next-check-card small { color: var(--text-secondary); font-size: 14px; }
+.next-check-card strong { display: block; font-size: 20px; margin: 5px 0 15px 0; color: var(--text-primary); }
+.next-check-card p { margin: 5px 0; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; gap: 10px; }
+.next-check-card .btn-primary { margin-top: 20px; }
