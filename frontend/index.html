@@ -11,11 +11,12 @@
 
     <div id="app-container">
         
-        <!-- ЭКРАН ЗАГРУЗКИ (Опционально, если нужен) -->
-     <div id="loader" class="screen active"><div class="spinner"></div></div>
-<div id="auth-screen" class="screen">
+        <!-- ЭКРАН ЗАГРУЗКИ -->
+        <div id="loader" class="screen active"><div class="spinner"></div></div>
+
+        <!-- ЭКРАН АВТОРИЗАЦИИ -->
+        <div id="auth-screen" class="screen">
             <div class="auth-container">
-                <!-- Форма входа -->
                 <div id="login-view">
                     <h2>Вход</h2>
                     <form id="login-form">
@@ -25,7 +26,6 @@
                     </form>
                     <p class="auth-toggle">Нет аккаунта? <a href="#" id="show-register">Регистрация</a></p>
                 </div>
-                <!-- Форма регистрации -->
                 <div id="register-view" style="display: none;">
                     <h2>Регистрация</h2>
                     <form id="register-form">
@@ -52,11 +52,80 @@
             </div>
         </div>
         
-        <!-- Остальные ваши экраны остаются без изменений -->
+        <!-- ================================================ -->
+        <!-- НОВЫЕ ЭКРАНЫ, КОТОРЫЕ БЫЛИ ДОБАВЛЕНЫ -->
+        <!-- ================================================ -->
+
+        <!-- ВЫБОР ГОРОДА -->
+        <div id="cooperation-screen" class="screen page-screen">
+            <header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>Выберите город</h2></header>
+            <div class="content">
+                <div id="city-list" class="menu-grid">
+                    <!-- Сюда JavaScript будет вставлять кнопки городов -->
+                </div>
+            </div>
+        </div>
         
+        <!-- СПИСОК ТОЧЕК -->
+        <div id="locations-screen" class="screen page-screen">
+            <header><button class="back-btn" data-target="cooperation-screen">Назад</button><h2 id="locations-header">Точки в городе</h2></header>
+            <div class="content scrollable">
+                <ul id="locations-list" class="locations-list">
+                    <!-- Сюда JavaScript будет вставлять список точек -->
+                </ul>
+            </div>
+        </div>
+        
+        <!-- ЧЕК-ЛИСТ (пока не используется, но уже готов) -->
+        <div id="checklist-screen" class="screen page-screen">
+            <header><button class="back-btn" data-target="locations-screen">Назад</button><h2>Чек-лист</h2></header>
+            <div class="content scrollable">
+                <form id="checklist-form"><!-- ... --></form>
+            </div>
+        </div>
+        
+        <!-- ИСТОРИЯ ПРОВЕРОК -->
+        <div id="history-screen" class="screen page-screen">
+            <header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>История проверок</h2></header>
+            <div class="content"><p>Здесь будет список ваших проверок.</p></div>
+        </div>
+
+        <!-- ИНСТРУКЦИЯ -->
+        <div id="instruction-screen" class="screen page-screen">
+             <header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>Инструкция</h2></header>
+             <div class="content scrollable">
+                <p>Приветствую тебя в проекте "Тайный агент BURЖУЙ"! 🧨</p>
+                <p>Спасибо, что решил(а) помочь нам стать лучше и обеспечить себе вкусный обед за наш счёт. 🍔☕</p>
+                <p>👉 Напоминаю: анкету заполняем только один раз, для следующих проверок просто пиши сюда.</p>
+                <h4>Как проходит проверка:</h4>
+                <ol>
+                    <li>Покупку совершаешь за свой счёт (не забудь сохранить чек);</li>
+                    <li>После проверки отправляешь чек-лист + фото;</li>
+                    <li>После принятия отчёта деньги переводятся тебе обратно на карту.</li>
+                </ol>
+                <p>❗❗ Компенсация возможна только при корректной и полной сдаче материалов.</p>
+                <h4>Основные правила:</h4>
+                <ul>
+                    <li>Веди себя естественно, не раскрывай, что ты тайный агент;</li>
+                    <li>Следуй инструкции и чек-листу;</li>
+                    <li>Делай четкие фото по списку ниже (без вспышки, без звука камеры);</li>
+                    <li>После проверки в течении двух часов отправь чек-лист + фото;</li>
+                    <li>Если не можешь провести проверку — обязательно заранее предупреди.</li>
+                </ul>
+             </div>
+        </div>
+        
+        <!-- ТЕХ. ПОДДЕРЖКА -->
+        <div id="support-screen" class="screen page-screen">
+             <header><button class="back-btn" data-target="main-menu-screen">Назад</button><h2>Тех. поддержка</h2></header>
+             <div class="content">
+                 <form id="support-form"><input type="text" id="support-name" placeholder="Ваше имя" required><input type="tel" id="support-phone" placeholder="Номер телефона" required><textarea id="support-message" placeholder="Опишите вашу проблему" required></textarea><button type="submit" class="btn-primary">Отправить</button><p id="support-status"></p></form>
+             </div>
+        </div>
+
     </div>
 
-    <!-- Firebase SDK (старая версия для совместимости) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
