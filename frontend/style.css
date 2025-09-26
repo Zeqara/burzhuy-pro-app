@@ -214,6 +214,8 @@ input[type="password"],
 input[type="text"],
 input[type="tel"],
 input[type="number"],
+input[type="date"],
+input[type="time"],
 textarea {
     background-color: var(--surface-color);
     border: 1px solid var(--border-color);
@@ -287,4 +289,96 @@ input:focus, textarea:focus {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+
+/* =================================================================
+   СТИЛИ ДЛЯ АДМИН-ПАНЕЛИ ГРАФИКА
+   ================================================================= */
+select {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 15px;
+    color: var(--text-primary);
+    font-size: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aaaaaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 1em;
+}
+
+.time-slot-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.time-slot-input input {
+    margin-bottom: 0;
+}
+
+.remove-slot-btn {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--primary-color-start);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 28px;
+}
+
+.btn-secondary {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+.urgent-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: var(--surface-color);
+    padding: 15px;
+    border-radius: 12px;
+}
+.urgent-checkbox input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color-start);
+}
+.urgent-checkbox label {
+    margin: 0;
+    font-weight: 500;
+}
+
+.schedule-item {
+    background-color: var(--surface-color);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid var(--border-color);
+}
+
+.schedule-item.urgent {
+    border-left: 4px solid var(--primary-color-start);
+    box-shadow: 0 0 10px rgba(229, 45, 39, 0.2);
 }
