@@ -19,6 +19,7 @@ function showScreen(screenId) {
 // ИНИЦИАЛИЗАЦИЯ ВСЕГО ПРИЛОЖЕНИЯ
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
+
     // ПОЛУЧЕНИЕ ЭЛЕМЕНТОВ (DOM)
     const loginView = document.getElementById('login-view'), registerView = document.getElementById('register-view'), loginForm = document.getElementById('login-form'), registerForm = document.getElementById('register-form'), showRegisterLink = document.getElementById('show-register'), showLoginLink = document.getElementById('show-login'), loginEmailInput = document.getElementById('login-email'), loginPasswordInput = document.getElementById('login-password'), registerNameInput = document.getElementById('register-name'), registerEmailInput = document.getElementById('register-email'), registerPasswordInput = document.getElementById('register-password'), registerPhoneInput = document.getElementById('register-phone');
     const logoutBtn = document.getElementById('logout-btn'), menuButtons = document.querySelectorAll('.menu-btn'), backButtons = document.querySelectorAll('.back-btn');
@@ -39,61 +40,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ЛОГИКА "НАЧАТЬ СОТРУДНИЧЕСТВО"
     function renderCityButtons() { if (!cityListContainer) return; const cities = ["Павлодар", "Экибастуз", "Усть-Каменогорск"]; cityListContainer.innerHTML = ''; cities.forEach(city => { const button = document.createElement('button'); button.className = 'menu-btn'; button.textContent = city; button.addEventListener('click', () => renderLocationsForCity(city)); cityListContainer.appendChild(button); }); }
-    function renderLocationsForCity(cityName) { if (!locationsListContainer || !locationsHeader) return; locationsHeader.textContent = `Точки в г. ${cityName}`; locationsListContainer.innerHTML = '<div class="spinner"></div>'; showScreen('locations-screen'); db.collection('locations').where('city', '==', cityName).get().then(snapshot => { locationsListContainer.innerHTML = ''; if (snapshot.empty) { locationsListContainer.innerHTML = '<p>Нет доступных точек.</p>'; return; } snapshot.forEach(doc => { const point = doc.data(); const li = document.createElement('li'); li.className = 'location-item'; li.innerHTML = `<strong>${point.name}</strong><small>${point.address}</small>`; li.addEventListener('click', () => openChecklistFor(point)); locationsListContainer.appendChild(li); }); }).catch(error => { console.error("Ошибка: ", error); locationsListContainer.innerHTML = '<p>Не удалось загрузить точки.</p>'; }); }
-
-    // =================================================================
-    // НОВЫЙ КОД: ЛОГИКА ЧЕК-ЛИСТА
-    // =================================================================
-    function openChecklistFor(pointData) {
-        if (!checklistAddress || !checklistDate || !checklistForm) return;
-        currentChecklistPoint = pointData;
-        checklistAddress.textContent = pointData.address;
-        checklistDate.textContent = new Date().toLocaleString('ru-RU');
-        checklistForm.reset();
-        showScreen('checklist-screen');
-    }
-    
-    if (checklistForm) {
-        checklistForm.addEventListener('submit', e => {
-            e.preventDefault();
-            const user = auth.currentUser;
-            if (!user) return alert('Ошибка: вы не авторизованы.');
-            
-            const reportData = {
-                userId: user.uid, userEmail: user.email,
-                pointName: currentChecklistPoint.name, pointAddress: currentChecklistPoint.address,
-                checkDate: new Date(),
-                status: 'pending', // Статус "на проверке"
-                answers: {
-                    q1_appearance: document.getElementById('checklist-q1-appearance').value,
-                    q2_cleanliness: document.getElementById('checklist-q2-cleanliness').value,
-                    q3_greeting: document.getElementById('checklist-q3-greeting').value,
-                    q4_upsell: document.getElementById('checklist-q4-upsell').value,
-                    q5_actions: document.getElementById('checklist-q5-actions').value,
-                    q6_handout: document.getElementById('checklist-q6-handout').value,
-                    q7_order_eval: document.getElementById('checklist-q7-order-eval').value,
-                    q8_food_rating: document.getElementById('checklist-q8-food-rating').value,
-                    q9_comments: document.getElementById('checklist-q9-comments').value,
-                }
-            };
-            
-            db.collection('reports').add(reportData).then(() => {
-                alert('Спасибо за ваш отчёт ✅ На проверку отчёта уходит до 12 часов (будние дни).');
-                showScreen('main-menu-screen');
-            }).catch(error => {
-                console.error("Ошибка при отправке отчета: ", error);
-                alert('Не удалось отправить отчет. Пожалуйста, попробуйте еще раз.');
-            });
-        });
-    }
-
-    // ГЛАВНЫЙ КОНТРОЛЛЕР
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            showScreen('main-menu-screen');
-            renderCityButtons();
-        } else {
-            showScreen('auth-screen');
-        }
-    });
-});
+    function renderLocationsForCity(cityName) {
+        if (!locationsListContainer || !locationsHeader) return;
+        locationsHeader.textContent = `Точки в г. ${cityName}`;
+        locationsListContainer.innerHTML = '<div class="spinner"></div>';
+        showScreen('locations-screen');
+        db.collection('locations').where('city', '==', cityName).get().then(snapshot => {
+            locationsListContainer.innerHTML = '';
+            if (snapshot.empty) { locationsListContainer.innerHTML = '<p>Нет доступных точек.</p>'; return; }
+            snapshot.forEach(doc => {
+                const point = doc.data();
+                const li = document.createElement('li');
+                li.className = 'location-item';
+                li.innerHTML = `<strong>${point.name}</strong><small>${point.address}</small>`;
+                // =================================================
+                // ИСПРАВЛЕНИЕ ЗДЕСЬ: Убираем alert, вызываем функцию
+                // =================================================
+                li.addEventListener('click', () => openChecklistFor(point));
+                locati
