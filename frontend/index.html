@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Тайный агент BURЖУЙ</title>
-    <!-- ПОДКЛЮЧАЕМ ИКОНКИ FONT AWESOME -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -15,17 +14,52 @@
         
         <div id="loader" class="screen active"><div class="spinner"></div></div>
 
-        <!-- ЭКРАН АВТОРИЗАЦИИ (дизайн обновится автоматически) -->
+        <!-- НОВЫЙ ЭКРАН АВТОРИЗАЦИИ -->
         <div id="auth-screen" class="screen">
             <div class="auth-container">
-                <div id="login-view"><h2>Вход</h2><form id="login-form"><input type="email" id="login-email" placeholder="Email" required><input type="password" id="login-password" placeholder="Пароль" required><button type="submit" class="btn-primary">Войти</button></form><p class="auth-toggle">Нет аккаунта? <a href="#" id="show-register">Регистрация</a></p></div>
-                <div id="register-view" style="display: none;"><h2>Регистрация</h2><form id="register-form"><input type="text" id="register-name" placeholder="Имя" required><input type="email" id="register-email" placeholder="Email (будет вашим логином)" required><input type="tel" id="register-phone" placeholder="Номер телефона" required><input type="password" id="register-password" placeholder="Пароль" required><button type="submit" class="btn-primary">Зарегистрироваться</button></form><p class="auth-toggle">Уже есть аккаунт? <a href="#" id="show-login">Войти</a></p></div>
+                <!-- Шаг 1: Ввод номера телефона -->
+                <div id="phone-view">
+                    <h2>Вход или Регистрация</h2>
+                    <p class="auth-toggle" style="margin-bottom: 20px; color: var(--text-secondary);">Введите ваш номер телефона для входа или создания нового аккаунта.</p>
+                    <form id="phone-form">
+                        <div class="form-group">
+                            <input type="tel" id="phone-input" placeholder="+7 (999) 999-99-99" required>
+                        </div>
+                        <button type="submit" id="send-code-btn" class="btn-primary">Получить код</button>
+                    </form>
+                </div>
+                <!-- Шаг 2: Ввод СМС-кода -->
+                <div id="code-view" style="display: none;">
+                    <h2>Подтверждение</h2>
+                    <p class="auth-toggle" style="margin-bottom: 20px; color: var(--text-secondary);">Мы отправили СМС-код на ваш номер. Введите его ниже.</p>
+                    <form id="code-form">
+                        <div class="form-group">
+                            <input type="text" id="code-input" placeholder="Код из СМС" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Войти</button>
+                    </form>
+                </div>
             </div>
         </div>
 
-        <!-- НОВЫЙ ГЛАВНЫЙ ЭКРАН - ДАШБОРД -->
+        <!-- ЭКРАН ЗАПОЛНЕНИЯ ПРОФИЛЯ ДЛЯ НОВЫХ ПОЛЬЗОВАТЕЛЕЙ -->
+        <div id="profile-setup-screen" class="screen">
+            <div class="auth-container">
+                <h2>Завершение регистрации</h2>
+                <p class="auth-toggle" style="margin-bottom: 20px; color: var(--text-secondary);">Пожалуйста, укажите ваше имя и фамилию.</p>
+                <form id="profile-setup-form">
+                    <div class="form-group">
+                        <label>Имя и Фамилия</label>
+                        <input type="text" id="profile-name-input" placeholder="Иван Иванов" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Сохранить и войти</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Дашборд и остальные экраны (остаются прежними) -->
         <div id="main-menu-screen" class="screen">
-            <div class="dashboard-header">
+             <div class="dashboard-header">
                 <div class="avatar">Б</div>
                 <h2 id="user-name-display">BURЖУЙ</h2>
                 <p>Тайный агент</p>
@@ -49,18 +83,18 @@
                 <button id="logout-btn">Выйти из аккаунта</button>
             </div>
         </div>
-
-        <!-- ОСТАЛЬНЫЕ ЭКРАНЫ -->
+        
+        <!-- Остальные экраны остаются без изменений в структуре -->
         <div id="cooperation-screen" class="screen"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button></header><div class="content"><div id="city-list" class="menu-list"></div></div></div>
-        <div id="locations-screen" class="screen"><header><button class="back-btn" data-target="cooperation-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2 id="locations-header">Точки в городе</h2></header><div class="content scrollable"><ul id="locations-list" class="locations-list"></ul></div></div>
-        <div id="checklist-screen" class="screen"><header><button class="back-btn" data-target="locations-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Чек-лист</h2></header><div class="content scrollable"><form id="checklist-form"> <p><strong>Адрес:</strong> <span id="checklist-address"></span></p> <p><strong>Дата:</strong> <span id="checklist-date"></span></p> <div class="form-group"><label>Чистота и внешний вид</label><textarea id="checklist-q1-appearance" required></textarea></div> <div class="form-group"><label>Чистота внутри</label><textarea id="checklist-q2-cleanliness" required></textarea></div> <div class="form-group"><label>Приветствие и поведение</label><textarea id="checklist-q3-greeting" required></textarea></div> <div class="form-group"><label>Предложение дополнений</label><textarea id="checklist-q4-upsell" required></textarea></div> <div class="form-group"><label>Действия после заказа</label><textarea id="checklist-q5-actions" required></textarea></div> <div class="form-group"><label>Выдача заказа</label><textarea id="checklist-q6-handout" required></textarea></div> <div class="form-group"><label>Оценка заказа</label><textarea id="checklist-q7-order-eval" required></textarea></div> <div class="form-group"><label>Оценка блюда №1 (1–5)</label><input type="number" id="checklist-q8-food-rating" min="1" max="5" required></div> <div class="form-group"><label>Дополнительные замечания</label><textarea id="checklist-q9-comments"></textarea></div> <div class="form-group"><label>Прикрепите фото</label><input type="file" id="checklist-photos" multiple accept="image/*"></div> <button type="submit" class="btn-primary">Отправить отчёт</button> </form></div></div>
         <div id="history-screen" class="screen"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>История проверок</h2></header><div class="content scrollable"><ul id="history-list" class="locations-list"></ul></div></div>
         <div id="instruction-screen" class="screen"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Инструкция</h2></header><div class="content scrollable"><p>Здесь будет текст инструкции...</p></div></div>
         <div id="admin-screen" class="screen"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Все отчеты</h2></header><div class="content scrollable"><ul id="admin-reports-list" class="locations-list"></ul></div></div>
         <!-- и так далее для всех остальных экранов... -->
     </div>
+    
+    <!-- Невидимый элемент для reCAPTCHA от Firebase. Он должен быть в HTML. -->
+    <div id="recaptcha-container"></div>
 
-    <!-- Скрипты Firebase и приложения -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
