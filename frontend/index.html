@@ -12,7 +12,8 @@
 <body>
     <div id="app-container">
         <div id="loader" class="screen active"><div class="spinner"></div></div>
-        <!-- ЭКРАНЫ АВТОРИЗАЦИИ -->
+        
+        <!-- ЭКРАНЫ АВТОРИЗАЦИИ (без изменений) -->
         <div id="auth-screen" class="screen">
             <div class="auth-container">
                 <div id="phone-view">
@@ -31,18 +32,19 @@
                 <form id="profile-setup-form"><div class="form-group"><label>Имя и Фамилия</label><input type="text" id="profile-name-input" placeholder="Иван Иванов" required></div><button type="submit" class="btn-primary">Сохранить и войти</button></form>
             </div>
         </div>
+        
         <!-- ДАШБОРД -->
         <div id="main-menu-screen" class="screen">
-            <div class="dashboard-header"><div class="avatar">Б</div><h2 id="user-name-display">BURЖУЙ</h2><p>Тайный агент</p></div>
-            <div class="content">
+            <!-- ИСПРАВЛЕНИЕ: Добавляем класс scrollable, чтобы весь экран можно было прокручивать -->
+            <div class="content scrollable">
+                <div class="dashboard-header"><div class="avatar">Б</div><h2 id="user-name-display">BURЖУЙ</h2><p>Тайный агент</p></div>
                 <div id="dashboard-info-container"></div>
                 <ul class="menu-list">
                     <li class="menu-list-item menu-btn" data-target="cooperation-screen">
                         <i class="icon fa-solid fa-calendar-check"></i>
                         <div><strong>Записаться на проверку</strong><small>Выбрать доступную точку и время</small></div>
                     </li>
-                    <!-- ИСПРАВЛЕНИЕ: Добавляем ID для кнопки истории -->
-                    <li id="history-btn" class="menu-list-item menu-btn" data-target="history-screen">
+                    <li class="menu-list-item menu-btn" data-target="history-screen">
                         <i class="icon fa-solid fa-list-check"></i>
                         <div><strong>История проверок</strong><small>Посмотреть статусы отчетов</small></div>
                     </li>
@@ -58,7 +60,8 @@
                 <button id="logout-btn">Выйти из аккаунта</button>
             </div>
         </div>
-        <!-- ПАНЕЛЬ АДМИНИСТРАТОРА -->
+
+        <!-- Остальные экраны (уже имеют scrollable, где нужно) -->
         <div id="admin-schedule-screen" class="screen">
             <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Управление графиком</h2></header>
             <div class="content scrollable">
@@ -75,7 +78,6 @@
                 <div id="schedule-list"></div>
             </div>
         </div>
-        <!-- ЭКРАНЫ ЗАПИСИ И ЧЕК-ЛИСТА -->
         <div id="cooperation-screen" class="screen">
             <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Доступные проверки</h2></header>
             <div class="content scrollable">
@@ -110,12 +112,13 @@
                 </form>
             </div>
         </div>
-        <!-- ЭКРАН ИСТОРИИ -->
         <div id="history-screen" class="screen">
             <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>История проверок</h2></header>
             <div class="content scrollable"><ul id="history-list" class="menu-list"></ul></div>
         </div>
-        <div id="instruction-screen" class="screen"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Инструкция</h2></header><div class="content scrollable"><p>Здесь будет текст инструкции...</p></div></div>
+        <div id="instruction-screen" class="screen">
+            <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Инструкция</h2></header>
+            <div class="content scrollable"><p>Здесь будет текст инструкции...</p></div></div>
     </div>
     <div id="recaptcha-container"></div>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
