@@ -51,7 +51,7 @@
         <!-- АДМИН-ПАНЕЛЬ -->
         <div id="admin-hub-screen" class="screen">
             <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Центр Управления</h2></header>
-            <div class="content"><div id="admin-stats-container"></div><ul class="menu-list"><li class="menu-list-item admin-hub-btn" data-target="admin-schedule-screen"><i class="icon fa-solid fa-calendar-days"></i><div><strong>Управление графиком</strong><small>Создать и удалить проверки</small></div></li><li class="menu-list-item admin-hub-btn" data-target="admin-reports-screen"><i class="icon fa-solid fa-file-signature"></i><div><strong>Просмотр отчетов</strong><small>Проверить и утвердить отчеты</small></div></li><li class="menu-list-item admin-hub-btn" data-target="admin-users-screen"><i class="icon fa-solid fa-users"></i><div><strong>Управление пользователями</strong><small>Просмотр и смена ролей</small></div></li></ul></div>
+            <div class="content scrollable"><div id="admin-stats-container"></div><ul class="menu-list"><li class="menu-list-item admin-hub-btn" data-target="admin-schedule-screen"><i class="icon fa-solid fa-calendar-days"></i><div><strong>Управление графиком</strong><small>Создать и удалить проверки</small></div></li><li class="menu-list-item admin-hub-btn" data-target="admin-reports-screen"><i class="icon fa-solid fa-file-signature"></i><div><strong>Просмотр отчетов</strong><small>Проверить и утвердить отчеты</small></div></li><li class="menu-list-item admin-hub-btn" data-target="admin-users-screen"><i class="icon fa-solid fa-users"></i><div><strong>Управление пользователями</strong><small>Просмотр и смена ролей</small></div></li></ul></div>
         </div>
         <div id="admin-schedule-screen" class="screen">
             <header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Управление графиком</h2></header>
@@ -94,17 +94,7 @@
     </div>
     
     <!-- МОДАЛЬНОЕ ОКНО -->
-    <div id="modal-container" class="modal-hidden">
-        <div id="modal-content">
-            <h3 id="modal-title">Подтверждение</h3>
-            <p id="modal-text">Вы уверены?</p>
-            <div id="modal-buttons">
-                <button id="modal-confirm-btn" class="btn-primary">OK</button>
-                <button id="modal-cancel-btn" class="btn-secondary">Отмена</button>
-            </div>
-        </div>
-    </div>
-
+    <div id="modal-container" class="modal-hidden"><div id="modal-content"><h3 id="modal-title">Подтверждение</h3><p id="modal-text">Вы уверены?</p><div id="modal-buttons"><button id="modal-confirm-btn" class="btn-primary">OK</button><button id="modal-cancel-btn" class="btn-secondary">Отмена</button></div></div></div>
     <div id="recaptcha-container"></div>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
