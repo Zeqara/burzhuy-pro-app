@@ -36,19 +36,23 @@
             <div class="dashboard-header"><div class="avatar">Б</div><h2 id="user-name-display">BURЖУЙ</h2><p>Тайный агент</p></div>
             <div class="content">
                 <div id="dashboard-info-container"></div>
-                <!-- ИЗМЕНЕНИЕ: Даем ID самому списку, чтобы добавлять кнопку админа прямо в него -->
-                <ul id="main-menu-list" class="menu-list">
+                <ul class="menu-list">
                     <li class="menu-list-item menu-btn" data-target="cooperation-screen">
                         <i class="icon fa-solid fa-calendar-check"></i>
                         <div><strong>Записаться на проверку</strong><small>Выбрать доступную точку и время</small></div>
                     </li>
-                    <li class="menu-list-item menu-btn" data-target="history-screen">
+                    <!-- ИСПРАВЛЕНИЕ: Добавляем ID для кнопки истории -->
+                    <li id="history-btn" class="menu-list-item menu-btn" data-target="history-screen">
                         <i class="icon fa-solid fa-list-check"></i>
                         <div><strong>История проверок</strong><small>Посмотреть статусы отчетов</small></div>
                     </li>
                     <li class="menu-list-item menu-btn" data-target="instruction-screen">
                         <i class="icon fa-solid fa-book-open"></i>
                         <div><strong>Инструкция</strong><small>Правила и требования</small></div>
+                    </li>
+                    <li id="admin-menu-btn" class="menu-list-item" style="display: none;">
+                        <i class="icon fa-solid fa-user-shield"></i>
+                        <div><strong>Панель Администратора</strong><small>Управление графиком проверок</small></div>
                     </li>
                 </ul>
                 <button id="logout-btn">Выйти из аккаунта</button>
@@ -71,7 +75,7 @@
                 <div id="schedule-list"></div>
             </div>
         </div>
-        <!-- ЭКРАН ЗАПИСИ И ВЫБОРА ВРЕМЕНИ -->
+        <!-- ЭКРАНЫ ЗАПИСИ И ЧЕК-ЛИСТА -->
         <div id="cooperation-screen" class="screen">
             <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Доступные проверки</h2></header>
             <div class="content scrollable">
@@ -87,7 +91,6 @@
                 <h3 id="slot-location-title" style="text-align: center; margin-bottom: 20px;"></h3><ul id="slots-list" class="menu-list"></ul>
             </div>
         </div>
-        <!-- ЭКРАН ЧЕК-ЛИСТА -->
         <div id="checklist-screen" class="screen">
              <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Чек-лист</h2></header>
             <div class="content scrollable">
@@ -107,8 +110,11 @@
                 </form>
             </div>
         </div>
-        <!-- Остальные экраны -->
-        <div id="history-screen" class="screen"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>История проверок</h2></header><div class="content scrollable"><ul id="history-list" class="locations-list"></ul></div></div>
+        <!-- ЭКРАН ИСТОРИИ -->
+        <div id="history-screen" class="screen">
+            <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>История проверок</h2></header>
+            <div class="content scrollable"><ul id="history-list" class="menu-list"></ul></div>
+        </div>
         <div id="instruction-screen" class="screen"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Инструкция</h2></header><div class="content scrollable"><p>Здесь будет текст инструкции...</p></div></div>
     </div>
     <div id="recaptcha-container"></div>
