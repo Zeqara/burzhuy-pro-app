@@ -325,4 +325,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }));
     const backButtons = document.querySelectorAll('.back-btn');
     backButtons.forEach(b => b.addEventListener('click', () => showScreen(b.dataset.target)));
-});```
+});
