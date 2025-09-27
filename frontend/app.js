@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendCodeBtn = document.getElementById('send-code-btn');
     const phoneView = document.getElementById('phone-view'), codeView = document.getElementById('code-view');
     const userNameDisplay = document.getElementById('user-name-display'), logoutBtn = document.getElementById('logout-btn');
-    const adminMenuBtn = document.getElementById('admin-menu-btn'); // <-- Находим новую кнопку
+    const adminMenuBtn = document.getElementById('admin-menu-btn');
     const scheduleForm = document.getElementById('schedule-form'), scheduleLocationSelect = document.getElementById('schedule-location-select'), scheduleDateInput = document.getElementById('schedule-date-input'), timeSlotsContainer = document.getElementById('time-slots-container'), addSlotBtn = document.getElementById('add-slot-btn'), scheduleUrgentCheckbox = document.getElementById('schedule-urgent-checkbox'), scheduleList = document.getElementById('schedule-list');
     const scheduleCardsList = document.getElementById('schedule-cards-list'), noSchedulesView = document.getElementById('no-schedules-view'), lottieAnimationContainer = document.getElementById('lottie-animation'), slotsList = document.getElementById('slots-list'), slotLocationTitle = document.getElementById('slot-location-title');
     const dashboardInfoContainer = document.getElementById('dashboard-info-container');
@@ -77,10 +77,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (doc.exists) {
                     const userData = doc.data();
                     userNameDisplay.textContent = userData.fullName;
-                    if (userData.role === 'admin') {
-                        adminMenuBtn.style.display = 'flex';
-                    } else {
-                        adminMenuBtn.style.display = 'none';
+                    if (adminMenuBtn) {
+                        if (userData.role === 'admin') {
+                            adminMenuBtn.style.display = 'flex';
+                        } else {
+                            adminMenuBtn.style.display = 'none';
+                        }
                     }
                     loadUserDashboard(user.uid);
                     showScreen('main-menu-screen');
@@ -89,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         } else {
-            adminMenuBtn.style.display = 'none'; // Скрываем кнопку при выходе
+            if(adminMenuBtn) adminMenuBtn.style.display = 'none';
             if(phoneView && codeView) { phoneView.style.display = 'block'; codeView.style.display = 'none'; }
             showScreen('auth-screen');
         }
@@ -323,4 +325,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }));
     const backButtons = document.querySelectorAll('.back-btn');
     backButtons.forEach(b => b.addEventListener('click', () => showScreen(b.dataset.target)));
-});
+});```
