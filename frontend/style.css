@@ -54,3 +54,17 @@ select { -webkit-appearance: none; -moz-appearance: none; appearance: none; back
 .delete-schedule-btn { background-color: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; transition: background-color 0.2s; }
 .delete-schedule-btn:hover { background-color: #cc0000; }
 .auth-toggle { color: var(--text-secondary); text-align: center; margin-bottom: 20px; }
+.history-item .status-indicator, .report-item .status-indicator { width: 10px; height: 10px; border-radius: 50%; margin-right: 15px; background-color: var(--border-color); flex-shrink: 0; }
+.history-item .status-indicator.pending, .report-item .status-indicator.pending { background-color: var(--status-pending); }
+.history-item .status-indicator.approved, .report-item .status-indicator.approved { background-color: var(--status-approved); }
+.history-item .status-indicator.rejected, .report-item .status-indicator.rejected { background-color: var(--status-rejected); }
+#admin-stats-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+.stat-card { background-color: var(--surface-color); padding: 20px; border-radius: 12px; text-align: center; }
+.stat-card strong { font-size: 28px; display: block; color: var(--primary-color-start); }
+.stat-card small { color: var(--text-secondary); }
+.user-item { justify-content: space-between; }
+.role-tag { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+.role-tag.admin { background-color: var(--primary-color-start); color: white; }
+.role-tag.guest { background-color: var(--border-color); color: var(--text-secondary); }
+.report-details p { background-color: var(--surface-color); padding: 10px; border-radius: 5px; border-left: 3px solid var(--primary-color-start); }
+hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
