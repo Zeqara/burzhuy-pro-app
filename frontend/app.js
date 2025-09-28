@@ -92,7 +92,40 @@ document.addEventListener('DOMContentLoaded', () => {
     function deleteSchedule(scheduleId) { showModal('Удаление', 'Удалить эту проверку и все связанные с ней слоты?', 'confirm', async (confirmed) => { if(confirmed) { try { await db.collection('schedule').doc(scheduleId).delete(); const slotsSnapshot = await db.collection('timeSlots').where('scheduleId', '==', scheduleId).get(); const batch = db.batch(); slotsSnapshot.forEach(doc => batch.delete(doc.ref)); await batch.commit(); showModal('Успешно', 'Проверка удалена.'); renderSchedules(); } catch (error) { showModal('Ошибка', 'Не удалось удалить проверку.'); } } }); }
     async function loadAdminStats() { const statsContainer = document.getElementById('admin-stats-container'); if (!statsContainer) return; const pendingReports = await db.collection('reports').where('status', '==', 'pending').get(); const totalUsers = await db.collection('users').get(); statsContainer.innerHTML = `<div class="stat-card"><strong>${pendingReports.size}</strong><small>Отчетов на проверке</small></div><div class="stat-card"><strong>${totalUsers.size}</strong><small>Всего пользователей</small></div>`; }
     async function renderAllReports() { if (!adminReportsList) return; adminReportsList.innerHTML = '<div class="spinner"></div>'; const snapshot = await db.collection('reports').orderBy('checkDate', 'desc').get(); if (snapshot.empty) { adminReportsList.innerHTML = '<p>Отчетов пока нет.</p>'; return; } let html = ''; const userIds = [...new Set(snapshot.docs.map(doc => doc.data().userId))]; if (userIds.length > 0) { const userPromises = userIds.map(id => db.collection('users').doc(id).get()); const userDocs = await Promise.all(userPromises); const usersMap = new Map(userDocs.map(d => [d.id, d.data()])); snapshot.forEach(doc => { const r = doc.data(); const user = usersMap.get(r.userId); const date = r.checkDate.toDate().toLocaleDateString('ru-RU'); const statusText = { pending: 'в ожидании', approved: 'принят', rejected: 'отклонен' }[r.status] || r.status; html += `<li class="menu-list-item report-item" data-id="${doc.id}"><div class="status-indicator ${r.status}"></div><div><strong>${r.locationName.replace(/^Б\d+\s*/, '')}</strong><small>${user?.fullName || 'Агент'} - ${date} - ${statusText}</small></div><button class="delete-report-btn" data-id="${doc.id}">Удалить</button></li>`; }); } adminReportsList.innerHTML = html; adminReportsList.querySelectorAll('.report-item').forEach(item => item.addEventListener('click', (e) => { if (e.target.classList.contains('delete-report-btn')) return; openAdminReportDetail(item.dataset.id); })); adminReportsList.querySelectorAll('.delete-report-btn').forEach(button => button.addEventListener('click', (e) => deleteReport(e.target.dataset.id))); }
-    async function openAdminReportDetail(reportId) { currentReportId = reportId; showScreen('admin-report-detail-screen'); const doc = await db.collection('reports').doc(reportId).get(); if (!doc.exists) return; const report = doc.data(); const userDoc = await db.collection('users').doc(report.userId).get(); const statusText = { pending: 'в ожидании', approved: 'принят', rejected: 'отклонен' }[report.status] || report.status; adminDetailAddress.textContent = report.locationAddress; adminDetailUser.textContent = userDoc.data()?.fullName || 'Агент'; adminDetailDate.textContent = report.checkDate.toDate().toLocaleString('ru-RU'); adminDetailStatus.textContent = statusText; Object.keys(adminDetailAnswers).forEach((key, i) => { const answerKey = 'q' + (i + 1) + '_' + Object.keys(report.answers)[i].split('_')[1]; adminDetailAnswers[key].textContent = report.answers[answerKey] || '—'; }); adminDetailPhotos.innerHTML = report.imageUrls && report.imageUrls.length > 0 ? report.imageUrls.map(url => `<a href="${url}" target="_blank"><img src="${url}" style="max-width: 100%; border-radius: 8px; margin-top: 10px;"></a>`).join('') : '<p>Фото не прикреплены.</p>'; }
+    
+    async function openAdminReportDetail(reportId) {
+        currentReportId = reportId;
+        showScreen('admin-report-detail-screen');
+        const doc = await db.collection('reports').doc(reportId).get();
+        if (!doc.exists) return;
+    
+        const report = doc.data();
+        const userDoc = await db.collection('users').doc(report.userId).get();
+        const statusText = { pending: 'в ожидании', approved: 'принят', rejected: 'отклонен' }[report.status] || report.status;
+    
+        adminDetailAddress.textContent = report.locationAddress;
+        adminDetailUser.textContent = userDoc.data()?.fullName || 'Агент';
+        adminDetailDate.textContent = report.checkDate.toDate().toLocaleString('ru-RU');
+        adminDetailStatus.textContent = statusText;
+    
+        // --- ИСПРАВЛЕННЫЙ БЛОК ---
+        const answers = report.answers || {};
+        adminDetailAnswers.q1.textContent = answers.q1_appearance || '—';
+        adminDetailAnswers.q2.textContent = answers.q2_cleanliness || '—';
+        adminDetailAnswers.q3.textContent = answers.q3_greeting || '—';
+        adminDetailAnswers.q4.textContent = answers.q4_upsell || '—';
+        adminDetailAnswers.q5.textContent = answers.q5_actions || '—';
+        adminDetailAnswers.q6.textContent = answers.q6_handout || '—';
+        adminDetailAnswers.q7.textContent = answers.q7_order_eval || '—';
+        adminDetailAnswers.q8.textContent = answers.q8_food_rating || '—';
+        adminDetailAnswers.q9.textContent = answers.q9_comments || '—';
+        // --- КОНЕЦ ИСПРАВЛЕННОГО БЛОКА ---
+    
+        adminDetailPhotos.innerHTML = report.imageUrls && report.imageUrls.length > 0
+            ? report.imageUrls.map(url => `<a href="${url}" target="_blank"><img src="${url}" style="max-width: 100%; border-radius: 8px; margin-top: 10px;"></a>`).join('')
+            : '<p>Фото не прикреплены.</p>';
+    }
+
     function updateReportStatus(newStatus) { showModal('Подтверждение', `Вы уверены?`, 'confirm', async (confirmed) => { if(confirmed) { if (!currentReportId) return; await db.collection('reports').doc(currentReportId).update({ status: newStatus }); showModal('Успешно', `Статус отчета изменен.`); renderAllReports(); loadAdminStats(); showScreen('admin-reports-screen'); } }); }
     document.getElementById('admin-action-approve')?.addEventListener('click', () => updateReportStatus('approved')); document.getElementById('admin-action-reject')?.addEventListener('click', () => updateReportStatus('rejected'));
     
@@ -100,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showModal('Удаление', 'Вы уверены, что хотите безвозвратно удалить этот отчет и все прикрепленные к нему фотографии?', 'confirm', async (confirmed) => {
             if (confirmed) {
                 try {
-                    // Получаем документ отчета перед удалением, чтобы достать ссылки на фото
                     const reportRef = db.collection('reports').doc(reportId);
                     const reportDoc = await reportRef.get();
     
@@ -108,24 +140,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         const reportData = reportDoc.data();
                         const imageUrls = reportData.imageUrls;
     
-                        // Если есть фотографии, создаем промисы на их удаление
                         if (imageUrls && imageUrls.length > 0) {
                             const deletePromises = imageUrls.map(url => {
-                                // Получаем ссылку на файл в Storage по его URL
                                 const fileRef = storage.refFromURL(url);
-                                // Возвращаем промис удаления
                                 return fileRef.delete();
                             });
-                            // Ждем, пока все фотографии удалятся
                             await Promise.all(deletePromises);
                         }
                     }
     
-                    // Теперь удаляем сам документ отчета из Firestore
                     await reportRef.delete();
-    
                     showModal('Успешно', 'Отчет и все фотографии были удалены.');
-                    renderAllReports(); // Обновляем список отчетов
+                    renderAllReports();
     
                 } catch (e) {
                     console.error("Ошибка при удалении отчета: ", e);
