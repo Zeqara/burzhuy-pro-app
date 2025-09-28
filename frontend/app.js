@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const checklistForm = document.getElementById('checklist-form'), checklistAddress = document.getElementById('checklist-address'), checklistDate = document.getElementById('checklist-date');
     const historyList = document.getElementById('history-list');
     const adminReportsList = document.getElementById('admin-reports-list'), adminUsersList = document.getElementById('admin-users-list');
-    const adminDetailAddress = document.getElementById('admin-detail-address'), adminDetailUser = document.getElementById('admin-detail-user'), adminDetailDate = document.getElementById('admin-detail-date'), adminDetailStatus = document.getElementById('admin-detail-status'), adminDetailPhotos = document.getElementById('admin-detail-photos');
+    const adminDetailAddress = document.getElementById('admin-detail-address'), adminDetailUser = document.getElementById('admin-detail-user'), adminDetailDate = document.getElementById('admin-detail-date'), adminDetailStatus = document.getElementById('admin-detail-status'), adminDetailPhotos = document.getElementById('admin-detail-photos'), adminDetailRejectionComment = document.getElementById('admin-detail-rejection-comment-container');
     const adminDetailAnswers = { q1: document.getElementById('admin-detail-q1'), q2: document.getElementById('admin-detail-q2'), q3: document.getElementById('admin-detail-q3'), q4: document.getElementById('admin-detail-q4'), q5: document.getElementById('admin-detail-q5'), q6: document.getElementById('admin-detail-q6'), q7: document.getElementById('admin-detail-q7'), q8: document.getElementById('admin-detail-q8'), q9: document.getElementById('admin-detail-q9'), };
     
     const recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
@@ -136,6 +136,14 @@ document.addEventListener('DOMContentLoaded', () => {
         adminDetailUser.textContent = userDoc.data()?.fullName || 'Агент';
         adminDetailDate.textContent = report.checkDate.toDate().toLocaleString('ru-RU');
         adminDetailStatus.textContent = statusText;
+
+        if (report.status === 'rejected' && report.rejectionComment) {
+            adminDetailRejectionComment.style.display = 'block';
+            adminDetailRejectionComment.innerHTML = `<h4>Причина отклонения:</h4><p>${report.rejectionComment}</p>`;
+        } else {
+            adminDetailRejectionComment.style.display = 'none';
+        }
+
         const answers = report.answers || {};
         adminDetailAnswers.q1.textContent = answers.q1_appearance || '—';
         adminDetailAnswers.q2.textContent = answers.q2_cleanliness || '—';
@@ -146,11 +154,57 @@ document.addEventListener('DOMContentLoaded', () => {
         adminDetailAnswers.q7.textContent = answers.q7_order_eval || '—';
         adminDetailAnswers.q8.textContent = answers.q8_food_rating || '—';
         adminDetailAnswers.q9.textContent = answers.q9_comments || '—';
-        adminDetailPhotos.innerHTML = report.imageUrls && report.imageUrls.length > 0 ? report.imageUrls.map(url => `<a href="${url}" target="_blank"><img src="${url}" style="max-width: 100%; border-radius: 8px; margin-top: 10px;"></a>`).join('') : '<p>Фото не прикреплены.</p>';
+        adminDetailPhotos.innerHTML = report.imageUrls && report.imageUrls.length > 0 ? report.imageUrls.map(url => `<a href="${url}" target="_blank"><img src="${url}"></a>`).join('') : '<p>Фото не прикреплены.</p>';
     }
 
-    function updateReportStatus(newStatus) { showModal('Подтверждение', `Вы уверены?`, 'confirm', async (confirmed) => { if(confirmed) { if (!currentReportId) return; await db.collection('reports').doc(currentReportId).update({ status: newStatus }); showModal('Успешно', `Статус отчета изменен.`); renderAllReports(); loadAdminStats(); showScreen('admin-reports-screen'); } }); }
-    document.getElementById('admin-action-approve')?.addEventListener('click', () => updateReportStatus('approved')); document.getElementById('admin-action-reject')?.addEventListener('click', () => updateReportStatus('rejected'));
+    function updateReportStatus(newStatus) {
+        if (newStatus === 'rejected') {
+            const modal = document.getElementById('rejection-modal-container');
+            const confirmBtn = document.getElementById('rejection-modal-confirm-btn');
+            const cancelBtn = document.getElementById('rejection-modal-cancel-btn');
+            const commentInput = document.getElementById('rejection-comment-input');
+            commentInput.value = '';
+            modal.classList.remove('modal-hidden');
+
+            const confirmHandler = async () => {
+                const comment = commentInput.value.trim();
+                if (!comment) {
+                    showModal('Ошибка', 'Пожалуйста, укажите причину отклонения.');
+                    return;
+                }
+                await db.collection('reports').doc(currentReportId).update({ status: 'rejected', rejectionComment: comment });
+                cleanup();
+                showModal('Успешно', `Статус отчета изменен.`);
+                renderAllReports();
+                loadAdminStats();
+                showScreen('admin-reports-screen');
+            };
+
+            const cancelHandler = () => cleanup();
+            const cleanup = () => {
+                modal.classList.add('modal-hidden');
+                confirmBtn.removeEventListener('click', confirmHandler);
+                cancelBtn.removeEventListener('click', cancelHandler);
+            };
+
+            confirmBtn.addEventListener('click', confirmHandler);
+            cancelBtn.addEventListener('click', cancelHandler);
+        } else {
+            showModal('Подтверждение', `Вы уверены?`, 'confirm', async (confirmed) => {
+                if(confirmed) {
+                    if (!currentReportId) return;
+                    await db.collection('reports').doc(currentReportId).update({ status: newStatus, rejectionComment: null });
+                    showModal('Успешно', `Статус отчета изменен.`);
+                    renderAllReports();
+                    loadAdminStats();
+                    showScreen('admin-reports-screen');
+                }
+            });
+        }
+    }
+    
+    document.getElementById('admin-action-approve')?.addEventListener('click', () => updateReportStatus('approved'));
+    document.getElementById('admin-action-reject')?.addEventListener('click', () => updateReportStatus('rejected'));
     
     async function deleteReport(reportId) {
         showModal('Удаление', 'Вы уверены, что хотите безвозвратно удалить этот отчет и все прикрепленные к нему фотографии?', 'confirm', async (confirmed) => {
@@ -188,7 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
         noSchedulesView.style.display = 'none';
         const user = auth.currentUser;
         if (!user) return;
-        
         const existingBookingSnapshot = await db.collection('timeSlots').where('bookedBy', '==', user.uid).where('status', '==', 'забронирован').get();
         if (!existingBookingSnapshot.empty) {
             scheduleCardsList.innerHTML = '';
@@ -197,14 +250,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (document.getElementById('lottie-animation-booked')) lottie.loadAnimation({ container: document.getElementById('lottie-animation-booked'), renderer: 'svg', loop: false, autoplay: true, path: 'https://assets10.lottiefiles.com/packages/lf20_u4j3xm6g.json' });
             return;
         }
-
         const now = new Date();
         now.setHours(0, 0, 0, 0);
         const snapshot = await db.collection('schedule').where('date', '>=', now).get();
         let schedules = [];
         snapshot.forEach(doc => schedules.push({ id: doc.id, ...doc.data() }));
         schedules.sort((a, b) => (a.isUrgent && !b.isUrgent) ? -1 : (!a.isUrgent && b.isUrgent) ? 1 : a.date.toMillis() - b.date.toMillis());
-
         if (schedules.length === 0) {
             scheduleCardsList.innerHTML = '';
             noSchedulesView.innerHTML = `<div id="lottie-animation"></div><h3>Пока нет доступных проверок</h3><p>Отличная работа! Все задания выполнены.</p>`;
@@ -212,14 +263,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (document.getElementById('lottie-animation')) lottie.loadAnimation({ container: document.getElementById('lottie-animation'), renderer: 'svg', loop: false, autoplay: true, path: 'https://assets10.lottiefiles.com/packages/lf20_u4j3xm6g.json' });
             return;
         }
-
         const schedulesByCity = schedules.reduce((acc, schedule) => {
             const city = schedule.city || 'Другое';
             if (!acc[city]) acc[city] = [];
             acc[city].push(schedule);
             return acc;
         }, {});
-
         let cardsHTML = '';
         for (const city in schedulesByCity) {
             cardsHTML += `<h3 class="city-header">${city}</h3>`;
@@ -228,7 +277,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 cardsHTML += `<li class="menu-list-item schedule-card ${s.isUrgent ? 'urgent' : ''}" data-schedule-id="${s.id}" data-location-title="${s.locationName.replace(/^Б\d+\s*/, '')} (${date})"><i class="icon fa-solid ${s.isUrgent ? 'fa-fire' : 'fa-calendar-day'}"></i><div><strong>${s.locationName.replace(/^Б\d+\s*/, '')}</strong><small>${s.locationAddress} - <b>${date}</b></small></div></li>`;
             });
         }
-        
         scheduleCardsList.innerHTML = cardsHTML;
         document.querySelectorAll('.schedule-card').forEach(c => c.addEventListener('click', () => renderTimeSlots(c.dataset.scheduleId, c.dataset.locationTitle)));
     }
@@ -254,9 +302,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const report = doc.data();
             const date = report.checkDate.toDate().toLocaleDateString('ru-RU');
             const statusText = { pending: 'в ожидании', approved: 'принят', rejected: 'отклонен' }[report.status] || report.status;
-            historyHTML += `<li class="menu-list-item history-item"><div class="status-indicator ${report.status}"></div><div><strong>${report.locationName.replace(/^Б\d+\s*/, '')}</strong><small>Дата: ${date} - Статус: ${statusText}</small></div></li>`;
+            let commentHTML = '';
+            if (report.status === 'rejected' && report.rejectionComment) {
+                commentHTML = `<small class="rejection-comment"><b>Причина отклонения:</b> ${report.rejectionComment}</small>`;
+            }
+            historyHTML += `<li class="menu-list-item history-item"><div class="status-indicator ${report.status}"></div><div><strong>${report.locationName.replace(/^Б\d+\s*/, '')}</strong><small>Дата: ${date} - Статус: ${statusText}</small>${commentHTML}</div></li>`;
         });
-        // Исправленная строка:
         historyList.innerHTML = historyHTML;
     }
 
