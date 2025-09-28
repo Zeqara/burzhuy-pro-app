@@ -95,7 +95,46 @@ document.addEventListener('DOMContentLoaded', () => {
     async function openAdminReportDetail(reportId) { currentReportId = reportId; showScreen('admin-report-detail-screen'); const doc = await db.collection('reports').doc(reportId).get(); if (!doc.exists) return; const report = doc.data(); const userDoc = await db.collection('users').doc(report.userId).get(); const statusText = { pending: 'в ожидании', approved: 'принят', rejected: 'отклонен' }[report.status] || report.status; adminDetailAddress.textContent = report.locationAddress; adminDetailUser.textContent = userDoc.data()?.fullName || 'Агент'; adminDetailDate.textContent = report.checkDate.toDate().toLocaleString('ru-RU'); adminDetailStatus.textContent = statusText; Object.keys(adminDetailAnswers).forEach((key, i) => { const answerKey = 'q' + (i + 1) + '_' + Object.keys(report.answers)[i].split('_')[1]; adminDetailAnswers[key].textContent = report.answers[answerKey] || '—'; }); adminDetailPhotos.innerHTML = report.imageUrls && report.imageUrls.length > 0 ? report.imageUrls.map(url => `<a href="${url}" target="_blank"><img src="${url}" style="max-width: 100%; border-radius: 8px; margin-top: 10px;"></a>`).join('') : '<p>Фото не прикреплены.</p>'; }
     function updateReportStatus(newStatus) { showModal('Подтверждение', `Вы уверены?`, 'confirm', async (confirmed) => { if(confirmed) { if (!currentReportId) return; await db.collection('reports').doc(currentReportId).update({ status: newStatus }); showModal('Успешно', `Статус отчета изменен.`); renderAllReports(); loadAdminStats(); showScreen('admin-reports-screen'); } }); }
     document.getElementById('admin-action-approve')?.addEventListener('click', () => updateReportStatus('approved')); document.getElementById('admin-action-reject')?.addEventListener('click', () => updateReportStatus('rejected'));
-    function deleteReport(reportId) { showModal('Удаление', 'Вы уверены, что хотите безвозвратно удалить этот отчет?', 'confirm', async (confirmed) => { if(confirmed) { try { await db.collection('reports').doc(reportId).delete(); showModal('Успешно', 'Отчет удален.'); renderAllReports(); } catch (e) { showModal('Ошибка', 'Не удалось удалить отчет.'); } } }); }
+    
+    async function deleteReport(reportId) {
+        showModal('Удаление', 'Вы уверены, что хотите безвозвратно удалить этот отчет и все прикрепленные к нему фотографии?', 'confirm', async (confirmed) => {
+            if (confirmed) {
+                try {
+                    // Получаем документ отчета перед удалением, чтобы достать ссылки на фото
+                    const reportRef = db.collection('reports').doc(reportId);
+                    const reportDoc = await reportRef.get();
+    
+                    if (reportDoc.exists) {
+                        const reportData = reportDoc.data();
+                        const imageUrls = reportData.imageUrls;
+    
+                        // Если есть фотографии, создаем промисы на их удаление
+                        if (imageUrls && imageUrls.length > 0) {
+                            const deletePromises = imageUrls.map(url => {
+                                // Получаем ссылку на файл в Storage по его URL
+                                const fileRef = storage.refFromURL(url);
+                                // Возвращаем промис удаления
+                                return fileRef.delete();
+                            });
+                            // Ждем, пока все фотографии удалятся
+                            await Promise.all(deletePromises);
+                        }
+                    }
+    
+                    // Теперь удаляем сам документ отчета из Firestore
+                    await reportRef.delete();
+    
+                    showModal('Успешно', 'Отчет и все фотографии были удалены.');
+                    renderAllReports(); // Обновляем список отчетов
+    
+                } catch (e) {
+                    console.error("Ошибка при удалении отчета: ", e);
+                    showModal('Ошибка', 'Не удалось удалить отчет или его файлы.');
+                }
+            }
+        });
+    }
+
     async function renderAllUsers() { if (!adminUsersList) return; adminUsersList.innerHTML = '<div class="spinner"></div>'; const snapshot = await db.collection('users').get(); let html = ''; snapshot.forEach(doc => { const u = doc.data(); html += `<li class="menu-list-item user-item"><div><strong>${u.fullName}</strong><small>${u.phone}</small></div><button class="role-tag-btn" data-id="${doc.id}" data-role="${u.role}" data-name="${u.fullName}"><div class="role-tag ${u.role}">${u.role}</div></button></li>`; }); adminUsersList.innerHTML = html; adminUsersList.querySelectorAll('.role-tag-btn').forEach(button => button.addEventListener('click', (e) => { const currentTarget = e.currentTarget; toggleUserRole(currentTarget.dataset.id, currentTarget.dataset.role, currentTarget.dataset.name); })); }
     function toggleUserRole(userId, currentRole, name) { const newRole = currentRole === 'admin' ? 'guest' : 'admin'; showModal('Смена роли', `Сменить роль для "${name}" на "${newRole}"?`, 'confirm', async (confirmed) => { if(confirmed) { try { await db.collection('users').doc(userId).update({ role: newRole }); showModal('Успешно', 'Роль пользователя изменена.'); renderAllUsers(); } catch (e) { showModal('Ошибка', 'Не удалось изменить роль.'); } } }); }
     
