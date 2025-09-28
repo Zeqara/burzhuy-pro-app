@@ -70,12 +70,12 @@ select { -webkit-appearance: none; -moz-appearance: none; appearance: none; back
 .role-tag-btn { background: none; border: none; padding: 0; cursor: pointer; }
 .report-details p { background-color: var(--surface-color); padding: 10px; border-radius: 5px; border-left: 3px solid var(--primary-color-start); }
 hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
-#modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 1; transition: opacity 0.3s ease; }
-#modal-container.modal-hidden { opacity: 0; pointer-events: none; }
+#modal-container, #rejection-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 1; transition: opacity 0.3s ease; }
+#modal-container.modal-hidden, #rejection-modal-container.modal-hidden { opacity: 0; pointer-events: none; }
 #modal-content { background-color: var(--surface-color); padding: 25px; border-radius: 16px; width: 90%; max-width: 350px; text-align: center; border: 1px solid var(--border-color); transform: scale(1); transition: transform 0.3s ease; }
-#modal-container.modal-hidden #modal-content { transform: scale(0.9); }
-#modal-title { margin: 0 0 10px 0; font-size: 20px; color: var(--text-primary); }
-#modal-text { margin: 0 0 25px 0; color: var(--text-secondary); line-height: 1.5; }
+#modal-container.modal-hidden #modal-content, #rejection-modal-container.modal-hidden #modal-content { transform: scale(0.9); }
+#modal-title, #rejection-modal-title { margin: 0 0 10px 0; font-size: 20px; color: var(--text-primary); }
+#modal-text, #rejection-modal-text { margin: 0 0 25px 0; color: var(--text-secondary); line-height: 1.5; }
 #modal-buttons { display: flex; gap: 10px; }
 .action-buttons-container { display: flex; gap: 10px; align-items: center; }
 .action-buttons-container .btn-primary { flex-grow: 1; }
@@ -83,7 +83,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
 .btn-icon:hover { background-color: var(--surface-color-hover); color: var(--text-primary); }
 
 /* --- СТИЛИ ДЛЯ ИСПРАВЛЕНИЯ ВИЗУАЛЬНЫХ БАГОВ --- */
-.report-details p {
+.report-details p, #admin-detail-rejection-comment-container p {
     word-break: break-word;
     white-space: pre-wrap;
 }
@@ -113,5 +113,19 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
     border-left: 3px solid var(--primary-color-start);
 }
 .menu-list h3:first-of-type {
+    margin-top: 0;
+}
+.rejection-comment {
+    display: block;
+    margin-top: 8px;
+    color: var(--status-rejected) !important;
+}
+#admin-detail-rejection-comment-container {
+    margin-top: 15px;
+}
+
+/* --- СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ОТКЛОНЕНИЯ --- */
+#rejection-modal-container #modal-buttons .btn-secondary {
+    width: 100%;
     margin-top: 0;
 }
