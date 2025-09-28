@@ -31,6 +31,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 #logout-btn:hover { color: var(--primary-color-start); }
 .spinner { width: 50px; height: 50px; border: 5px solid var(--border-color); border-top-color: var(--primary-color-start); border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+select:disabled { background-color: #2a2a2a; color: #777; }
 select { -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24' fill='none' stroke='%23aaaaaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 15px center; background-size: 1em; }
 .time-slot-input { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .time-slot-input input { margin-bottom: 0; }
@@ -80,3 +81,37 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
 .action-buttons-container .btn-primary { flex-grow: 1; }
 .btn-icon { background-color: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-secondary); padding: 15px; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; transition: background-color 0.2s, color 0.2s; }
 .btn-icon:hover { background-color: var(--surface-color-hover); color: var(--text-primary); }
+
+/* --- СТИЛИ ДЛЯ ИСПРАВЛЕНИЯ ВИЗУАЛЬНЫХ БАГОВ --- */
+.report-details p {
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+#admin-detail-photos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+}
+#admin-detail-photos img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+#admin-detail-photos img:hover {
+    transform: scale(1.05);
+}
+.city-header {
+    margin-top: 25px;
+    margin-bottom: 5px;
+    color: var(--text-secondary);
+    font-size: 16px;
+    font-weight: 500;
+    padding-left: 10px;
+    border-left: 3px solid var(--primary-color-start);
+}
+.menu-list h3:first-of-type {
+    margin-top: 0;
+}
