@@ -165,35 +165,38 @@ document.addEventListener('DOMContentLoaded', () => {
             const commentInput = document.getElementById('rejection-comment-input');
             commentInput.value = '';
             modal.classList.remove('modal-hidden');
-
+    
             const confirmHandler = async () => {
                 const comment = commentInput.value.trim();
+                cleanup(); // Сначала убираем обработчики
                 if (!comment) {
-                    showModal('Ошибка', 'Пожалуйста, укажите причину отклонения.');
+                    showModal('Ошибка', 'Пожалуйста, укажите причину отклонения.'); // Потом показываем ошибку
                     return;
                 }
                 await db.collection('reports').doc(currentReportId).update({ status: 'rejected', rejectionComment: comment });
-                cleanup();
                 showModal('Успешно', `Статус отчета изменен.`);
                 renderAllReports();
                 loadAdminStats();
                 showScreen('admin-reports-screen');
             };
-
+    
             const cancelHandler = () => cleanup();
             const cleanup = () => {
                 modal.classList.add('modal-hidden');
                 confirmBtn.removeEventListener('click', confirmHandler);
                 cancelBtn.removeEventListener('click', cancelHandler);
             };
-
+    
             confirmBtn.addEventListener('click', confirmHandler);
             cancelBtn.addEventListener('click', cancelHandler);
         } else {
             showModal('Подтверждение', `Вы уверены?`, 'confirm', async (confirmed) => {
                 if(confirmed) {
                     if (!currentReportId) return;
-                    await db.collection('reports').doc(currentReportId).update({ status: newStatus, rejectionComment: null });
+                    await db.collection('reports').doc(currentReportId).update({ 
+                        status: newStatus, 
+                        rejectionComment: firebase.firestore.FieldValue.delete() 
+                    });
                     showModal('Успешно', `Статус отчета изменен.`);
                     renderAllReports();
                     loadAdminStats();
