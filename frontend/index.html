@@ -86,7 +86,7 @@
         </div>
         <div id="admin-report-detail-screen" class="screen">
             <header><button class="back-btn" data-target="admin-reports-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Детали отчета</h2></header>
-            <div class="content scrollable"><div class="report-details"><p><strong>Адрес:</strong> <span id="admin-detail-address"></span></p><p><strong>Агент:</strong> <span id="admin-detail-user"></span></p><p><strong>Дата:</strong> <span id="admin-detail-date"></span></p><p><strong>Статус:</strong> <span id="admin-detail-status"></span></p><hr><h4>Ответы на вопросы:</h4><div class="form-group"><label>Чистота и внешний вид:</label><p id="admin-detail-q1"></p></div><div class="form-group"><label>Чистота внутри:</label><p id="admin-detail-q2"></p></div><div class="form-group"><label>Приветствие и поведение:</label><p id="admin-detail-q3"></p></div><div class="form-group"><label>Предложение дополнений:</label><p id="admin-detail-q4"></p></div><div class="form-group"><label>Действия после заказа:</label><p id="admin-detail-q5"></p></div><div class="form-group"><label>Выдача заказа:</label><p id="admin-detail-q6"></p></div><div class="form-group"><label>Оценка заказа:</label><p id="admin-detail-q7"></p></div><div class="form-group"><label>Оценка блюда №1 (1–5):</label><p id="admin-detail-q8"></p></div><div class="form-group"><label>Дополнительные замечания:</label><p id="admin-detail-q9"></p></div><hr><h4>Прикрепленные фото:</h4><div id="admin-detail-photos"></div><hr><h4>Действия:</h4><div id="admin-detail-actions" style="display: flex; gap: 15px;"><button id="admin-action-approve" class="btn-primary" style="background: var(--status-approved);">Принять</button><button id="admin-action-reject" class="btn-primary" style="background: var(--status-rejected);">Отклонить</button></div></div></div>
+            <div class="content scrollable"><div class="report-details"><p><strong>Адрес:</strong> <span id="admin-detail-address"></span></p><p><strong>Агент:</strong> <span id="admin-detail-user"></span></p><p><strong>Дата:</strong> <span id="admin-detail-date"></span></p><p><strong>Статус:</strong> <span id="admin-detail-status"></span></p><div id="admin-detail-rejection-comment-container" style="display: none;"></div><hr><h4>Ответы на вопросы:</h4><div class="form-group"><label>Чистота и внешний вид:</label><p id="admin-detail-q1"></p></div><div class="form-group"><label>Чистота внутри:</label><p id="admin-detail-q2"></p></div><div class="form-group"><label>Приветствие и поведение:</label><p id="admin-detail-q3"></p></div><div class="form-group"><label>Предложение дополнений:</label><p id="admin-detail-q4"></p></div><div class="form-group"><label>Действия после заказа:</label><p id="admin-detail-q5"></p></div><div class="form-group"><label>Выдача заказа:</label><p id="admin-detail-q6"></p></div><div class="form-group"><label>Оценка заказа:</label><p id="admin-detail-q7"></p></div><div class="form-group"><label>Оценка блюда №1 (1–5):</label><p id="admin-detail-q8"></p></div><div class="form-group"><label>Дополнительные замечания:</label><p id="admin-detail-q9"></p></div><hr><h4>Прикрепленные фото:</h4><div id="admin-detail-photos"></div><hr><h4>Действия:</h4><div id="admin-detail-actions" style="display: flex; gap: 15px;"><button id="admin-action-approve" class="btn-primary" style="background: var(--status-approved);">Принять</button><button id="admin-action-reject" class="btn-primary" style="background: var(--status-rejected);">Отклонить</button></div></div></div>
         </div>
         <div id="admin-users-screen" class="screen">
             <header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Все пользователи</h2></header>
@@ -119,6 +119,22 @@
     <!-- МОДАЛЬНОЕ ОКНО -->
     <div id="modal-container" class="modal-hidden"><div id="modal-content"><h3 id="modal-title">Подтверждение</h3><p id="modal-text">Вы уверены?</p><div id="modal-buttons"><button id="modal-confirm-btn" class="btn-primary">OK</button><button id="modal-cancel-btn" class="btn-secondary">Отмена</button></div></div></div>
     <div id="recaptcha-container"></div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ВВОДА КОММЕНТАРИЯ -->
+    <div id="rejection-modal-container" class="modal-hidden">
+        <div id="modal-content">
+            <h3 id="rejection-modal-title">Причина отклонения</h3>
+            <p id="rejection-modal-text">Пожалуйста, укажите причину, по которой отчет отклонен. Агент увидит этот комментарий.</p>
+            <div class="form-group">
+                <textarea id="rejection-comment-input" rows="4" placeholder="Например: Некачественные фотографии"></textarea>
+            </div>
+            <div id="modal-buttons">
+                <button id="rejection-modal-confirm-btn" class="btn-primary">Отправить</button>
+                <button id="rejection-modal-cancel-btn" class="btn-secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
