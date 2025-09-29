@@ -107,9 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const userData = userDoc.exists() ? userDoc.data() : {};
         const statusText = { pending: 'в ожидании', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' }[report.status] || report.status;
         
+        const adminDetailPhone = document.getElementById('admin-detail-phone');
+
         adminDetailAddress.textContent = report.locationAddress;
         adminDetailUser.textContent = userData.fullName || 'Агент не найден';
-        adminDetailPhone.textContent = userData.phone || 'Не указан';
+        if (adminDetailPhone) adminDetailPhone.textContent = userData.phone || 'Не указан';
         adminDetailDate.textContent = report.checkDate.toDate().toLocaleString('ru-RU');
         adminDetailStatus.textContent = statusText;
 
