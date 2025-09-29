@@ -108,13 +108,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const report = reportDoc.data();
             const userDoc = await db.collection('users').doc(report.userId).get();
-            const userData = userDoc.exists() ? userDoc.data() : {};
+            // === ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+            const userData = userDoc.exists ? userDoc.data() : {};
             const statusText = { pending: 'в ожидании', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' }[report.status] || report.status;
             
             adminDetailAddress.textContent = report.locationAddress || '—';
             adminDetailUser.textContent = userData.fullName || 'Агент не найден';
             adminDetailPhone.textContent = userData.phone || 'Не указан';
-            // === ИСПРАВЛЕНИЕ ЗДЕСЬ ===
             adminDetailDate.textContent = report.checkDate && report.checkDate.toDate ? report.checkDate.toDate().toLocaleString('ru-RU') : 'Дата не указана';
             adminDetailStatus.textContent = statusText;
 
