@@ -108,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const report = reportDoc.data();
             const userDoc = await db.collection('users').doc(report.userId).get();
-            // === ИСПРАВЛЕНИЕ ЗДЕСЬ ===
             const userData = userDoc.exists ? userDoc.data() : {};
             const statusText = { pending: 'в ожидании', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' }[report.status] || report.status;
             
@@ -223,8 +222,84 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function renderAllUsers() { if (!adminUsersList) return; adminUsersList.innerHTML = '<div class="spinner"></div>'; const snapshot = await db.collection('users').get(); let html = ''; snapshot.forEach(doc => { const u = doc.data(); html += `<li class="menu-list-item user-item"><div><strong>${u.fullName}</strong><small>${u.phone}</small></div><button class="role-tag-btn" data-id="${doc.id}" data-role="${u.role}" data-name="${u.fullName}"><div class="role-tag ${u.role}">${u.role}</div></button></li>`; }); adminUsersList.innerHTML = html; adminUsersList.querySelectorAll('.role-tag-btn').forEach(button => button.addEventListener('click', (e) => { const currentTarget = e.currentTarget; toggleUserRole(currentTarget.dataset.id, currentTarget.dataset.role, currentTarget.dataset.name); })); }
-    function toggleUserRole(userId, currentRole, name) { const newRole = currentRole === 'admin' ? 'guest' : 'admin'; showModal('Смена роли', `Сменить роль для "${name}" на "${newRole}"?`, 'confirm', async (confirmed) => { if(confirmed) { try { await db.collection('users').doc(userId).update({ role: newRole }); showModal('Успешно', 'Роль пользователя изменена.'); renderAllUsers(); } catch (e) { showModal('Ошибка', 'Не удалось изменить роль.'); } } }); }
+    // === ИЗМЕНЕНИЯ ЗДЕСЬ ===
+    async function renderAllUsers() {
+        if (!adminUsersList) return;
+        adminUsersList.innerHTML = '<div class="spinner"></div>';
+        const snapshot = await db.collection('users').get();
+        let html = '';
+        snapshot.forEach(doc => {
+            const u = doc.data();
+            const userName = u.fullName || 'Имя не указано';
+            const userPhone = u.phone || 'Номер не указан';
+            
+            html += `
+                <li class="menu-list-item user-item">
+                    <div>
+                        <strong>${userName}</strong>
+                        <small>${userPhone}</small>
+                    </div>
+                    <div class="user-item-actions">
+                        <button class="role-tag-btn" data-id="${doc.id}" data-role="${u.role}" data-name="${userName}">
+                            <div class="role-tag ${u.role}">${u.role}</div>
+                        </button>
+                        <button class="delete-user-btn" data-id="${doc.id}" data-name="${userName}">Удалить</button>
+                    </div>
+                </li>`;
+        });
+        adminUsersList.innerHTML = html;
+        
+        adminUsersList.querySelectorAll('.role-tag-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const currentTarget = e.currentTarget;
+                toggleUserRole(currentTarget.dataset.id, currentTarget.dataset.role, currentTarget.dataset.name);
+            });
+        });
+
+        adminUsersList.querySelectorAll('.delete-user-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const currentTarget = e.currentTarget;
+                deleteUser(currentTarget.dataset.id, currentTarget.dataset.name);
+            });
+        });
+    }
+
+    function toggleUserRole(userId, currentRole, name) {
+        const newRole = currentRole === 'admin' ? 'guest' : 'admin';
+        showModal('Смена роли', `Сменить роль для "${name}" на "${newRole}"?`, 'confirm', async (confirmed) => {
+            if (confirmed) {
+                try {
+                    await db.collection('users').doc(userId).update({ role: newRole });
+                    showModal('Успешно', 'Роль пользователя изменена.');
+                    renderAllUsers();
+                } catch (e) {
+                    showModal('Ошибка', 'Не удалось изменить роль.');
+                }
+            }
+        });
+    }
+
+    function deleteUser(userId, name) {
+        const currentUser = auth.currentUser;
+        if (currentUser && currentUser.uid === userId) {
+            showModal('Ошибка', 'Вы не можете удалить свой собственный аккаунт.');
+            return;
+        }
+
+        showModal('Удаление пользователя', `Вы уверены, что хотите удалить "${name}"? Это действие необратимо.`, 'confirm', async (confirmed) => {
+            if (confirmed) {
+                try {
+                    await db.collection('users').doc(userId).delete();
+                    showModal('Успешно', 'Пользователь удален.');
+                    renderAllUsers();
+                } catch (e) {
+                    console.error("Ошибка при удалении пользователя: ", e);
+                    showModal('Ошибка', 'Не удалось удалить пользователя.');
+                }
+            }
+        });
+    }
+    // === КОНЕЦ ИЗМЕНЕНИЙ ===
     
     // --- ЛОГИКА АГЕНТА ---
     async function renderAvailableSchedules() {
