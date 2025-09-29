@@ -69,8 +69,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
     if(lottieAnimationContainer) lottie.loadAnimation({ container: lottieAnimationContainer, renderer: 'svg', loop: false, autoplay: true, path: 'https://assets10.lottiefiles.com/packages/lf20_u4j3xm6g.json' });
 
+    // === ИЗМЕНЕНИЯ ЗДЕСЬ ===
     // --- АУТЕНТИФИКАЦИЯ ---
-    if(phoneForm) phoneForm.addEventListener('submit', (e) => { e.preventDefault(); let rawPhoneNumber = phoneInput.value, digitsOnly = rawPhoneNumber.replace(/\D/g, ''); if (digitsOnly.startsWith('8')) digitsOnly = '7' + digitsOnly.substring(1); const formattedPhoneNumber = `+${digitsOnly}`; if (digitsOnly.length < 11) return showModal('Ошибка', 'Пожалуйста, введите полный номер телефона.'); sendCodeBtn.disabled = true; sendCodeBtn.textContent = 'Отправка...'; auth.signInWithPhoneNumber(formattedPhoneNumber, recaptchaVerifier).then(result => { confirmationResult = result; phoneView.style.display = 'none'; codeView.style.display = 'block'; showModal('Успешно', 'СМС-код отправлен на ваш номер.'); }).catch(err => showModal('Ошибка', `Произошла ошибка: ${err.code}`)).finally(() => { sendCodeBtn.disabled = false; sendCodeBtn.textContent = 'Получить код'; }); });
+    if(phoneForm) phoneForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        let rawPhoneNumber = phoneInput.value, digitsOnly = rawPhoneNumber.replace(/\D/g, '');
+        if (digitsOnly.startsWith('8')) digitsOnly = '7' + digitsOnly.substring(1);
+        const formattedPhoneNumber = `+${digitsOnly}`;
+        if (digitsOnly.length < 11) return showModal('Ошибка', 'Пожалуйста, введите полный номер телефона.');
+        
+        sendCodeBtn.disabled = true;
+        sendCodeBtn.textContent = 'Отправка...';
+        
+        // Явно "отрисовываем" reCAPTCHA и ждем, пока она будет готова
+        recaptchaVerifier.render().then((widgetId) => {
+            auth.signInWithPhoneNumber(formattedPhoneNumber, recaptchaVerifier).then(result => {
+                confirmationResult = result;
+                phoneView.style.display = 'none';
+                codeView.style.display = 'block';
+                showModal('Успешно', 'СМС-код отправлен на ваш номер.');
+            }).catch(err => {
+                console.error("Ошибка Firebase Auth:", err); // Логируем полную ошибку в консоль
+                showModal('Ошибка', `Произошла ошибка: ${err.code}`);
+            }).finally(() => {
+                sendCodeBtn.disabled = false;
+                sendCodeBtn.textContent = 'Получить код';
+            });
+        }).catch(err => {
+            console.error("Ошибка отрисовки reCAPTCHA:", err);
+            showModal('Ошибка', 'Не удалось запустить проверку reCAPTCHA. Попробуйте обновить страницу.');
+            sendCodeBtn.disabled = false;
+            sendCodeBtn.textContent = 'Получить код';
+        });
+    });
+    // === КОНЕЦ ИЗМЕНЕНИЙ ===
+
     if(codeForm) codeForm.addEventListener('submit', (e) => { e.preventDefault(); const code = codeInput.value; if (!code || !confirmationResult) return; confirmationResult.confirm(code).catch(err => showModal('Ошибка', 'Неверный код. Попробуйте еще раз.')); });
     if(profileSetupForm) profileSetupForm.addEventListener('submit', (e) => { e.preventDefault(); const user = auth.currentUser, fullName = profileNameInput.value.trim(); if (!user || !fullName) return; db.collection('users').doc(user.uid).set({ fullName, phone: user.phoneNumber, role: 'guest' }).then(() => { userNameDisplay.textContent = fullName; showScreen('main-menu-screen'); }).catch(err => showModal('Ошибка', 'Не удалось сохранить профиль.')); });
 
@@ -83,6 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(logoutBtn) logoutBtn.addEventListener('click', () => { if(dashboardUpdateInterval) clearInterval(dashboardUpdateInterval); auth.signOut(); });
 
     // --- ЛОГИКА АДМИН-ПАНЕЛИ ---
+    // (весь остальной код без изменений)
     if (adminMenuBtn) adminMenuBtn.addEventListener('click', () => showScreen('admin-hub-screen'));
     
     async function loadCitiesForAdmin() { if (!scheduleCitySelect) return; const snapshot = await db.collection('cities').orderBy('name').get(); let optionsHTML = '<option value="" disabled selected>-- Выберите город --</option>'; snapshot.forEach(doc => { optionsHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`; }); scheduleCitySelect.innerHTML = optionsHTML; }
@@ -222,7 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // === ИЗМЕНЕНИЯ ЗДЕСЬ ===
     async function renderAllUsers() {
         if (!adminUsersList) return;
         adminUsersList.innerHTML = '<div class="spinner"></div>';
@@ -299,7 +332,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    // === КОНЕЦ ИЗМЕНЕНИЙ ===
     
     // --- ЛОГИКА АГЕНТА ---
     async function renderAvailableSchedules() {
@@ -425,4 +457,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.back-btn').forEach(b => b.addEventListener('click', () => showScreen(b.dataset.target)));
     document.querySelectorAll('.admin-hub-btn').forEach(b => b.addEventListener('click', () => { const target = b.dataset.target; if(target === 'admin-schedule-screen') { loadCitiesForAdmin(); } if(target === 'admin-reports-screen') renderAllReports(); if(target === 'admin-users-screen') renderAllUsers(); showScreen(target); }));
     if(viewScheduleBtn) viewScheduleBtn.addEventListener('click', () => { const targetScreen = document.getElementById('admin-view-schedule-screen'); if (targetScreen) { renderSchedules(); showScreen('admin-view-schedule-screen'); } });
-});
+});```
