@@ -100,41 +100,49 @@ document.addEventListener('DOMContentLoaded', () => {
     async function openAdminReportDetail(reportId) {
         currentReportId = reportId;
         showScreen('admin-report-detail-screen');
-        const doc = await db.collection('reports').doc(reportId).get();
-        if (!doc.exists) return;
-        const report = doc.data();
-        const userDoc = await db.collection('users').doc(report.userId).get();
-        const userData = userDoc.exists() ? userDoc.data() : {};
-        const statusText = { pending: 'в ожидании', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' }[report.status] || report.status;
-        
-        const adminDetailPhone = document.getElementById('admin-detail-phone');
+        try {
+            const reportDoc = await db.collection('reports').doc(reportId).get();
+            if (!reportDoc.exists) {
+                showModal('Ошибка', 'Отчет не найден. Возможно, он был удален.');
+                return showScreen('admin-reports-screen');
+            }
+            const report = reportDoc.data();
+            const userDoc = await db.collection('users').doc(report.userId).get();
+            const userData = userDoc.exists() ? userDoc.data() : {};
+            const statusText = { pending: 'в ожидании', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' }[report.status] || report.status;
+            
+            adminDetailAddress.textContent = report.locationAddress || '—';
+            adminDetailUser.textContent = userData.fullName || 'Агент не найден';
+            adminDetailPhone.textContent = userData.phone || 'Не указан';
+            adminDetailDate.textContent = report.checkDate.toDate().toLocaleString('ru-RU');
+            adminDetailStatus.textContent = statusText;
 
-        adminDetailAddress.textContent = report.locationAddress;
-        adminDetailUser.textContent = userData.fullName || 'Агент не найден';
-        if (adminDetailPhone) adminDetailPhone.textContent = userData.phone || 'Не указан';
-        adminDetailDate.textContent = report.checkDate.toDate().toLocaleString('ru-RU');
-        adminDetailStatus.textContent = statusText;
+            document.getElementById('admin-action-paid').style.display = (report.status === 'approved') ? 'block' : 'none';
 
-        document.getElementById('admin-action-paid').style.display = (report.status === 'approved') ? 'block' : 'none';
+            if (report.status === 'rejected' && report.rejectionComment) {
+                adminDetailRejectionComment.style.display = 'block';
+                adminDetailRejectionComment.innerHTML = `<h4>Причина отклонения:</h4><p>${report.rejectionComment}</p>`;
+            } else {
+                adminDetailRejectionComment.style.display = 'none';
+            }
 
-        if (report.status === 'rejected' && report.rejectionComment) {
-            adminDetailRejectionComment.style.display = 'block';
-            adminDetailRejectionComment.innerHTML = `<h4>Причина отклонения:</h4><p>${report.rejectionComment}</p>`;
-        } else {
-            adminDetailRejectionComment.style.display = 'none';
+            const answers = report.answers || {};
+            adminDetailAnswers.q1.textContent = answers.q1_appearance || '—';
+            adminDetailAnswers.q2.textContent = answers.q2_cleanliness || '—';
+            adminDetailAnswers.q3.textContent = answers.q3_greeting || '—';
+            adminDetailAnswers.q4.textContent = answers.q4_upsell || '—';
+            adminDetailAnswers.q5.textContent = answers.q5_actions || '—';
+            adminDetailAnswers.q6.textContent = answers.q6_handout || '—';
+            adminDetailAnswers.q7.textContent = answers.q7_order_eval || '—';
+            adminDetailAnswers.q8.textContent = answers.q8_food_rating || '—';
+            adminDetailAnswers.q9.textContent = answers.q9_comments || '—';
+            
+            adminDetailPhotos.innerHTML = report.imageUrls && report.imageUrls.length > 0 ? report.imageUrls.map(url => `<a href="${url}" target="_blank"><img src="${url}"></a>`).join('') : '<p>Фото не прикреплены.</p>';
+        } catch (error) {
+            console.error("Ошибка при открытии деталей отчета:", error);
+            showModal('Ошибка', 'Не удалось загрузить детали отчета.');
+            showScreen('admin-reports-screen');
         }
-
-        const answers = report.answers || {};
-        adminDetailAnswers.q1.textContent = answers.q1_appearance || '—';
-        adminDetailAnswers.q2.textContent = answers.q2_cleanliness || '—';
-        adminDetailAnswers.q3.textContent = answers.q3_greeting || '—';
-        adminDetailAnswers.q4.textContent = answers.q4_upsell || '—';
-        adminDetailAnswers.q5.textContent = answers.q5_actions || '—';
-        adminDetailAnswers.q6.textContent = answers.q6_handout || '—';
-        adminDetailAnswers.q7.textContent = answers.q7_order_eval || '—';
-        adminDetailAnswers.q8.textContent = answers.q8_food_rating || '—';
-        adminDetailAnswers.q9.textContent = answers.q9_comments || '—';
-        adminDetailPhotos.innerHTML = report.imageUrls && report.imageUrls.length > 0 ? report.imageUrls.map(url => `<a href="${url}" target="_blank"><img src="${url}"></a>`).join('') : '<p>Фото не прикреплены.</p>';
     }
 
     function updateReportStatus(newStatus) {
