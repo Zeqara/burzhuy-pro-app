@@ -143,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const commentInput = document.getElementById('rejection-comment-input');
             commentInput.value = '';
             modal.classList.remove('modal-hidden');
+    
             const confirmHandler = async () => {
                 const comment = commentInput.value.trim();
                 cleanup();
@@ -156,12 +157,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadAdminStats();
                 showScreen('admin-reports-screen');
             };
+    
             const cancelHandler = () => cleanup();
             const cleanup = () => {
                 modal.classList.add('modal-hidden');
                 confirmBtn.removeEventListener('click', confirmHandler);
                 cancelBtn.removeEventListener('click', cancelHandler);
             };
+    
             confirmBtn.addEventListener('click', confirmHandler);
             cancelBtn.addEventListener('click', cancelHandler);
         } else {
@@ -185,7 +188,30 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('admin-action-reject')?.addEventListener('click', () => updateReportStatus('rejected'));
     document.getElementById('admin-action-paid')?.addEventListener('click', () => updateReportStatus('paid'));
 
-    async function deleteReport(reportId) { showModal('Удаление', 'Вы уверены, что хотите безвозвратно удалить этот отчет и все прикрепленные к нему фотографии?', 'confirm', async (confirmed) => { if (confirmed) { try { const reportRef = db.collection('reports').doc(reportId); const reportDoc = await reportRef.get(); if (reportDoc.exists) { const reportData = reportDoc.data(); const imageUrls = reportData.imageUrls; if (imageUrls && imageUrls.length > 0) { const deletePromises = imageUrls.map(url => storage.refFromURL(url).delete()); await Promise.all(deletePromises); } } await reportRef.delete(); showModal('Успешно', 'Отчет и все фотографии были удалены.'); renderAllReports(); } catch (e) { console.error("Ошибка при удалении отчета: ", e); showModal('Ошибка', 'Не удалось удалить отчет или его файлы.'); } } }); }
+    async function deleteReport(reportId) {
+        showModal('Удаление', 'Вы уверены, что хотите безвозвратно удалить этот отчет и все прикрепленные к нему фотографии?', 'confirm', async (confirmed) => {
+            if (confirmed) {
+                try {
+                    const reportRef = db.collection('reports').doc(reportId);
+                    const reportDoc = await reportRef.get();
+                    if (reportDoc.exists) {
+                        const reportData = reportDoc.data();
+                        if (reportData.imageUrls && reportData.imageUrls.length > 0) {
+                            const deletePromises = reportData.imageUrls.map(url => storage.refFromURL(url).delete());
+                            await Promise.all(deletePromises);
+                        }
+                    }
+                    await reportRef.delete();
+                    showModal('Успешно', 'Отчет и все фотографии были удалены.');
+                    renderAllReports();
+                } catch (e) {
+                    console.error("Ошибка при удалении отчета: ", e);
+                    showModal('Ошибка', 'Не удалось удалить отчет или его файлы.');
+                }
+            }
+        });
+    }
+
     async function renderAllUsers() { if (!adminUsersList) return; adminUsersList.innerHTML = '<div class="spinner"></div>'; const snapshot = await db.collection('users').get(); let html = ''; snapshot.forEach(doc => { const u = doc.data(); html += `<li class="menu-list-item user-item"><div><strong>${u.fullName}</strong><small>${u.phone}</small></div><button class="role-tag-btn" data-id="${doc.id}" data-role="${u.role}" data-name="${u.fullName}"><div class="role-tag ${u.role}">${u.role}</div></button></li>`; }); adminUsersList.innerHTML = html; adminUsersList.querySelectorAll('.role-tag-btn').forEach(button => button.addEventListener('click', (e) => { const currentTarget = e.currentTarget; toggleUserRole(currentTarget.dataset.id, currentTarget.dataset.role, currentTarget.dataset.name); })); }
     function toggleUserRole(userId, currentRole, name) { const newRole = currentRole === 'admin' ? 'guest' : 'admin'; showModal('Смена роли', `Сменить роль для "${name}" на "${newRole}"?`, 'confirm', async (confirmed) => { if(confirmed) { try { await db.collection('users').doc(userId).update({ role: newRole }); showModal('Успешно', 'Роль пользователя изменена.'); renderAllUsers(); } catch (e) { showModal('Ошибка', 'Не удалось изменить роль.'); } } }); }
     
@@ -220,13 +246,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dashboardUpdateInterval) clearInterval(dashboardUpdateInterval);
         const snapshot = await db.collection('timeSlots').where('bookedBy', '==', userId).where('status', '==', 'забронирован').limit(1).get();
         if (snapshot.empty) {
-            dashboardInfoContainer.innerHTML = ''; // Убираем старую карточку
+            dashboardInfoContainer.innerHTML = '';
             return;
         }
         const doc = snapshot.docs[0];
         const booking = { id: doc.id, ...doc.data() };
         const scheduleDoc = await db.collection('schedule').doc(booking.scheduleId).get();
-        if (!scheduleDoc.exists) { // Проверка, что расписание не удалили
+        if (!scheduleDoc.exists) {
             dashboardInfoContainer.innerHTML = '';
             return;
         }
@@ -277,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         agentName: null
                     });
                     showModal('Успешно', 'Ваша запись отменена.');
-                    loadUserDashboard(auth.currentUser.uid); // Обновляем дашборд
+                    loadUserDashboard(auth.currentUser.uid);
                 } catch (error) {
                     showModal('Ошибка', 'Не удалось отменить запись. Попробуйте позже.');
                 }
