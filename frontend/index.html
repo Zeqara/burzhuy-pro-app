@@ -57,20 +57,17 @@
             <header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Создать проверку</h2></header>
             <div class="content scrollable">
                 <form id="schedule-form">
-                    <div class="form-group">
-                        <label>1. Выберите город</label>
-                        <select id="schedule-city-select" required>
-                            <option value="" disabled selected>-- Сначала выберите город --</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>2. Выберите торговую точку</label>
-                        <select id="schedule-location-select" required disabled>
-                            <option value="" disabled selected>-- ... --</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>1. Выберите город</label><select id="schedule-city-select" required><option value="" disabled selected>-- Сначала выберите город --</option></select></div>
+                    <div class="form-group"><label>2. Выберите торговую точку</label><select id="schedule-location-select" required disabled><option value="" disabled selected>-- ... --</option></select></div>
                     <div class="form-group"><label>Дата проверки</label><input type="date" id="schedule-date-input" required></div>
-                    <div class="form-group"><label>Временные слоты</label><div id="time-slots-container"></div><button type="button" id="add-slot-btn" class="btn-secondary">Добавить слот</button></div>
+                    <div class="form-group">
+                        <label>Интервал доступности</label>
+                        <div class="time-slot-input">
+                            <input type="time" id="schedule-start-time" required> 
+                            <span>-</span>
+                            <input type="time" id="schedule-end-time" required>
+                        </div>
+                    </div>
                     <div class="form-group urgent-checkbox"><input type="checkbox" id="schedule-urgent-checkbox"><label for="schedule-urgent-checkbox">🔥 Срочная проверка</label></div>
                     <div class="action-buttons-container"><button type="submit" class="btn-primary">Опубликовать</button><button type="button" id="view-schedule-btn" class="btn-icon"><i class="fa-solid fa-list-check"></i> К графику</button></div>
                 </form>
@@ -96,12 +93,20 @@
         <!-- ЭКРАНЫ АГЕНТА -->
         <div id="cooperation-screen" class="screen">
             <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Доступные проверки</h2></header>
-            <div class="content scrollable"><ul id="schedule-cards-list" class="menu-list"></ul><div id="no-schedules-view" class="empty-state" style="display: none;"><div id="lottie-animation"></div><h3>Пока нет доступных проверок</h3><p>Отличная работа! Все задания выполнены.</p></div></div>
+            <div class="content scrollable"><ul id="schedule-cards-list" class="menu-list"></ul><div id="no-schedules-view" class="empty-state" style="display: none;"><h3>Пока нет доступных проверок</h3><p>Отличная работа! Все задания выполнены.</p></div></div>
         </div>
-        <div id="time-slots-screen" class="screen">
+        
+        <div id="time-picker-screen" class="screen">
             <header><button class="back-btn" data-target="cooperation-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Выберите время</h2></header>
-            <div class="content scrollable"><h3 id="slot-location-title" style="text-align: center; margin-bottom: 20px;"></h3><ul id="slots-list" class="menu-list"></ul></div>
+            <div class="content scrollable">
+                <h3 id="picker-location-title" style="text-align: center; margin-bottom: 20px;"></h3>
+                <form id="time-picker-form">
+                    <div class="form-group"><label>Укажите удобное для вас время проверки</label><input type="time" id="user-chosen-time" required></div>
+                    <button type="submit" class="btn-primary">Подтвердить и записаться</button>
+                </form>
+            </div>
         </div>
+        
         <div id="checklist-screen" class="screen">
              <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Чек-лист</h2></header>
             <div class="content scrollable"><form id="checklist-form"><p><strong>Адрес:</strong> <span id="checklist-address"></span></p><p><strong>Дата:</strong> <span id="checklist-date"></span></p><div class="form-group"><label>Чистота и внешний вид</label><textarea id="checklist-q1-appearance" required></textarea></div><div class="form-group"><label>Чистота внутри</label><textarea id="checklist-q2-cleanliness" required></textarea></div><div class="form-group"><label>Приветствие и поведение</label><textarea id="checklist-q3-greeting" required></textarea></div><div class="form-group"><label>Предложение дополнений</label><textarea id="checklist-q4-upsell" required></textarea></div><div class="form-group"><label>Действия после заказа</label><textarea id="checklist-q5-actions" required></textarea></div><div class="form-group"><label>Выдача заказа</label><textarea id="checklist-q6-handout" required></textarea></div><div class="form-group"><label>Оценка заказа</label><textarea id="checklist-q7-order-eval" required></textarea></div><div class="form-group"><label>Оценка блюда №1 (1–5)</label><input type="number" id="checklist-q8-food-rating" min="1" max="5" required></div><div class="form-group"><label>Дополнительные замечания</label><textarea id="checklist-q9-comments"></textarea></div><div class="form-group"><label>Прикрепите фото</label><input type="file" id="checklist-photos" multiple accept="image/*"></div><button type="submit" class="btn-primary">Отправить отчёт</button></form></div>
@@ -116,24 +121,10 @@
         </div>
     </div>
     
-    <!-- МОДАЛЬНОЕ ОКНО -->
+    <!-- МОДАЛЬНЫЕ ОКНА -->
     <div id="modal-container" class="modal-hidden"><div id="modal-content"><h3 id="modal-title">Подтверждение</h3><p id="modal-text">Вы уверены?</p><div id="modal-buttons"><button id="modal-confirm-btn" class="btn-primary">OK</button><button id="modal-cancel-btn" class="btn-secondary">Отмена</button></div></div></div>
     <div id="recaptcha-container"></div>
-    
-    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ВВОДА КОММЕНТАРИЯ -->
-    <div id="rejection-modal-container" class="modal-hidden">
-        <div id="modal-content">
-            <h3 id="rejection-modal-title">Причина отклонения</h3>
-            <p id="rejection-modal-text">Пожалуйста, укажите причину, по которой отчет отклонен. Агент увидит этот комментарий.</p>
-            <div class="form-group">
-                <textarea id="rejection-comment-input" rows="4" placeholder="Например: Некачественные фотографии"></textarea>
-            </div>
-            <div id="modal-buttons">
-                <button id="rejection-modal-confirm-btn" class="btn-primary">Отправить</button>
-                <button id="rejection-modal-cancel-btn" class="btn-secondary">Отмена</button>
-            </div>
-        </div>
-    </div>
+    <div id="rejection-modal-container" class="modal-hidden"><div id="modal-content"><h3 id="rejection-modal-title">Причина отклонения</h3><p id="rejection-modal-text">Пожалуйста, укажите причину, по которой отчет отклонен. Агент увидит этот комментарий.</p><div class="form-group"><textarea id="rejection-comment-input" rows="4" placeholder="Например: Некачественные фотографии"></textarea></div><div id="modal-buttons"><button id="rejection-modal-confirm-btn" class="btn-primary">Отправить</button><button id="rejection-modal-cancel-btn" class="btn-secondary">Отмена</button></div></div></div>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
