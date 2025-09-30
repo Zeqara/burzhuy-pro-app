@@ -101,7 +101,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    if(codeForm) codeForm.addEventListener('submit', (e) => { e.preventDefault(); const code = codeInput.value; if (!code || !confirmationResult) return; confirmationResult.confirm(code).catch(err => showModal('Ошибка', 'Неверный код. Попробуйте еще раз.')); });
+    // === ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+    if(codeForm) codeForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const code = codeInput.value;
+        const confirmBtn = codeForm.querySelector('button[type="submit"]');
+
+        if (!code || !confirmationResult) return;
+
+        // Блокируем кнопку, чтобы предотвратить двойное нажатие
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Проверка...';
+
+        confirmationResult.confirm(code)
+            .catch(err => {
+                // В случае ошибки, показываем сообщение и снова включаем кнопку
+                showModal('Ошибка', 'Неверный код. Попробуйте еще раз.');
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Войти';
+            });
+        
+        // В случае успеха нам ничего делать не нужно. 
+        // onAuthStateChanged сам переключит экран, и эта кнопка исчезнет.
+    });
+    // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+
     if(profileSetupForm) profileSetupForm.addEventListener('submit', (e) => { e.preventDefault(); const user = auth.currentUser, fullName = profileNameInput.value.trim(); if (!user || !fullName) return; db.collection('users').doc(user.uid).set({ fullName, phone: user.phoneNumber, role: 'guest' }).then(() => { userNameDisplay.textContent = fullName; showScreen('main-menu-screen'); }).catch(err => showModal('Ошибка', 'Не удалось сохранить профиль.')); });
 
     // --- ГЛАВНЫЙ КОНТРОЛЛЕР ---
