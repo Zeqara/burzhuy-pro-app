@@ -58,6 +58,14 @@
                     <div class="form-group"><label>1. Выберите город</label><select id="schedule-city-select" required><option value="" disabled selected>-- Выберите город --</option></select></div>
                     <div class="form-group"><label>2. Выберите торговую точку</label><select id="schedule-location-select" required disabled><option value="" disabled selected>-- ... --</option></select></div>
                     <div class="form-group"><label>Дата проверки</label><input type="date" id="schedule-date-input" required></div>
+                    <div class="form-group">
+                        <label>Интервал доступности для записи</label>
+                        <div class="time-slot-input">
+                            <input type="time" id="schedule-start-time" value="09:00" required>
+                            <span>-</span>
+                            <input type="time" id="schedule-end-time" value="21:00" required>
+                        </div>
+                    </div>
                     <div class="form-group urgent-checkbox"><input type="checkbox" id="schedule-urgent-checkbox"><label for="schedule-urgent-checkbox">🔥 Срочная проверка</label></div>
                     <div class="action-buttons-container"><button type="submit" class="btn-primary">Опубликовать</button><button type="button" id="view-schedule-btn" class="btn-icon"><i class="fa-solid fa-list-check"></i> К графику</button></div>
                 </form>
