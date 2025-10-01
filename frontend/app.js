@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const phoneView = document.getElementById('phone-view'), codeView = document.getElementById('code-view');
     const userNameDisplay = document.getElementById('user-name-display'), logoutBtn = document.getElementById('logout-btn');
     const adminMenuBtn = document.getElementById('admin-menu-btn');
-    const scheduleForm = document.getElementById('schedule-form'), scheduleCitySelect = document.getElementById('schedule-city-select'), scheduleLocationSelect = document.getElementById('schedule-location-select'), scheduleDateInput = document.getElementById('schedule-date-input'), scheduleStartTimeInput = document.getElementById('schedule-start-time'), scheduleEndTimeInput = document.getElementById('schedule-end-time'), scheduleUrgentCheckbox = document.getElementById('schedule-urgent-checkbox'), scheduleList = document.getElementById('schedule-list'), viewScheduleBtn = document.getElementById('view-schedule-btn');
+    const scheduleForm = document.getElementById('schedule-form'), scheduleCitySelect = document.getElementById('schedule-city-select'), scheduleLocationSelect = document.getElementById('schedule-location-select'), scheduleDateInput = document.getElementById('schedule-date-input'), scheduleUrgentCheckbox = document.getElementById('schedule-urgent-checkbox'), scheduleList = document.getElementById('schedule-list'), viewScheduleBtn = document.getElementById('view-schedule-btn');
     const scheduleCardsList = document.getElementById('schedule-cards-list'), noSchedulesView = document.getElementById('no-schedules-view');
     const timePickerForm = document.getElementById('time-picker-form'), pickerLocationTitle = document.getElementById('picker-location-title'), userChosenTimeInput = document.getElementById('user-chosen-time');
     const dashboardInfoContainer = document.getElementById('dashboard-info-container');
@@ -62,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminDetailAddress = document.getElementById('admin-detail-address'), adminDetailUser = document.getElementById('admin-detail-user'), adminDetailPhone = document.getElementById('admin-detail-phone'), adminDetailDate = document.getElementById('admin-detail-date'), adminDetailStatus = document.getElementById('admin-detail-status'), adminDetailPhotos = document.getElementById('admin-detail-photos'), adminDetailRejectionComment = document.getElementById('admin-detail-rejection-comment-container');
     const adminDetailAnswers = { q1: document.getElementById('admin-detail-q1'), q2: document.getElementById('admin-detail-q2'), q3: document.getElementById('admin-detail-q3'), q4: document.getElementById('admin-detail-q4'), q5: document.getElementById('admin-detail-q5'), q6: document.getElementById('admin-detail-q6'), q7: document.getElementById('admin-detail-q7'), q8: document.getElementById('admin-detail-q8'), q9: document.getElementById('admin-detail-q9'), };
     
-    // Инициализация reCAPTCHA
     const recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
     if (phoneInput) { phoneInput.addEventListener('input', () => { if (!phoneInput.value.startsWith('+7')) { phoneInput.value = '+7'; } }); }
 
@@ -159,11 +158,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const city = scheduleCitySelect.value;
         const locationName = scheduleLocationSelect.value;
         const date = scheduleDateInput.value;
-        const startTime = scheduleStartTimeInput.value;
-        const endTime = scheduleEndTimeInput.value;
         const isUrgent = scheduleUrgentCheckbox.checked;
 
-        if (!city || !locationName || !date || !startTime || !endTime) {
+        if (!city || !locationName || !date) {
             return showModal('Ошибка', 'Пожалуйста, заполните все поля.');
         }
 
@@ -176,8 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 city,
                 locationName,
                 date: new Date(date),
-                startTime,
-                endTime,
                 isUrgent,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 isBooked: false
@@ -211,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <li class="menu-list-item">
                         <div>
                             <strong>${s.locationName} (${s.city})</strong>
-                            <small>Дата: ${date} | Время: ${s.startTime} - ${s.endTime} ${s.isUrgent ? '🔥' : ''}</small>
+                            <small>Дата: ${date} ${s.isUrgent ? '🔥' : ''}</small>
                         </div>
                         <button class="delete-btn" data-id="${doc.id}">&times;</button>
                     </li>
@@ -305,8 +300,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 adminDetailRejectionComment.style.display = 'none';
             }
 
+            const answers = report.answers || {};
             for(const key in adminDetailAnswers) {
-                if(report.answers[key]) adminDetailAnswers[key].textContent = report.answers[key];
+                if(adminDetailAnswers[key]) {
+                    adminDetailAnswers[key].textContent = answers[key] || '—';
+                }
             }
 
             adminDetailPhotos.innerHTML = '';
@@ -375,8 +373,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             showModal('Успешно', `Статус отчета изменен на "${newStatus}".`);
-            openAdminReportDetail(currentReportId); // Refresh details
-            renderAllReports(); // Refresh list
+            openAdminReportDetail(currentReportId);
+            renderAllReports();
         } catch (error) {
             console.error("Ошибка обновления статуса:", error);
             showModal('Ошибка', 'Не удалось обновить статус отчета.');
@@ -465,8 +463,6 @@ document.addEventListener('DOMContentLoaded', () => {
                  showModal('Критическое подтверждение', `ПОСЛЕДНЕЕ ПРЕДУПРЕЖДЕНИЕ: Удалить ${name} безвозвратно?`, 'confirm', async (finalConfirmation) => {
                     if(finalConfirmation) {
                         try {
-                            // ВАЖНО: Удаление пользователя из Auth не реализовано в веб-версии без бэкенда (Cloud Function).
-                            // Мы можем только удалить его из Firestore, что заблокирует ему доступ.
                             await db.collection('users').doc(userId).delete();
                             showModal('Успешно', `Пользователь ${name} удален из базы данных.`);
                             renderAllUsers();
@@ -485,41 +481,55 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!scheduleCardsList) return;
         scheduleCardsList.innerHTML = '<div class="spinner"></div>';
         noSchedulesView.style.display = 'none';
-
+    
         try {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+    
             const snapshot = await db.collection('schedules')
-                .where('isBooked', '==', false)
-                .where('date', '>=', new Date(new Date().setHours(0,0,0,0))) // Начиная с сегодня
+                .where('date', '>=', today)
                 .orderBy('date')
                 .get();
-
+    
             if (snapshot.empty) {
                 scheduleCardsList.innerHTML = '';
                 noSchedulesView.style.display = 'block';
                 return;
             }
-
-            let html = '';
+    
+            let availableSchedules = [];
             snapshot.forEach(doc => {
-                const s = doc.data();
+                const schedule = { id: doc.id, ...doc.data() };
+                if (!schedule.isBooked) {
+                    availableSchedules.push(schedule);
+                }
+            });
+    
+            if (availableSchedules.length === 0) {
+                scheduleCardsList.innerHTML = '';
+                noSchedulesView.style.display = 'block';
+                return;
+            }
+    
+            let html = '';
+            availableSchedules.forEach(s => {
                 const date = s.date.toDate().toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' });
                 html += `
-                    <li class="menu-list-item schedule-card" data-id="${doc.id}">
+                    <li class="menu-list-item schedule-card" data-id="${s.id}">
                         ${s.isUrgent ? '<div class="urgent-badge">🔥 Срочно</div>' : ''}
                         <div>
                             <strong>${s.locationName}</strong>
                             <small>${s.city} - ${date}</small>
-                            <small>Доступно: ${s.startTime} - ${s.endTime}</small>
                         </div>
                     </li>
                 `;
             });
             scheduleCardsList.innerHTML = html;
-
+    
             scheduleCardsList.querySelectorAll('.schedule-card').forEach(card => {
                 card.addEventListener('click', () => openTimePicker(card.dataset.id));
             });
-
+    
         } catch (error) {
             console.error("Ошибка загрузки доступных проверок:", error);
             scheduleCardsList.innerHTML = '<p>Не удалось загрузить данные.</p>';
@@ -536,9 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             selectedScheduleForBooking = { id: doc.id, ...doc.data() };
             pickerLocationTitle.textContent = selectedScheduleForBooking.locationName;
-            userChosenTimeInput.min = selectedScheduleForBooking.startTime;
-            userChosenTimeInput.max = selectedScheduleForBooking.endTime;
-            userChosenTimeInput.value = selectedScheduleForBooking.startTime;
+            userChosenTimeInput.value = '';
             showScreen('time-picker-screen');
         } catch (error) {
             console.error("Ошибка:", error);
@@ -558,12 +566,10 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Запись...';
 
-        const batch = db.batch();
         const scheduleRef = db.collection('schedules').doc(selectedScheduleForBooking.id);
-        const reportRef = db.collection('reports').doc(); // new doc
+        const reportRef = db.collection('reports').doc();
 
         try {
-            // Атомарная транзакция для проверки и обновления
             await db.runTransaction(async (transaction) => {
                 const scheduleDoc = await transaction.get(scheduleRef);
                 if (scheduleDoc.data().isBooked) {
@@ -599,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Подтвердить и записаться';
-            renderAvailableSchedules(); // Обновить список в фоне
+            renderAvailableSchedules();
         }
     });
 
@@ -669,7 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     await batch.commit();
                     showModal('Успешно', 'Запись отменена.');
-                    loadUserDashboard(auth.currentUser.uid); // Refresh dashboard
+                    loadUserDashboard(auth.currentUser.uid);
                 } catch (error) {
                     console.error("Ошибка отмены:", error);
                     showModal('Ошибка', 'Не удалось отменить запись.');
