@@ -86,10 +86,6 @@ button#logout-btn:hover { background: var(--surface-color); color: var(--text-pr
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinner-small { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(10, 14, 39, 0.5); border-top-color: #0A0E27; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 10px; vertical-align: middle; }
 
-.time-slot-input { display: flex; align-items: center; gap: 15px; }
-.time-slot-input span { font-weight: 700; color: var(--primary-color); font-size: 18px; }
-.time-slot-input input { margin-bottom: 0; flex: 1; }
-
 .action-buttons-container { display: flex; gap: 12px; }
 .action-buttons-container .btn-primary { flex: 1; }
 .action-buttons-container .btn-icon { background: var(--surface-color); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 20px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; }
@@ -137,6 +133,8 @@ button#logout-btn:hover { background: var(--surface-color); color: var(--text-pr
 .empty-state p { margin: 0; color: var(--text-secondary); }
 
 .delete-btn { background: none; border: none; color: var(--status-rejected); font-size: 20px; cursor: pointer; margin-left: auto; padding: 0 10px; }
+.delete-report-btn { margin-left: auto; background: var(--status-rejected); color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.3s ease; }
+.delete-report-btn:hover { opacity: 0.8; }
 
 #dashboard-info-container h3 { font-size: 18px; color: var(--text-gold); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
 .task-actions { display: flex; gap: 10px; margin-top: 15px; }
@@ -145,3 +143,9 @@ button#logout-btn:hover { background: var(--surface-color); color: var(--text-pr
 .btn-cancel-booking { background: var(--surface-color-hover); color: var(--text-primary); border: 1px solid var(--border-color); }
 
 .urgent-badge { position: absolute; top: 10px; right: 10px; background-color: var(--status-rejected); color: white; padding: 3px 8px; font-size: 10px; border-radius: 5px; font-weight: bold; }
+
+.instruction-text h3 { color: var(--text-gold); margin-top: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+.instruction-text p, .instruction-text li { color: var(--text-secondary); line-height: 1.7; }
+.instruction-text ol, .instruction-text ul { padding-left: 25px; }
+.instruction-text li { margin-bottom: 10px; }
+.instruction-text i { color: var(--primary-color); margin-right: 10px; width: 20px; text-align: center; }
