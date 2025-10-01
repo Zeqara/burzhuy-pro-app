@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }));
         adminReportsList.querySelectorAll('.delete-report-btn').forEach(button => {
             button.addEventListener('click', (e) => {
-                e.stopPropagation(); // Предотвращаем открытие деталей отчета
+                e.stopPropagation();
                 deleteReport(e.target.dataset.id);
             });
         });
@@ -631,7 +631,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dashboardInfoContainer) return;
         dashboardInfoContainer.innerHTML = '';
         try {
-            // Упрощаем запрос, чтобы избежать ошибок с индексами
             const snapshot = await db.collection('reports')
                 .where('userId', '==', userId)
                 .get();
@@ -644,7 +643,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Сортируем уже в коде
             activeTasks.sort((a, b) => a.checkDate.toDate() - b.checkDate.toDate());
 
             if (activeTasks.length === 0) {
@@ -771,10 +769,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 submittedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            showModal('Отчет отправлен!', 'Спасибо за вашу работу. Мы проверим отчет в ближайшее время.', 'alert', () => {
-                showScreen('main-menu-screen');
-                loadUserDashboard(user.uid);
-            });
+            showModal(
+                'Отчет отправлен на проверку!', 
+                'Спасибо за вашу работу. Если отчет будет принят, мы свяжемся с вами по вашему номеру телефона для возврата средств.', 
+                'alert', 
+                () => {
+                    showScreen('main-menu-screen');
+                    loadUserDashboard(user.uid);
+                }
+            );
 
         } catch (error) {
             console.error("Ошибка отправки отчета:", error);
@@ -794,18 +797,29 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const snapshot = await db.collection('reports')
                 .where('userId', '==', user.uid)
-                .where('status', 'in', ['pending', 'approved', 'rejected', 'paid'])
-                .orderBy('createdAt', 'desc')
                 .get();
 
-            if (snapshot.empty) { 
+            let userHistory = [];
+            snapshot.forEach(doc => {
+                const report = { id: doc.id, ...doc.data() };
+                if (['pending', 'approved', 'rejected', 'paid'].includes(report.status)) {
+                    userHistory.push(report);
+                }
+            });
+
+            userHistory.sort((a, b) => {
+                const dateA = a.createdAt ? a.createdAt.toDate() : 0;
+                const dateB = b.createdAt ? b.createdAt.toDate() : 0;
+                return dateB - dateA;
+            });
+
+            if (userHistory.length === 0) { 
                 historyList.innerHTML = '<p>Вы еще не отправляли ни одного отчета.</p>'; 
                 return; 
             } 
             
             let historyHTML = ''; 
-            snapshot.forEach(doc => { 
-                const report = doc.data(); 
+            userHistory.forEach(report => { 
                 const date = report.checkDate && report.checkDate.toDate ? report.checkDate.toDate().toLocaleDateString('ru-RU') : 'дата не указана'; 
                 const statusText = { pending: 'на проверке', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' }[report.status] || report.status; 
                 let commentHTML = ''; 
