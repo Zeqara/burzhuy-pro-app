@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const phoneView = document.getElementById('phone-view'), codeView = document.getElementById('code-view');
     const userNameDisplay = document.getElementById('user-name-display'), logoutBtn = document.getElementById('logout-btn');
     const adminMenuBtn = document.getElementById('admin-menu-btn');
-    const scheduleForm = document.getElementById('schedule-form'), scheduleCitySelect = document.getElementById('schedule-city-select'), scheduleLocationSelect = document.getElementById('schedule-location-select'), scheduleDateInput = document.getElementById('schedule-date-input'), scheduleUrgentCheckbox = document.getElementById('schedule-urgent-checkbox'), scheduleList = document.getElementById('schedule-list'), viewScheduleBtn = document.getElementById('view-schedule-btn');
+    const scheduleForm = document.getElementById('schedule-form'), scheduleCitySelect = document.getElementById('schedule-city-select'), scheduleLocationSelect = document.getElementById('schedule-location-select'), scheduleDateInput = document.getElementById('schedule-date-input'), scheduleStartTimeInput = document.getElementById('schedule-start-time'), scheduleEndTimeInput = document.getElementById('schedule-end-time'), scheduleUrgentCheckbox = document.getElementById('schedule-urgent-checkbox'), scheduleList = document.getElementById('schedule-list'), viewScheduleBtn = document.getElementById('view-schedule-btn');
     const scheduleCardsList = document.getElementById('schedule-cards-list'), noSchedulesView = document.getElementById('no-schedules-view');
     const timePickerForm = document.getElementById('time-picker-form'), pickerLocationTitle = document.getElementById('picker-location-title'), userChosenTimeInput = document.getElementById('user-chosen-time');
     const dashboardInfoContainer = document.getElementById('dashboard-info-container');
@@ -158,9 +158,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const city = scheduleCitySelect.value;
         const locationName = scheduleLocationSelect.value;
         const date = scheduleDateInput.value;
+        const startTime = scheduleStartTimeInput.value;
+        const endTime = scheduleEndTimeInput.value;
         const isUrgent = scheduleUrgentCheckbox.checked;
 
-        if (!city || !locationName || !date) {
+        if (!city || !locationName || !date || !startTime || !endTime) {
             return showModal('Ошибка', 'Пожалуйста, заполните все поля.');
         }
 
@@ -173,6 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 city,
                 locationName,
                 date: new Date(date),
+                startTime,
+                endTime,
                 isUrgent,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 isBooked: false
@@ -206,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <li class="menu-list-item">
                         <div>
                             <strong>${s.locationName} (${s.city})</strong>
-                            <small>Дата: ${date} ${s.isUrgent ? '🔥' : ''}</small>
+                            <small>Дата: ${date} | Доступно: ${s.startTime} - ${s.endTime} ${s.isUrgent ? '🔥' : ''}</small>
                         </div>
                         <button class="delete-btn" data-id="${doc.id}">&times;</button>
                     </li>
@@ -537,7 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${s.isUrgent ? '<div class="urgent-badge">🔥 Срочно</div>' : ''}
                         <div>
                             <strong>${s.locationName}</strong>
-                            <small>${s.city} - ${date}</small>
+                            <small>${s.city} - ${date} | Доступно: ${s.startTime} - ${s.endTime}</small>
                         </div>
                     </li>
                 `;
@@ -564,7 +568,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             selectedScheduleForBooking = { id: doc.id, ...doc.data() };
             pickerLocationTitle.textContent = selectedScheduleForBooking.locationName;
-            userChosenTimeInput.value = '';
+            
+            userChosenTimeInput.min = selectedScheduleForBooking.startTime;
+            userChosenTimeInput.max = selectedScheduleForBooking.endTime;
+            userChosenTimeInput.value = selectedScheduleForBooking.startTime;
+
             showScreen('time-picker-screen');
         } catch (error) {
             console.error("Ошибка:", error);
@@ -651,15 +659,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let html = '<h3>Ваши активные задания:</h3><ul class="menu-list">';
+            const today = new Date();
+
             activeTasks.forEach(report => {
-                const date = report.checkDate.toDate().toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'});
+                const checkDate = report.checkDate.toDate();
+                const isCheckDayOrPast = checkDate.setHours(0, 0, 0, 0) <= today.setHours(0, 0, 0, 0);
+                
+                const dateString = checkDate.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'});
                 html += `
                     <li class="menu-list-item active-task-card">
                         <div>
                             <strong>${report.locationName}</strong>
-                            <small>Запланировано на: ${date}</small>
+                            <small>Запланировано на: ${dateString}</small>
                             <div class="task-actions">
-                                <button class="btn-fill-checklist" data-id="${report.id}">Заполнить чек-лист</button>
+                                <button class="btn-fill-checklist" data-id="${report.id}" ${!isCheckDayOrPast ? 'disabled' : ''}>Заполнить чек-лист</button>
                                 <button class="btn-cancel-booking" data-id="${report.id}">Отменить</button>
                             </div>
                         </div>
@@ -847,4 +860,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.back-btn').forEach(b => b.addEventListener('click', (e) => { const target = e.currentTarget.dataset.target; showScreen(target); }));
     document.querySelectorAll('.admin-hub-btn').forEach(b => b.addEventListener('click', () => { const target = b.dataset.target; if(target === 'admin-schedule-screen') { loadCitiesForAdmin(); } if(target === 'admin-reports-screen') { renderAllReports(); } if(target === 'admin-users-screen') { renderAllUsers(); } showScreen(target); }));
     if(viewScheduleBtn) viewScheduleBtn.addEventListener('click', () => { renderSchedules(); showScreen('admin-view-schedule-screen'); });
-});
+});```
