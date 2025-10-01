@@ -264,6 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <strong>${r.locationName.replace(/^Б\d+\s*/, '')}</strong>
                                 <small>${user?.fullName || 'Агент'} - ${date} - ${statusText}</small>
                             </div>
+                            <button class="delete-report-btn" data-id="${doc.id}">Удалить</button>
                          </li>`; 
             }); 
         } 
@@ -271,7 +272,13 @@ document.addEventListener('DOMContentLoaded', () => {
         adminReportsList.querySelectorAll('.report-item').forEach(item => item.addEventListener('click', (e) => { 
             if (e.target.classList.contains('delete-report-btn')) return; 
             openAdminReportDetail(item.dataset.id); 
-        })); 
+        }));
+        adminReportsList.querySelectorAll('.delete-report-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation(); // Предотвращаем открытие деталей отчета
+                deleteReport(e.target.dataset.id);
+            });
+        });
     }
 
     async function openAdminReportDetail(reportId) {
@@ -321,6 +328,21 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             detailContainer.style.opacity = '1';
         }
+    }
+
+    function deleteReport(reportId) {
+        showModal('Подтверждение', 'Вы уверены, что хотите БЕЗВОЗВРАТНО удалить этот отчет? Это действие нельзя отменить.', 'confirm', async (confirmed) => {
+            if (confirmed) {
+                try {
+                    await db.collection('reports').doc(reportId).delete();
+                    showModal('Успешно', 'Отчет был удален.');
+                    renderAllReports();
+                } catch (error) {
+                    console.error("Ошибка удаления отчета:", error);
+                    showModal('Ошибка', 'Не удалось удалить отчет.');
+                }
+            }
+        });
     }
     
     document.getElementById('admin-action-approve').addEventListener('click', () => updateReportStatus('approved'));
@@ -491,19 +513,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 .orderBy('date')
                 .get();
     
-            if (snapshot.empty) {
-                scheduleCardsList.innerHTML = '';
-                noSchedulesView.style.display = 'block';
-                return;
-            }
-    
             let availableSchedules = [];
-            snapshot.forEach(doc => {
-                const schedule = { id: doc.id, ...doc.data() };
-                if (!schedule.isBooked) {
-                    availableSchedules.push(schedule);
-                }
-            });
+            if (!snapshot.empty) {
+                snapshot.forEach(doc => {
+                    const schedule = { id: doc.id, ...doc.data() };
+                    if (!schedule.isBooked) {
+                        availableSchedules.push(schedule);
+                    }
+                });
+            }
     
             if (availableSchedules.length === 0) {
                 scheduleCardsList.innerHTML = '';
@@ -613,20 +631,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dashboardInfoContainer) return;
         dashboardInfoContainer.innerHTML = '';
         try {
+            // Упрощаем запрос, чтобы избежать ошибок с индексами
             const snapshot = await db.collection('reports')
                 .where('userId', '==', userId)
-                .where('status', '==', 'booked')
-                .orderBy('checkDate', 'asc')
                 .get();
 
-            if (snapshot.empty) {
+            let activeTasks = [];
+            snapshot.forEach(doc => {
+                const report = { id: doc.id, ...doc.data() };
+                if (report.status === 'booked') {
+                    activeTasks.push(report);
+                }
+            });
+
+            // Сортируем уже в коде
+            activeTasks.sort((a, b) => a.checkDate.toDate() - b.checkDate.toDate());
+
+            if (activeTasks.length === 0) {
                 dashboardInfoContainer.innerHTML = '<div class="empty-state"><p>У вас нет активных заданий. Время выбрать новое!</p></div>';
                 return;
             }
 
             let html = '<h3>Ваши активные задания:</h3><ul class="menu-list">';
-            snapshot.forEach(doc => {
-                const report = doc.data();
+            activeTasks.forEach(report => {
                 const date = report.checkDate.toDate().toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'});
                 html += `
                     <li class="menu-list-item active-task-card">
@@ -634,8 +661,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <strong>${report.locationName}</strong>
                             <small>Запланировано на: ${date}</small>
                             <div class="task-actions">
-                                <button class="btn-fill-checklist" data-id="${doc.id}">Заполнить чек-лист</button>
-                                <button class="btn-cancel-booking" data-id="${doc.id}">Отменить</button>
+                                <button class="btn-fill-checklist" data-id="${report.id}">Заполнить чек-лист</button>
+                                <button class="btn-cancel-booking" data-id="${report.id}">Отменить</button>
                             </div>
                         </div>
                     </li>
@@ -654,7 +681,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error("Ошибка загрузки дашборда:", error);
-            dashboardInfoContainer.innerHTML = '<p>Не удалось загрузить ваши задания.</p>';
+            dashboardInfoContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Не удалось загрузить ваши задания.</p>';
         }
     }
 
