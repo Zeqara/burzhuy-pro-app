@@ -6,8 +6,6 @@
     <title>Тайный агент BURЖУЙ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
 </head>
 <body>
     <div id="app-container">
@@ -80,7 +78,7 @@
         </div>
         <div id="admin-users-screen" class="screen">
             <header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Все пользователи</h2></header>
-            <div class="content scrollable"><ul id="admin-users-list" class="menu-list"></ul></div>
+            <div class="content scrollable" id="admin-users-list"></div>
         </div>
 
         <!-- ЭКРАНЫ АГЕНТА -->
@@ -94,7 +92,7 @@
         </div>
         <div id="checklist-screen" class="screen">
              <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Чек-лист</h2></header>
-            <div class="content scrollable"><form id="checklist-form"><p><strong>Адрес:</strong> <span id="checklist-address"></span></p><p><strong>Дата:</strong> <span id="checklist-date"></span></p><div class="form-group"><label>Чистота и внешний вид</label><textarea id="checklist-q1-appearance" required></textarea></div><div class="form-group"><label>Чистота внутри</label><textarea id="checklist-q2-cleanliness" required></textarea></div><div class="form-group"><label>Приветствие и поведение</label><textarea id="checklist-q3-greeting" required></textarea></div><div class="form-group"><label>Предложение дополнений</label><textarea id="checklist-q4-upsell" required></textarea></div><div class="form-group"><label>Действия после заказа</label><textarea id="checklist-q5-actions" required></textarea></div><div class="form-group"><label>Выдача заказа</label><textarea id="checklist-q6-handout" required></textarea></div><div class="form-group"><label>Оценка заказа</label><textarea id="checklist-q7-order-eval" required></textarea></div><div class="form-group"><label>Оценка блюда №1 (1–5)</label><input type="number" id="checklist-q8-food-rating" min="1" max="5" required></div><div class="form-group"><label>Дополнительные замечания</label><textarea id="checklist-q9-comments"></textarea></div><div class="form-group"><label>Прикрепите фото</label><input type="file" id="checklist-photos" multiple accept="image/*"></div><button type="submit" class="btn-primary">Отправить отчёт</button></form></div>
+            <div class="content scrollable"><form id="checklist-form"><p><strong>Адрес:</strong> <span id="checklist-address"></span></p><p><strong>Дата:</strong> <span id="checklist-date"></span></p><div class="form-group"><label>Чистота и внешний вид</label><textarea id="checklist-q1-appearance" required></textarea></div><div class="form-group"><label>Чистота внутри</label><textarea id="checklist-q2-cleanliness" required></textarea></div><div class="form-group"><label>Приветствие и поведение</label><textarea id="checklist-q3-greeting" required></textarea></div><div class="form-group"><label>Предложение дополнений</label><textarea id="checklist-q4-upsell" required></textarea></div><div class="form-group"><label>Действия после заказа</label><textarea id="checklist-q5-actions" required></textarea></div><div class="form-group"><label>Выдача заказа</label><textarea id="checklist-q6-handout" required></textarea></div><div class="form-group"><label>Оценка заказа</label><textarea id="checklist-q7-order-eval" required></textarea></div><div class="form-group"><label>Оценка блюда №1 (1–5)</label><input type="number" id="checklist-q8-food-rating" min="1" max="5" required></div><div class="form-group"><label>Дополнительные замечания</label><textarea id="checklist-q9-comments"></textarea></div><div class="form-group"><label>Прикрепите фото</label><input type="file" id="checklist-photos" multiple accept="image/*" required></div><button type="submit" class="btn-primary">Отправить отчёт</button></form></div>
         </div>
         <div id="history-screen" class="screen">
             <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>История проверок</h2></header>
@@ -109,7 +107,7 @@
     <!-- МОДАЛЬНЫЕ ОКНА -->
     <div id="modal-container" class="modal-hidden"><div id="modal-content"><h3 id="modal-title">Подтверждение</h3><p id="modal-text">Вы уверены?</p><div id="modal-buttons"><button id="modal-confirm-btn" class="btn-primary">OK</button><button id="modal-cancel-btn" class="btn-secondary">Отмена</button></div></div></div>
     <div id="recaptcha-container"></div>
-    <div id="rejection-modal-container" class="modal-hidden"><div id="modal-content"><h3 id="rejection-modal-title">Причина отклонения</h3><p id="rejection-modal-text">Пожалуйста, укажите причину, по которой отчет отклонен. Агент увидит этот комментарий.</p><div class="form-group"><textarea id="rejection-comment-input" rows="4" placeholder="Например: Некачественные фотографии"></textarea></div><div id="modal-buttons"><button id="rejection-modal-confirm-btn" class="btn-primary">Отправить</button><button id="rejection-modal-cancel-btn" class="btn-secondary">Отмена</button></div></div></div>
+    <div id="rejection-modal-container" class="modal-hidden"><div class="modal-content"><h3 id="rejection-modal-title">Причина отклонения</h3><p id="rejection-modal-text">Пожалуйста, укажите причину, по которой отчет отклонен. Агент увидит этот комментарий.</p><div class="form-group"><textarea id="rejection-comment-input" rows="4" placeholder="Например: Некачественные фотографии"></textarea></div><div id="modal-buttons"><button id="rejection-modal-confirm-btn" class="btn-primary">Отправить</button><button id="rejection-modal-cancel-btn" class="btn-secondary">Отмена</button></div></div></div>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
