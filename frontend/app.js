@@ -660,10 +660,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let html = '<h3>Ваши активные задания:</h3><ul class="menu-list">';
             const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
             activeTasks.forEach(report => {
                 const checkDate = report.checkDate.toDate();
-                const isCheckDayOrPast = checkDate.setHours(0, 0, 0, 0) <= today.setHours(0, 0, 0, 0);
+                const isCheckDayOrPast = checkDate.getTime() < (today.getTime() + (24 * 60 * 60 * 1000)); // True если сегодня или раньше
                 
                 const dateString = checkDate.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'});
                 html += `
@@ -860,4 +861,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.back-btn').forEach(b => b.addEventListener('click', (e) => { const target = e.currentTarget.dataset.target; showScreen(target); }));
     document.querySelectorAll('.admin-hub-btn').forEach(b => b.addEventListener('click', () => { const target = b.dataset.target; if(target === 'admin-schedule-screen') { loadCitiesForAdmin(); } if(target === 'admin-reports-screen') { renderAllReports(); } if(target === 'admin-users-screen') { renderAllUsers(); } showScreen(target); }));
     if(viewScheduleBtn) viewScheduleBtn.addEventListener('click', () => { renderSchedules(); showScreen('admin-view-schedule-screen'); });
-});```
+});
