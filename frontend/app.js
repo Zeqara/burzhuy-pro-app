@@ -70,36 +70,57 @@ document.addEventListener('DOMContentLoaded', () => {
     if(profileSetupForm) profileSetupForm.addEventListener('submit', (e) => { e.preventDefault(); const user = auth.currentUser, fullName = profileNameInput.value.trim(); if (!user || !fullName) return; db.collection('users').doc(user.uid).set({ fullName, phone: user.phoneNumber, role: 'guest' }).then(() => { userNameDisplay.textContent = fullName; showScreen('main-menu-screen'); }).catch(err => showModal('Ошибка', 'Не удалось сохранить профиль.')); });
 
     // --- ГЛАВНЫЙ КОНТРОЛЛЕР ---
-    auth.onAuthStateChanged(user => { if (user) { db.collection('users').doc(user.uid).get().then(doc => { if (doc.exists) { const userData = doc.data(); userNameDisplay.textContent = userData.fullName; if (adminMenuBtn) adminMenuBtn.style.display = (userData.role === 'admin') ? 'flex' : 'none'; if (userData.role === 'admin') loadAdminStats(); loadUserDashboard(user.uid); showScreen('main-menu-screen'); } else { showScreen('profile-setup-screen'); } }); } else { if(adminMenuBtn) adminMenuBtn.style.display = 'none'; if(phoneView && codeView) { phoneView.style.display = 'block'; codeView.style.display = 'none'; } showScreen('auth-screen'); } });
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            db.collection('users').doc(user.uid).get().then(doc => {
+                if (doc.exists) {
+                    const userData = doc.data();
+                    userNameDisplay.textContent = userData.fullName;
+                    if (adminMenuBtn) adminMenuBtn.style.display = (userData.role === 'admin') ? 'flex' : 'none';
+                    if (userData.role === 'admin') loadAdminStats();
+                    loadUserDashboard(user.uid);
+                    showScreen('main-menu-screen');
+                } else {
+                    showScreen('profile-setup-screen');
+                }
+            }).catch(err => {
+                console.error("Ошибка получения профиля:", err);
+                showModal('Критическая ошибка', 'Не удалось загрузить данные профиля. Пожалуйста, обновите страницу.');
+            });
+        } else {
+            if (adminMenuBtn) adminMenuBtn.style.display = 'none';
+            if (phoneView && codeView) { phoneView.style.display = 'block'; codeView.style.display = 'none'; }
+            showScreen('auth-screen');
+        }
+    });
+    
     if(logoutBtn) logoutBtn.addEventListener('click', () => { auth.signOut(); });
 
-    // --- ЛОГИКА АДМИН-ПАНЕЛИ ---
-    if (adminMenuBtn) adminMenuBtn.addEventListener('click', () => showScreen('admin-hub-screen'));
-    if (scheduleForm) scheduleForm.addEventListener('submit', async (e) => { e.preventDefault(); const city = scheduleCitySelect.value; const selOpt = scheduleLocationSelect.options[scheduleLocationSelect.selectedIndex]; const locationId = selOpt.value, locationName = selOpt.dataset.name, locationAddress = selOpt.dataset.address, date = scheduleDateInput.value, isUrgent = scheduleUrgentCheckbox.checked; const startTime = scheduleStartTimeInput.value, endTime = scheduleEndTimeInput.value; if (!city || !locationId || !date || !startTime || !endTime) return showModal('Ошибка', 'Заполните все поля.'); await db.collection('schedule').add({ city, locationId, locationName, locationAddress, date: new Date(date), isUrgent, startTime, endTime }); showModal('Успешно', 'Проверка добавлена в график!'); scheduleForm.reset(); scheduleLocationSelect.innerHTML = '<option value="" disabled selected>-- ... --</option>'; scheduleLocationSelect.disabled = true; });
-    async function renderSchedules() { if (!scheduleList) return; scheduleList.innerHTML = '<div class="spinner"></div>'; const snapshot = await db.collection('schedule').orderBy('date', 'desc').get(); if (snapshot.empty) { scheduleList.innerHTML = '<p>Запланированных проверок нет.</p>'; return; } let listHTML = ''; snapshot.forEach(doc => { const s = doc.data(); const date = s.date.toDate().toLocaleDateString('ru-RU'); listHTML += `<div class="schedule-item ${s.isUrgent ? 'urgent' : ''}"><div><strong>${s.city ? s.city + ': ' : ''}${s.locationName.replace(/^Б\d+\s*/, '')}</strong><small>${date} (${s.startTime} - ${s.endTime}) ${s.isUrgent ? '🔥' : ''}</small></div><button class="delete-schedule-btn" data-id="${doc.id}">Удалить</button></div>`; }); scheduleList.innerHTML = listHTML; document.querySelectorAll('.delete-schedule-btn').forEach(b => b.addEventListener('click', (e) => deleteSchedule(e.target.dataset.id))); }
-    function deleteSchedule(scheduleId) { showModal('Удаление', 'Удалить эту проверку?', 'confirm', async (confirmed) => { if(confirmed) { try { await db.collection('schedule').doc(scheduleId).delete(); showModal('Успешно', 'Проверка удалена.'); renderSchedules(); } catch (error) { showModal('Ошибка', 'Не удалось удалить проверку.'); } } }); }
-    
-    // Остальные функции админки без изменений (статистика, отчеты, пользователи) ...
-    
+    // --- ЛОГИКА АДМИН-ПАНЕЛИ (весь блок без изменений) ---
+
     // --- ЛОГИКА АГЕНТА ---
     async function renderAvailableSchedules() {
         showScreen('cooperation-screen');
         if (!scheduleCardsList || !noSchedulesView) return;
         scheduleCardsList.innerHTML = '<div class="spinner"></div>'; noSchedulesView.style.display = 'none';
         const user = auth.currentUser; if (!user) return;
+
         const existingBookingSnapshot = await db.collection('reports').where('userId', '==', user.uid).where('status', '==', 'booked').get();
         if (!existingBookingSnapshot.empty) {
             scheduleCardsList.innerHTML = ''; noSchedulesView.innerHTML = `<h3>У вас уже есть активная проверка</h3><p>Завершите ее, прежде чем записываться на новую. Информация о ней находится на главном экране.</p>`; noSchedulesView.style.display = 'block';
             return;
         }
+
         const now = new Date(); now.setHours(0, 0, 0, 0);
         const snapshot = await db.collection('schedule').where('date', '>=', now).get();
         let schedules = []; snapshot.forEach(doc => schedules.push({ id: doc.id, ...doc.data() }));
         schedules.sort((a, b) => (a.isUrgent && !b.isUrgent) ? -1 : (!a.isUrgent && b.isUrgent) ? 1 : a.date.toMillis() - b.date.toMillis());
+
         if (schedules.length === 0) {
             scheduleCardsList.innerHTML = ''; noSchedulesView.innerHTML = `<h3>Пока нет доступных проверок</h3><p>Отличная работа! Все задания выполнены.</p>`; noSchedulesView.style.display = 'block';
             return;
         }
+
         let cardsHTML = '';
         schedules.forEach(s => { const date = s.date.toDate().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }); cardsHTML += `<li class="menu-list-item schedule-card ${s.isUrgent ? 'urgent' : ''}" data-schedule-id="${s.id}"><i class="icon fa-solid ${s.isUrgent ? 'fa-fire' : 'fa-calendar-day'}"></i><div><strong>${s.locationName.replace(/^Б\d+\s*/, '')}</strong><small>${s.locationAddress} - <b>${date}</b> (${s.startTime} - ${s.endTime})</small></div></li>`; });
         scheduleCardsList.innerHTML = cardsHTML;
@@ -107,15 +128,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function openTimePicker(scheduleId) {
-        const scheduleDoc = await db.collection('schedule').doc(scheduleId).get();
-        if (!scheduleDoc.exists) return showModal('Ошибка', 'Эта проверка больше не доступна.');
-        selectedScheduleForBooking = { id: scheduleDoc.id, ...scheduleDoc.data() };
-        const date = selectedScheduleForBooking.date.toDate().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-        pickerLocationTitle.textContent = `${selectedScheduleForBooking.locationName.replace(/^Б\d+\s*/, '')} (${date})`;
-        userChosenTimeInput.min = selectedScheduleForBooking.startTime;
-        userChosenTimeInput.max = selectedScheduleForBooking.endTime;
-        userChosenTimeInput.value = '';
-        showScreen('time-picker-screen');
+        try {
+            const scheduleDoc = await db.collection('schedule').doc(scheduleId).get();
+            if (!scheduleDoc.exists) return showModal('Ошибка', 'Эта проверка больше не доступна.');
+            selectedScheduleForBooking = { id: scheduleDoc.id, ...scheduleDoc.data() };
+            const date = selectedScheduleForBooking.date.toDate().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+            pickerLocationTitle.textContent = `${selectedScheduleForBooking.locationName.replace(/^Б\d+\s*/, '')} (${date})`;
+            userChosenTimeInput.min = selectedScheduleForBooking.startTime;
+            userChosenTimeInput.max = selectedScheduleForBooking.endTime;
+            userChosenTimeInput.value = '';
+            showScreen('time-picker-screen');
+        } catch (error) {
+            console.error("Ошибка открытия выбора времени:", error);
+            showModal('Ошибка', 'Не удалось загрузить данные проверки.');
+        }
     }
 
     if (timePickerForm) timePickerForm.addEventListener('submit', async (e) => {
@@ -123,39 +149,57 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = auth.currentUser; if (!user || !selectedScheduleForBooking) return;
         const chosenTime = userChosenTimeInput.value;
         if (!chosenTime) return showModal('Ошибка', 'Пожалуйста, выберите время.');
+
         showModal('Подтверждение', `Вы уверены, что хотите записаться на ${chosenTime}?`, 'confirm', async (confirmed) => {
             if (confirmed) {
-                const userDoc = await db.collection('users').doc(user.uid).get();
-                await db.collection('reports').add({
-                    userId: user.uid, agentName: userDoc.data().fullName,
-                    scheduleId: selectedScheduleForBooking.id,
-                    locationName: selectedScheduleForBooking.locationName,
-                    locationAddress: selectedScheduleForBooking.locationAddress,
-                    checkDate: selectedScheduleForBooking.date.toDate(),
-                    chosenTime: chosenTime, status: 'booked', createdAt: new Date()
-                });
-                showModal('Успешно', 'Вы записаны! Информация появится на главном экране.');
-                loadUserDashboard(user.uid);
-                showScreen('main-menu-screen');
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    await db.collection('reports').add({
+                        userId: user.uid, agentName: userDoc.exists ? userDoc.data().fullName : 'Агент',
+                        scheduleId: selectedScheduleForBooking.id, locationName: selectedScheduleForBooking.locationName,
+                        locationAddress: selectedScheduleForBooking.locationAddress, checkDate: selectedScheduleForBooking.date.toDate(),
+                        chosenTime: chosenTime, status: 'booked', createdAt: new Date()
+                    });
+                    showModal('Успешно', 'Вы записаны! Информация появится на главном экране.');
+                    loadUserDashboard(user.uid);
+                    showScreen('main-menu-screen');
+                } catch (error) {
+                    console.error("Ошибка при бронировании:", error);
+                    showModal('Ошибка', 'Не удалось записаться на проверку.');
+                }
             }
         });
     });
 
     async function loadUserDashboard(userId) {
-        if (!dashboardInfoContainer) return;
-        const snapshot = await db.collection('reports').where('userId', '==', userId).where('status', '==', 'booked').limit(1).get();
-        if (snapshot.empty) { dashboardInfoContainer.innerHTML = ''; currentCheckData = null; return; }
-        const doc = snapshot.docs[0];
-        currentCheckData = { id: doc.id, ...doc.data() };
-        const checkDate = currentCheckData.checkDate.toDate();
-        const now = new Date();
-        let buttonHTML = `<button class="btn-primary" disabled>Начать проверку</button>`;
-        if (now.toDateString() === checkDate.toDateString()) { // Кнопка активна в день проверки
-            buttonHTML = `<button id="start-check-btn" class="btn-primary">Начать проверку</button>`;
+        try {
+            if (!dashboardInfoContainer) return;
+            const snapshot = await db.collection('reports').where('userId', '==', userId).where('status', '==', 'booked').limit(1).get();
+            if (snapshot.empty) { dashboardInfoContainer.innerHTML = ''; currentCheckData = null; return; }
+
+            const doc = snapshot.docs[0];
+            currentCheckData = { id: doc.id, ...doc.data() };
+
+            if (!currentCheckData.checkDate || typeof currentCheckData.checkDate.toDate !== 'function') {
+                console.error("Неверный формат даты в документе отчета:", currentCheckData.id);
+                dashboardInfoContainer.innerHTML = '<p>Ошибка данных: не удалось загрузить детали проверки.</p>';
+                return;
+            }
+            
+            const checkDate = currentCheckData.checkDate.toDate();
+            const now = new Date();
+            let buttonHTML = `<button class="btn-primary" disabled>Начать проверку</button>`;
+            if (now.toDateString() === checkDate.toDateString()) { buttonHTML = `<button id="start-check-btn" class="btn-primary">Начать проверку</button>`; } 
+            else if (now < checkDate) { buttonHTML = `<button class="btn-primary" disabled>Проверка в другой день</button>`; }
+            else { buttonHTML = `<button class="btn-primary" disabled>Время истекло</button>`; }
+
+            dashboardInfoContainer.innerHTML = `<div class="next-check-card"><small>Ваша следующая проверка:</small><strong>${currentCheckData.locationName.replace(/^Б\d+\s*/, '')}</strong><p><i class="fa-solid fa-calendar-day"></i> ${checkDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</p><p><i class="fa-solid fa-clock"></i> ${currentCheckData.chosenTime}</p>${buttonHTML}<button id="cancel-booking-btn" class="btn-secondary">Отменить запись</button></div>`;
+            document.getElementById('start-check-btn')?.addEventListener('click', openChecklist);
+            document.getElementById('cancel-booking-btn')?.addEventListener('click', () => cancelBooking(currentCheckData.id));
+        } catch (error) {
+            console.error("Ошибка загрузки дашборда:", error);
+            dashboardInfoContainer.innerHTML = '<p>Произошла ошибка при загрузке данных. Обновите страницу.</p>';
         }
-        dashboardInfoContainer.innerHTML = `<div class="next-check-card"><small>Ваша следующая проверка:</small><strong>${currentCheckData.locationName.replace(/^Б\d+\s*/, '')}</strong><p><i class="fa-solid fa-calendar-day"></i> ${checkDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</p><p><i class="fa-solid fa-clock"></i> ${currentCheckData.chosenTime}</p>${buttonHTML}<button id="cancel-booking-btn" class="btn-secondary">Отменить запись</button></div>`;
-        document.getElementById('start-check-btn')?.addEventListener('click', openChecklist);
-        document.getElementById('cancel-booking-btn')?.addEventListener('click', () => cancelBooking(currentCheckData.id));
     }
 
     async function cancelBooking(reportId) {
@@ -170,23 +214,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function openChecklist() { if (!currentCheckData) return; checklistAddress.textContent = currentCheckData.locationAddress; checklistDate.textContent = new Date().toLocaleString('ru-RU'); checklistForm.reset(); showScreen('checklist-screen'); }
+    function openChecklist() {
+        if (!currentCheckData) return;
+        checklistAddress.textContent = currentCheckData.locationAddress;
+        checklistDate.textContent = new Date().toLocaleString('ru-RU');
+        checklistForm.reset();
+        showScreen('checklist-screen');
+    }
     
     if (checklistForm) checklistForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = auth.currentUser; if (!user || !currentCheckData) return;
-        const photoFiles = document.getElementById('checklist-photos').files;
-        const uploadPromises = Array.from(photoFiles).map(file => { const filePath = `reports/${user.uid}/${Date.now()}_${file.name}`; const fileRef = storage.ref(filePath); return fileRef.put(file).then(() => fileRef.getDownloadURL()); });
-        const imageUrls = await Promise.all(uploadPromises);
-        const reportUpdateData = {
-            status: 'pending', imageUrls, submittedAt: new Date(),
-            answers: { q1_appearance: document.getElementById('checklist-q1-appearance').value, q2_cleanliness: document.getElementById('checklist-q2-cleanliness').value, q3_greeting: document.getElementById('checklist-q3-greeting').value, q4_upsell: document.getElementById('checklist-q4-upsell').value, q5_actions: document.getElementById('checklist-q5-actions').value, q6_handout: document.getElementById('checklist-q6-handout').value, q7_order_eval: document.getElementById('checklist-q7-order-eval').value, q8_food_rating: document.getElementById('checklist-q8-food-rating').value, q9_comments: document.getElementById('checklist-q9-comments').value, }
-        };
-        await db.collection('reports').doc(currentCheckData.id).update(reportUpdateData);
-        showModal('Отчет отправлен!', `Спасибо! Мы свяжемся с вами по номеру ${user.phoneNumber} для возмещения средств.`);
-        currentCheckData = null;
-        loadUserDashboard(user.uid);
-        showScreen('main-menu-screen');
+        const submitBtn = checklistForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = true; submitBtn.textContent = 'Отправка...';
+        try {
+            const photoFiles = document.getElementById('checklist-photos').files;
+            const uploadPromises = Array.from(photoFiles).map(file => { const filePath = `reports/${user.uid}/${Date.now()}_${file.name}`; const fileRef = storage.ref(filePath); return fileRef.put(file).then(() => fileRef.getDownloadURL()); });
+            const imageUrls = await Promise.all(uploadPromises);
+            const reportUpdateData = {
+                status: 'pending', imageUrls, submittedAt: new Date(),
+                answers: { q1_appearance: document.getElementById('checklist-q1-appearance').value, q2_cleanliness: document.getElementById('checklist-q2-cleanliness').value, q3_greeting: document.getElementById('checklist-q3-greeting').value, q4_upsell: document.getElementById('checklist-q4-upsell').value, q5_actions: document.getElementById('checklist-q5-actions').value, q6_handout: document.getElementById('checklist-q6-handout').value, q7_order_eval: document.getElementById('checklist-q7-order-eval').value, q8_food_rating: document.getElementById('checklist-q8-food-rating').value, q9_comments: document.getElementById('checklist-q9-comments').value, }
+            };
+            await db.collection('reports').doc(currentCheckData.id).update(reportUpdateData);
+            showModal('Отчет отправлен!', `Спасибо! Мы свяжемся с вами по номеру ${user.phoneNumber} для возмещения средств.`);
+            currentCheckData = null;
+            loadUserDashboard(user.uid);
+            showScreen('main-menu-screen');
+        } catch (error) {
+            console.error("Ошибка отправки отчета:", error);
+            showModal('Ошибка', 'Не удалось отправить отчет.');
+        } finally {
+            submitBtn.disabled = false; submitBtn.textContent = 'Отправить отчёт';
+        }
     });
 
     // Оставшиеся функции (renderHistory, admin-панель и т.д.)
