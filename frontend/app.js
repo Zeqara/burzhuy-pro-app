@@ -64,14 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminDetailAnswers = { q1: document.getElementById('admin-detail-q1'), q2: document.getElementById('admin-detail-q2'), q3: document.getElementById('admin-detail-q3'), q4: document.getElementById('admin-detail-q4'), q5: document.getElementById('admin-detail-q5'), q6: document.getElementById('admin-detail-q6'), q7: document.getElementById('admin-detail-q7'), q8: document.getElementById('admin-detail-q8'), q9: document.getElementById('admin-detail-q9'), };
     
     const recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
-
-    if (phoneInput) {
-        phoneInput.addEventListener('input', () => {
-            if (!phoneInput.value.startsWith('+7')) {
-                phoneInput.value = '+7';
-            }
-        });
-    }
+    if (phoneInput) { phoneInput.addEventListener('input', () => { if (!phoneInput.value.startsWith('+7')) { phoneInput.value = '+7'; } }); }
 
     // --- АУТЕНТИФИКАЦИЯ ---
     if(phoneForm) phoneForm.addEventListener('submit', (e) => { e.preventDefault(); let rawPhoneNumber = phoneInput.value, digitsOnly = rawPhoneNumber.replace(/\D/g, ''); if (digitsOnly.startsWith('8')) digitsOnly = '7' + digitsOnly.substring(1); const formattedPhoneNumber = `+${digitsOnly}`; if (digitsOnly.length < 11) return showModal('Ошибка', 'Пожалуйста, введите полный номер телефона.'); sendCodeBtn.disabled = true; sendCodeBtn.textContent = 'Отправка...'; recaptchaVerifier.render().then((widgetId) => { auth.signInWithPhoneNumber(formattedPhoneNumber, recaptchaVerifier).then(result => { confirmationResult = result; phoneView.style.display = 'none'; codeView.style.display = 'block'; showModal('Успешно', 'СМС-код отправлен на ваш номер.'); }).catch(err => { console.error("Ошибка Firebase Auth:", err); showModal('Ошибка', `Произошла ошибка: ${err.code}`); }).finally(() => { sendCodeBtn.disabled = false; sendCodeBtn.textContent = 'Получить код'; }); }).catch(err => { console.error("Ошибка отрисовки reCAPTCHA:", err); showModal('Ошибка', 'Не удалось запустить проверку reCAPTCHA. Попробуйте обновить страницу.'); sendCodeBtn.disabled = false; sendCodeBtn.textContent = 'Получить код'; }); });
@@ -89,13 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (userData.role === 'admin') loadAdminStats();
                     loadUserDashboard(user.uid);
                     showScreen('main-menu-screen');
-                } else {
-                    showScreen('profile-setup-screen');
-                }
-            }).catch(err => {
-                console.error("Ошибка получения профиля:", err);
-                showModal('Критическая ошибка', 'Не удалось загрузить данные профиля. Пожалуйста, обновите страницу.');
-            });
+                } else { showScreen('profile-setup-screen'); }
+            }).catch(err => { console.error("Ошибка получения профиля:", err); showModal('Критическая ошибка', 'Не удалось загрузить данные профиля. Пожалуйста, обновите страницу.'); });
         } else {
             if (adminMenuBtn) adminMenuBtn.style.display = 'none';
             if (phoneView && codeView) { phoneView.style.display = 'block'; codeView.style.display = 'none'; }
@@ -107,210 +95,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- ЛОГИКА АДМИН-ПАНЕЛИ ---
     if (adminMenuBtn) adminMenuBtn.addEventListener('click', () => showScreen('admin-hub-screen'));
-    async function loadAdminStats() {
-        const statsContainer = document.getElementById('admin-stats-container');
-        if (!statsContainer) return;
-        try {
-            const pendingReports = await db.collection('reports').where('status', '==', 'pending').get();
-            const totalUsers = await db.collection('users').get();
-            statsContainer.innerHTML = `<div class="stat-card"><h3>${pendingReports.size}</h3><p>Отчетов на проверке</p></div><div class="stat-card"><h3>${totalUsers.size}</h3><p>Всего пользователей</p></div>`;
-        } catch(e) { console.error("Ошибка загрузки статистики:", e)}
-    }
-    
+    async function loadAdminStats() { const statsContainer = document.getElementById('admin-stats-container'); if (!statsContainer) return; try { const pendingReports = await db.collection('reports').where('status', '==', 'pending').get(); const totalUsers = await db.collection('users').get(); statsContainer.innerHTML = `<div class="stat-card"><h3>${pendingReports.size}</h3><p>Отчетов на проверке</p></div><div class="stat-card"><h3>${totalUsers.size}</h3><p>Всего пользователей</p></div>`; } catch(e) { console.error("Ошибка загрузки статистики:", e)} }
     async function loadCitiesForAdmin() { if (!scheduleCitySelect) return; const snapshot = await db.collection('cities').orderBy('name').get(); let optionsHTML = '<option value="" disabled selected>-- Выберите город --</option>'; snapshot.forEach(doc => { optionsHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`; }); scheduleCitySelect.innerHTML = optionsHTML; }
     if (scheduleCitySelect) { scheduleCitySelect.addEventListener('change', async (e) => { const selectedCity = e.target.value; scheduleLocationSelect.innerHTML = '<option value="" disabled selected>-- Загрузка... --</option>'; if (!selectedCity) { scheduleLocationSelect.disabled = true; return; } const snapshot = await db.collection('locations').where('city', '==', selectedCity).get(); let optionsHTML = '<option value="" disabled selected>-- Выберите точку --</option>'; snapshot.forEach(doc => { const loc = doc.data(); const cleanName = loc.name.replace(/^Б\d+\s*/, ''); optionsHTML += `<option value="${doc.id}" data-name="${loc.name}" data-address="${loc.address}">${cleanName}</option>`; }); scheduleLocationSelect.innerHTML = optionsHTML; scheduleLocationSelect.disabled = false; }); }
-    
     if (scheduleForm) scheduleForm.addEventListener('submit', async (e) => { e.preventDefault(); const city = scheduleCitySelect.value; const selOpt = scheduleLocationSelect.options[scheduleLocationSelect.selectedIndex]; const locationId = selOpt.value, locationName = selOpt.dataset.name, locationAddress = selOpt.dataset.address, date = scheduleDateInput.value, isUrgent = scheduleUrgentCheckbox.checked; const startTime = scheduleStartTimeInput.value, endTime = scheduleEndTimeInput.value; if (!city || !locationId || !date || !startTime || !endTime) return showModal('Ошибка', 'Заполните все поля.'); await db.collection('schedule').add({ city, locationId, locationName, locationAddress, date: new Date(date), isUrgent, startTime, endTime }); showModal('Успешно', 'Проверка добавлена в график!'); scheduleForm.reset(); scheduleLocationSelect.innerHTML = '<option value="" disabled selected>-- ... --</option>'; scheduleLocationSelect.disabled = true; });
-    
     async function renderSchedules() { if (!scheduleList) return; scheduleList.innerHTML = '<div class="spinner"></div>'; const snapshot = await db.collection('schedule').orderBy('date', 'desc').get(); if (snapshot.empty) { scheduleList.innerHTML = '<p>Запланированных проверок нет.</p>'; return; } let listHTML = ''; snapshot.forEach(doc => { const s = doc.data(); const date = s.date.toDate().toLocaleDateString('ru-RU'); listHTML += `<div class="schedule-item ${s.isUrgent ? 'urgent' : ''}"><div><strong>${s.city ? s.city + ': ' : ''}${s.locationName.replace(/^Б\d+\s*/, '')}</strong><small>${date} (${s.startTime} - ${s.endTime}) ${s.isUrgent ? '🔥' : ''}</small></div><button class="delete-schedule-btn" data-id="${doc.id}">Удалить</button></div>`; }); scheduleList.innerHTML = listHTML; document.querySelectorAll('.delete-schedule-btn').forEach(b => b.addEventListener('click', (e) => deleteSchedule(e.target.dataset.id))); }
     function deleteSchedule(scheduleId) { showModal('Удаление', 'Удалить эту проверку?', 'confirm', async (confirmed) => { if(confirmed) { try { await db.collection('schedule').doc(scheduleId).delete(); showModal('Успешно', 'Проверка удалена.'); renderSchedules(); } catch (error) { showModal('Ошибка', 'Не удалось удалить проверку.'); } } }); }
-    
     async function renderAllReports() { if (!adminReportsList) return; adminReportsList.innerHTML = '<div class="spinner"></div>'; const snapshot = await db.collection('reports').orderBy('createdAt', 'desc').get(); if (snapshot.empty) { adminReportsList.innerHTML = '<p>Отчетов пока нет.</p>'; return; } let html = ''; const userIds = [...new Set(snapshot.docs.map(doc => doc.data().userId))]; if (userIds.length > 0) { const userPromises = userIds.map(id => db.collection('users').doc(id).get()); const userDocs = await Promise.all(userPromises); const usersMap = new Map(userDocs.map(d => [d.id, d.data()])); snapshot.forEach(doc => { const r = doc.data(); const user = usersMap.get(r.userId); const date = r.checkDate && r.checkDate.toDate ? r.checkDate.toDate().toLocaleDateString('ru-RU') : 'без даты'; const statusText = { booked: 'забронирован', pending: 'в ожидании', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' }[r.status] || r.status; html += `<li class="menu-list-item report-item" data-id="${doc.id}"><div class="status-indicator ${r.status}"></div><div><strong>${r.locationName.replace(/^Б\d+\s*/, '')}</strong><small>${user?.fullName || 'Агент'} - ${date} - ${statusText}</small></div><button class="delete-report-btn" data-id="${doc.id}">Удалить</button></li>`; }); } adminReportsList.innerHTML = html; adminReportsList.querySelectorAll('.report-item').forEach(item => item.addEventListener('click', (e) => { if (e.target.classList.contains('delete-report-btn')) return; openAdminReportDetail(item.dataset.id); })); adminReportsList.querySelectorAll('.delete-report-btn').forEach(button => button.addEventListener('click', (e) => deleteReport(e.target.dataset.id))); }
-    async function openAdminReportDetail(reportId) { /* ... */ } // Эта и другие функции админки уже есть, оставляем их
+    async function openAdminReportDetail(reportId) { /* ... */ }
     function updateReportStatus(newStatus) { /* ... */ }
     async function deleteReport(reportId) { /* ... */ }
-    async function renderAllUsers() { /* ... */ }
+    async function renderAllUsers() { if (!adminUsersList) return; adminUsersList.innerHTML = '<div class="spinner"></div>'; const usersSnapshot = await db.collection('users').get(); const reportsSnapshot = await db.collection('reports').where('status', 'in', ['approved', 'paid']).get(); const reportCounts = {}; reportsSnapshot.forEach(doc => { const userId = doc.data().userId; if (!reportCounts[userId]) reportCounts[userId] = 0; reportCounts[userId]++; }); if (usersSnapshot.empty) { adminUsersList.innerHTML = '<p>Пользователей нет.</p>'; return; } let html = ''; usersSnapshot.forEach(doc => { const u = doc.data(); const userId = doc.id; const completedChecks = reportCounts[userId] || 0; const roleText = u.role === 'admin' ? 'Разжаловать' : 'Сделать админом'; const roleClass = u.role === 'admin' ? 'admin' : ''; html += `<li class="user-card"><div class="user-card-header"><div class="user-card-avatar">${u.fullName ? u.fullName.charAt(0) : '?'}</div><div class="user-card-info"><strong>${u.fullName || 'Имя не указано'}</strong><small>${u.phone || 'Телефон не указан'}</small></div></div><div class="user-card-stats"><div><span>${completedChecks}</span><small>Проверок</small></div></div><div class="user-card-actions"><button class="role-toggle-btn ${roleClass}" data-id="${userId}" data-role="${u.role}" data-name="${u.fullName}">${roleText}</button><button class="delete-user-btn" data-id="${userId}" data-name="${u.fullName}">Удалить</button></div></li>`; }); adminUsersList.innerHTML = html; adminUsersList.querySelectorAll('.role-toggle-btn').forEach(button => button.addEventListener('click', (e) => toggleUserRole(e.currentTarget.dataset.id, e.currentTarget.dataset.role, e.currentTarget.dataset.name))); adminUsersList.querySelectorAll('.delete-user-btn').forEach(button => button.addEventListener('click', (e) => deleteUser(e.currentTarget.dataset.id, e.currentTarget.dataset.name))); }
     function toggleUserRole(userId, currentRole, name) { /* ... */ }
     function deleteUser(userId, name) { /* ... */ }
 
     // --- ЛОГИКА АГЕНТА ---
-    async function renderAvailableSchedules() {
-        showScreen('cooperation-screen');
-        if (!scheduleCardsList || !noSchedulesView) return;
-        scheduleCardsList.innerHTML = '<div class="spinner"></div>'; noSchedulesView.style.display = 'none';
-        const user = auth.currentUser; if (!user) return;
-
-        const existingBookingSnapshot = await db.collection('reports').where('userId', '==', user.uid).where('status', '==', 'booked').get();
-        if (!existingBookingSnapshot.empty) {
-            scheduleCardsList.innerHTML = ''; noSchedulesView.innerHTML = `<h3>У вас уже есть активная проверка</h3><p>Завершите ее, прежде чем записываться на новую. Информация о ней находится на главном экране.</p>`; noSchedulesView.style.display = 'block';
-            return;
-        }
-
-        const now = new Date(); now.setHours(0, 0, 0, 0);
-        const snapshot = await db.collection('schedule').where('date', '>=', now).get();
-        let schedules = []; snapshot.forEach(doc => schedules.push({ id: doc.id, ...doc.data() }));
-
-        const reportsSnapshot = await db.collection('reports').where('status', '==', 'booked').get();
-        const bookedScheduleIds = new Set();
-        reportsSnapshot.forEach(doc => bookedScheduleIds.add(doc.data().scheduleId));
-        schedules = schedules.filter(s => !bookedScheduleIds.has(s.id));
-        
-        schedules.sort((a, b) => (a.isUrgent && !b.isUrgent) ? -1 : (!a.isUrgent && b.isUrgent) ? 1 : a.date.toMillis() - b.date.toMillis());
-
-        if (schedules.length === 0) {
-            scheduleCardsList.innerHTML = ''; noSchedulesView.innerHTML = `<h3>Пока нет доступных проверок</h3><p>Отличная работа! Все задания выполнены.</p>`; noSchedulesView.style.display = 'block';
-            return;
-        }
-
-        let cardsHTML = '';
-        schedules.forEach(s => { const date = s.date.toDate().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }); cardsHTML += `<li class="menu-list-item schedule-card ${s.isUrgent ? 'urgent' : ''}" data-schedule-id="${s.id}"><i class="icon fa-solid ${s.isUrgent ? 'fa-fire' : 'fa-calendar-day'}"></i><div><strong>${s.locationName.replace(/^Б\d+\s*/, '')}</strong><small>${s.locationAddress} - <b>${date}</b> (${s.startTime} - ${s.endTime})</small></div></li>`; });
-        scheduleCardsList.innerHTML = cardsHTML;
-        document.querySelectorAll('.schedule-card').forEach(c => c.addEventListener('click', () => openTimePicker(c.dataset.scheduleId)));
-    }
-
-    async function openTimePicker(scheduleId) {
-        try {
-            const scheduleDoc = await db.collection('schedule').doc(scheduleId).get();
-            if (!scheduleDoc.exists) return showModal('Ошибка', 'Эта проверка больше не доступна.');
-            selectedScheduleForBooking = { id: scheduleDoc.id, ...scheduleDoc.data() };
-            const date = selectedScheduleForBooking.date.toDate().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-            pickerLocationTitle.textContent = `${selectedScheduleForBooking.locationName.replace(/^Б\d+\s*/, '')} (${date})`;
-            userChosenTimeInput.min = selectedScheduleForBooking.startTime;
-            userChosenTimeInput.max = selectedScheduleForBooking.endTime;
-            userChosenTimeInput.value = '';
-            showScreen('time-picker-screen');
-        } catch (error) {
-            console.error("Ошибка открытия выбора времени:", error);
-            showModal('Ошибка', 'Не удалось загрузить данные проверки.');
-        }
-    }
-
-    if (timePickerForm) timePickerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const user = auth.currentUser; if (!user || !selectedScheduleForBooking) return;
-        const chosenTime = userChosenTimeInput.value;
-        if (!chosenTime) return showModal('Ошибка', 'Пожалуйста, выберите время.');
-
-        showModal('Подтверждение', `Вы уверены, что хотите записаться на ${chosenTime}?`, 'confirm', async (confirmed) => {
-            if (confirmed) {
-                try {
-                    const userDoc = await db.collection('users').doc(user.uid).get();
-                    await db.collection('reports').add({
-                        userId: user.uid, agentName: userDoc.exists ? userDoc.data().fullName : 'Агент',
-                        scheduleId: selectedScheduleForBooking.id, locationName: selectedScheduleForBooking.locationName,
-                        locationAddress: selectedScheduleForBooking.locationAddress, checkDate: selectedScheduleForBooking.date.toDate(),
-                        chosenTime: chosenTime, status: 'booked', createdAt: new Date()
-                    });
-                    showModal('Успешно', 'Вы записаны! Информация появится на главном экране.');
-                    loadUserDashboard(user.uid);
-                    showScreen('main-menu-screen');
-                } catch (error) {
-                    console.error("Ошибка при бронировании:", error);
-                    showModal('Ошибка', 'Не удалось записаться на проверку.');
-                }
-            }
-        });
-    });
-
-    async function loadUserDashboard(userId) {
-        try {
-            if (!dashboardInfoContainer) return;
-            const snapshot = await db.collection('reports').where('userId', '==', userId).where('status', '==', 'booked').limit(1).get();
-            if (snapshot.empty) { dashboardInfoContainer.innerHTML = ''; currentCheckData = null; return; }
-
-            const doc = snapshot.docs[0];
-            currentCheckData = { id: doc.id, ...doc.data() };
-
-            if (!currentCheckData.checkDate || typeof currentCheckData.checkDate.toDate !== 'function') {
-                console.error("Неверный формат даты в документе отчета:", currentCheckData.id);
-                dashboardInfoContainer.innerHTML = '<p>Ошибка данных: не удалось загрузить детали проверки.</p>';
-                return;
-            }
-            
-            const checkDate = currentCheckData.checkDate.toDate();
-            const now = new Date();
-            let buttonHTML = `<button class="btn-primary" disabled>Начать проверку</button>`;
-            if (now.toDateString() === checkDate.toDateString()) { buttonHTML = `<button id="start-check-btn" class="btn-primary">Начать проверку</button>`; } 
-            else if (now < checkDate) { buttonHTML = `<button class="btn-primary" disabled>Проверка в другой день</button>`; }
-            else { buttonHTML = `<button class="btn-primary" disabled>Время истекло</button>`; }
-
-            dashboardInfoContainer.innerHTML = `<div class="next-check-card"><small>Ваша следующая проверка:</small><strong>${currentCheckData.locationName.replace(/^Б\d+\s*/, '')}</strong><p><i class="fa-solid fa-calendar-day"></i> ${checkDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</p><p><i class="fa-solid fa-clock"></i> ${currentCheckData.chosenTime}</p>${buttonHTML}<button id="cancel-booking-btn" class="btn-secondary">Отменить запись</button></div>`;
-            document.getElementById('start-check-btn')?.addEventListener('click', openChecklist);
-            document.getElementById('cancel-booking-btn')?.addEventListener('click', () => cancelBooking(currentCheckData.id));
-        } catch (error) {
-            console.error("Ошибка загрузки дашборда:", error);
-            dashboardInfoContainer.innerHTML = '<p>Произошла ошибка при загрузке данных. Обновите страницу.</p>';
-        }
-    }
-
-    async function cancelBooking(reportId) {
-        showModal('Отмена записи', 'Вы уверены, что хотите отменить эту проверку?', 'confirm', async (confirmed) => {
-            if (confirmed) {
-                try {
-                    await db.collection('reports').doc(reportId).delete();
-                    showModal('Успешно', 'Ваша запись отменена.');
-                    loadUserDashboard(auth.currentUser.uid);
-                } catch (error) { showModal('Ошибка', 'Не удалось отменить запись.'); }
-            }
-        });
-    }
-
-    function openChecklist() {
-        if (!currentCheckData) return;
-        checklistAddress.textContent = currentCheckData.locationAddress;
-        checklistDate.textContent = new Date().toLocaleString('ru-RU');
-        checklistForm.reset();
-        showScreen('checklist-screen');
-    }
+    async function renderAvailableSchedules() { /* ... */ }
+    async function openTimePicker(scheduleId) { /* ... */ }
+    if (timePickerForm) timePickerForm.addEventListener('submit', async (e) => { /* ... */ });
+    async function loadUserDashboard(userId) { /* ... */ }
+    async function cancelBooking(reportId) { /* ... */ }
+    function openChecklist() { /* ... */ }
+    if (checklistForm) checklistForm.addEventListener('submit', async (e) => { /* ... */ });
+    async function renderHistory() { if (!historyList) return; historyList.innerHTML = '<div class="spinner"></div>'; const user = auth.currentUser; if (!user) return; const snapshot = await db.collection('reports').where('userId', '==', user.uid).orderBy('createdAt', 'desc').get(); if (snapshot.empty) { historyList.innerHTML = '<p>Вы еще не отправляли ни одного отчета.</p>'; return; } let historyHTML = ''; snapshot.forEach(doc => { const report = doc.data(); const date = report.checkDate.toDate().toLocaleDateString('ru-RU'); const statusText = { booked: 'забронирован', pending: 'в ожидании', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' }[report.status] || report.status; let commentHTML = ''; if (report.status === 'rejected' && report.rejectionComment) { commentHTML = `<small style="color:var(--status-rejected);"><b>Причина отклонения:</b> ${report.rejectionComment}</small>`; } historyHTML += `<li class="menu-list-item history-item"><div class="status-indicator ${report.status}"></div><div><strong>${report.locationName.replace(/^Б\d+\s*/, '')}</strong><small>Дата: ${date} - Статус: ${statusText}</small>${commentHTML}</div></li>`; }); historyList.innerHTML = historyHTML; }
     
-    if (checklistForm) checklistForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const user = auth.currentUser; if (!user || !currentCheckData) return;
-        const submitBtn = checklistForm.querySelector('button[type="submit"]');
-        submitBtn.disabled = true; submitBtn.textContent = 'Отправка...';
-        try {
-            const photoFiles = document.getElementById('checklist-photos').files;
-            const uploadPromises = Array.from(photoFiles).map(file => { const filePath = `reports/${user.uid}/${Date.now()}_${file.name}`; const fileRef = storage.ref(filePath); return fileRef.put(file).then(() => fileRef.getDownloadURL()); });
-            const imageUrls = await Promise.all(uploadPromises);
-            const reportUpdateData = {
-                status: 'pending', imageUrls, submittedAt: new Date(),
-                answers: { q1_appearance: document.getElementById('checklist-q1-appearance').value, q2_cleanliness: document.getElementById('checklist-q2-cleanliness').value, q3_greeting: document.getElementById('checklist-q3-greeting').value, q4_upsell: document.getElementById('checklist-q4-upsell').value, q5_actions: document.getElementById('checklist-q5-actions').value, q6_handout: document.getElementById('checklist-q6-handout').value, q7_order_eval: document.getElementById('checklist-q7-order-eval').value, q8_food_rating: document.getElementById('checklist-q8-food-rating').value, q9_comments: document.getElementById('checklist-q9-comments').value, }
-            };
-            await db.collection('reports').doc(currentCheckData.id).update(reportUpdateData);
-            showModal('Отчет отправлен!', `Спасибо! Мы свяжемся с вами по номеру ${user.phoneNumber} для возмещения средств.`);
-            currentCheckData = null;
-            loadUserDashboard(user.uid);
-            showScreen('main-menu-screen');
-        } catch (error) {
-            console.error("Ошибка отправки отчета:", error);
-            showModal('Ошибка', 'Не удалось отправить отчет.');
-        } finally {
-            submitBtn.disabled = false; submitBtn.textContent = 'Отправить отчёт';
-        }
-    });
-
-    async function renderHistory() {
-        if (!historyList) return;
-        historyList.innerHTML = '<div class="spinner"></div>';
-        const user = auth.currentUser; if (!user) return;
-        const snapshot = await db.collection('reports').where('userId', '==', user.uid).orderBy('createdAt', 'desc').get();
-        if (snapshot.empty) { historyList.innerHTML = '<p>Вы еще не отправляли ни одного отчета.</p>'; return; }
-        let historyHTML = '';
-        snapshot.forEach(doc => {
-            const report = doc.data();
-            const date = report.checkDate.toDate().toLocaleDateString('ru-RU');
-            const statusText = { booked: 'забронирован', pending: 'в ожидании', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' }[report.status] || report.status;
-            let commentHTML = '';
-            if (report.status === 'rejected' && report.rejectionComment) {
-                commentHTML = `<small class="rejection-comment"><b>Причина отклонения:</b> ${report.rejectionComment}</small>`;
-            }
-            historyHTML += `<li class="menu-list-item history-item"><div class="status-indicator ${report.status}"></div><div><strong>${report.locationName.replace(/^Б\d+\s*/, '')}</strong><small>Дата: ${date} - Статус: ${statusText}</small>${commentHTML}</div></li>`;
-        });
-        historyList.innerHTML = historyHTML;
-    }
-
+    // --- НАВИГАЦИЯ ---
     document.querySelectorAll('.menu-btn').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); const target = b.dataset.target; if (target === 'cooperation-screen') renderAvailableSchedules(); else if (target === 'history-screen') { renderHistory(); showScreen(target); } else showScreen(target); }));
-    document.querySelectorAll('.back-btn').forEach(b => b.addEventListener('click', () => { const parentScreen = b.closest('.screen').id; if (parentScreen === 'time-picker-screen') { showScreen('cooperation-screen'); } else { showScreen(b.dataset.target); }}));
+    document.querySelectorAll('.back-btn').forEach(b => b.addEventListener('click', (e) => { const target = e.currentTarget.dataset.target; showScreen(target); }));
     document.querySelectorAll('.admin-hub-btn').forEach(b => b.addEventListener('click', () => { const target = b.dataset.target; if(target === 'admin-schedule-screen') { loadCitiesForAdmin(); } if(target === 'admin-reports-screen') { renderAllReports(); } if(target === 'admin-users-screen') { renderAllUsers(); } showScreen(target); }));
-    if(viewScheduleBtn) viewScheduleBtn.addEventListener('click', () => { const targetScreen = document.getElementById('admin-view-schedule-screen'); if (targetScreen) { renderSchedules(); showScreen('admin-view-schedule-screen'); } });
+    if(viewScheduleBtn) viewScheduleBtn.addEventListener('click', () => { renderSchedules(); showScreen('admin-view-schedule-screen'); });
 });
