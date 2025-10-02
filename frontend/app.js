@@ -6,7 +6,6 @@ const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
-// let confirmationResult = null; // <-- УДАЛЕНО
 let currentReportId = null;
 let selectedScheduleForBooking = null;
 
@@ -46,12 +45,12 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Элементы
-    const loginRegisterForm = document.getElementById('login-register-form'); // <-- ИЗМЕНЕНО
+    const loginRegisterForm = document.getElementById('login-register-form'); 
     const profileSetupForm = document.getElementById('profile-setup-form');
     const phoneInput = document.getElementById('phone-input');
-    const passwordInput = document.getElementById('password-input'); // <-- ДОБАВЛЕНО
+    const passwordInput = document.getElementById('password-input'); 
     const profileNameInput = document.getElementById('profile-name-input');
-    const loginRegisterBtn = document.getElementById('login-register-btn'); // <-- ИЗМЕНЕНО
+    const loginRegisterBtn = document.getElementById('login-register-btn'); 
     const userNameDisplay = document.getElementById('user-name-display');
     const logoutBtn = document.getElementById('logout-btn');
     const adminMenuBtn = document.getElementById('admin-menu-btn');
@@ -65,52 +64,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminDetailAddress = document.getElementById('admin-detail-address'), adminDetailUser = document.getElementById('admin-detail-user'), adminDetailPhone = document.getElementById('admin-detail-phone'), adminDetailDate = document.getElementById('admin-detail-date'), adminDetailStatus = document.getElementById('admin-detail-status'), adminDetailPhotos = document.getElementById('admin-detail-photos'), adminDetailRejectionComment = document.getElementById('admin-detail-rejection-comment-container');
     const adminDetailAnswers = { q1: document.getElementById('admin-detail-q1'), q2: document.getElementById('admin-detail-q2'), q3: document.getElementById('admin-detail-q3'), q4: document.getElementById('admin-detail-q4'), q5: document.getElementById('admin-detail-q5'), q6: document.getElementById('admin-detail-q6'), q7: document.getElementById('admin-detail-q7'), q8: document.getElementById('admin-detail-q8'), q9: document.getElementById('admin-detail-q9'), };
     
-    // Вся логика reCAPTCHA и СМС удалена
     if (phoneInput) { phoneInput.addEventListener('input', () => { if (!phoneInput.value.startsWith('+7')) { phoneInput.value = '+7'; } }); }
 
-    // --- АУТЕНТИФИКАЦИЯ (ПОЛНОСТЬЮ ПЕРЕПИСАНА) ---
+    // --- АУТЕНТИФИКАЦИЯ ---
     if(loginRegisterForm) {
         loginRegisterForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            
-            // 1. Валидация и форматирование номера
             let rawPhoneNumber = phoneInput.value;
             let digitsOnly = rawPhoneNumber.replace(/\D/g, '');
             if (digitsOnly.startsWith('8')) digitsOnly = '7' + digitsOnly.substring(1);
             if (digitsOnly.length < 11) return showModal('Ошибка', 'Пожалуйста, введите полный номер телефона.');
             const formattedPhoneNumber = `+${digitsOnly}`;
-
             const password = passwordInput.value;
             if (password.length < 6) return showModal('Ошибка', 'Пароль должен содержать не менее 6 символов.');
-
-            // Используем номер телефона как часть email для совместимости с Firebase
             const email = `${formattedPhoneNumber}@burzhuy-pro.app`;
-
             loginRegisterBtn.disabled = true;
-            loginRegisterBtn.textContent = 'Обработка...';
-
-            // 2. Пытаемся создать нового пользователя
+            loginRegisterBtn.innerHTML = '<div class="spinner-small"></div> Вход...';
             auth.createUserWithEmailAndPassword(email, password)
-                .then(userCredential => {
-                    // Успешная регистрация, onAuthStateChanged перенаправит на создание профиля
-                    console.log('Новый пользователь зарегистрирован.');
-                })
+                .then(userCredential => {})
                 .catch(error => {
-                    // 3. Если пользователь уже существует, пытаемся войти
                     if (error.code === 'auth/email-already-in-use') {
                         auth.signInWithEmailAndPassword(email, password)
-                            .then(userCredential => {
-                                // Успешный вход
-                                console.log('Пользователь успешно вошел.');
-                            })
+                            .then(userCredential => {})
                             .catch(signInError => {
-                                // Ошибка входа (например, неверный пароль)
                                 showModal('Ошибка входа', 'Неверный номер телефона или пароль.');
                             });
                     } else if (error.code === 'auth/weak-password') {
                          showModal('Ошибка регистрации', 'Пароль слишком простой. Используйте не менее 6 символов.');
                     } else {
-                        // Другие ошибки
                         showModal('Ошибка', `Произошла ошибка: ${error.message}`);
                     }
                 })
@@ -127,13 +108,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const user = auth.currentUser;
             const fullName = profileNameInput.value.trim();
             if (!user || !fullName) return;
-
-            // Извлекаем номер телефона из "email" пользователя
             const phoneNumber = user.email.replace('@burzhuy-pro.app', '');
-
             db.collection('users').doc(user.uid).set({
                 fullName,
-                phone: phoneNumber, // <-- ИЗМЕНЕНО
+                phone: phoneNumber, 
                 role: 'guest',
                 completedChecks: 0
             }).then(() => {
@@ -158,7 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadUserDashboard(user.uid);
                     showScreen('main-menu-screen');
                 } else {
-                    // Если пользователь есть в Auth, но нет профиля в DB -> на страницу создания
                     showScreen('profile-setup-screen');
                 }
             }, err => {
@@ -166,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 showModal('Критическая ошибка', 'Не удалось загрузить данные профиля. Пожалуйста, обновите страницу.');
             });
         } else {
-            // Если пользователя нет, показываем экран входа/регистрации
             if (adminMenuBtn) adminMenuBtn.style.display = 'none';
             showScreen('auth-screen');
         }
@@ -174,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if(logoutBtn) logoutBtn.addEventListener('click', () => { auth.signOut(); });
 
-    // --- ЛОГИКА АДМИН-ПАНЕЛИ (без изменений) ---
+    // --- ЛОГИКА АДМИН-ПАНЕЛИ ---
     if (adminMenuBtn) adminMenuBtn.addEventListener('click', () => showScreen('admin-hub-screen'));
     
     async function loadAdminStats() {
@@ -304,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function deleteSchedule(scheduleId) {
-        showModal('Подтверждение', 'Вы уверены, что хотите удалить эту проверку? Это действие необратимо.', 'confirm', (confirmed) => {
+        showModal('Подтверждение', 'Вы уверены, что хотите удалить эту проверку?', 'confirm', (confirmed) => {
             if (confirmed) {
                 db.collection('schedules').doc(scheduleId).delete()
                     .then(() => {
@@ -312,7 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         renderSchedules();
                     })
                     .catch(err => {
-                        console.error("Ошибка удаления:", err);
                         showModal('Ошибка', 'Не удалось удалить проверку.');
                     });
             }
@@ -371,12 +346,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!reportDoc.exists) throw new Error("Отчет не найден");
             const report = reportDoc.data();
             
-            const userDoc = await db.collection('users').doc(report.userId).get();
-            const user = userDoc.exists ? userDoc.data() : { fullName: 'Неизвестно', phone: 'Неизвестно' };
-
             adminDetailAddress.textContent = report.locationName;
-            adminDetailUser.textContent = user.fullName;
-            adminDetailPhone.textContent = user.phone;
+
+            if (report.userId) {
+                const userDoc = await db.collection('users').doc(report.userId).get();
+                if (userDoc.exists) {
+                    const user = userDoc.data();
+                    adminDetailUser.textContent = user.fullName;
+                    adminDetailPhone.textContent = user.phone;
+                } else {
+                    adminDetailUser.textContent = 'Пользователь удален';
+                    adminDetailPhone.textContent = '—';
+                }
+            } else {
+                adminDetailUser.textContent = 'Пользователь не привязан';
+                adminDetailPhone.textContent = '—';
+            }
+
             adminDetailDate.textContent = report.checkDate.toDate().toLocaleString('ru-RU');
             adminDetailStatus.innerHTML = `<span class="status-indicator ${report.status}" style="margin-right: 8px;"></span> ${ { booked: 'Забронирован', pending: 'На проверке', approved: 'Принят', rejected: 'Отклонен', paid: 'Оплачен' }[report.status] || report.status}`;
 
@@ -411,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function deleteReport(reportId) {
-        showModal('Подтверждение', 'Вы уверены, что хотите БЕЗВОЗВРАТНО удалить этот отчет? Это действие нельзя отменить.', 'confirm', async (confirmed) => {
+        showModal('Подтверждение', 'Вы уверены, что хотите БЕЗВОЗВРАТНО удалить этот отчет?', 'confirm', async (confirmed) => {
             if (confirmed) {
                 try {
                     await db.collection('reports').doc(reportId).delete();
@@ -544,7 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function toggleUserRole(userId, currentRole, name) {
         const newRole = currentRole === 'admin' ? 'guest' : 'admin';
-        const actionText = newRole === 'admin' ? `повысить пользователя ${name} до администратора` : `понизить администратора ${name} до обычного пользователя`;
+        const actionText = newRole === 'admin' ? `повысить ${name} до администратора` : `понизить ${name} до агента`;
         showModal('Подтверждение', `Вы уверены, что хотите ${actionText}?`, 'confirm', async (confirmed) => {
             if (confirmed) {
                 try {
@@ -553,24 +539,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderAllUsers();
                 } catch (error) {
                     showModal('Ошибка', 'Не удалось изменить роль.');
-                    console.error("Ошибка смены роли:", error);
                 }
             }
         });
     }
 
     function deleteUser(userId, name) {
-        showModal('Подтверждение', `Вы уверены, что хотите удалить пользователя ${name}? Пользователь больше не сможет войти в систему.`, 'confirm', async (confirmed) => {
+        showModal('Подтверждение', `Вы уверены, что хотите удалить пользователя ${name}?`, 'confirm', (confirmed) => {
             if (confirmed) {
                  showModal('Критическое подтверждение', `ПОСЛЕДНЕЕ ПРЕДУПРЕЖДЕНИЕ: Удалить ${name} безвозвратно?`, 'confirm', async (finalConfirmation) => {
                     if(finalConfirmation) {
                         try {
                             await db.collection('users').doc(userId).delete();
-                            showModal('Успешно', `Пользователь ${name} удален из базы данных.`);
+                            showModal('Успешно', `Пользователь ${name} удален.`);
                             renderAllUsers();
                         } catch (error) {
                             showModal('Ошибка', 'Не удалось удалить пользователя.');
-                            console.error("Ошибка удаления:", error);
                         }
                     }
                  });
@@ -578,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- ЛОГИКА АГЕНТА (без изменений) ---
+    // --- ЛОГИКА АГЕНТА ---
     async function renderAvailableSchedules() {
         if (!scheduleCardsList) return;
         scheduleCardsList.innerHTML = '<div class="spinner"></div>';
@@ -661,12 +645,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const chosenTime = userChosenTimeInput.value;
         const user = auth.currentUser;
         if (!chosenTime || !selectedScheduleForBooking || !user) {
-            return showModal('Ошибка', 'Произошла непредвиденная ошибка. Попробуйте снова.');
+            return showModal('Ошибка', 'Произошла непредвиденная ошибка.');
         }
         
         const submitBtn = timePickerForm.querySelector('button[type="submit"]');
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Запись...';
+        submitBtn.innerHTML = '<div class="spinner-small"></div> Запись...';
 
         const scheduleRef = db.collection('schedules').doc(selectedScheduleForBooking.id);
         const reportRef = db.collection('reports').doc();
@@ -675,7 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await db.runTransaction(async (transaction) => {
                 const scheduleDoc = await transaction.get(scheduleRef);
                 if (scheduleDoc.data().isBooked) {
-                    throw new Error("Эта проверка уже была забронирована другим агентом.");
+                    throw new Error("Эта проверка уже забронирована другим агентом.");
                 }
                 
                 transaction.update(scheduleRef, { isBooked: true });
@@ -697,13 +681,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
             
+            await loadUserDashboard(user.uid); 
+
             showModal('Успешно!', 'Вы записались на проверку. Задание появилось на вашем главном экране.', 'alert', () => {
                 showScreen('main-menu-screen');
             });
 
         } catch (error) {
-            console.error("Ошибка записи:", error);
-            showModal('Ошибка', error.message || 'Не удалось записаться на проверку. Возможно, она уже занята. Обновите список.');
+            showModal('Ошибка', error.message || 'Не удалось записаться на проверку.');
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Подтвердить и записаться';
@@ -740,7 +725,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             activeTasks.forEach(report => {
                 const checkDate = report.checkDate.toDate();
-                const isCheckDayOrPast = checkDate.getTime() < (today.getTime() + (24 * 60 * 60 * 1000)); // True если сегодня или раньше
+                const isCheckDayOrPast = checkDate.getTime() < (today.getTime() + (24 * 60 * 60 * 1000));
                 
                 const dateString = checkDate.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'});
                 html += `
@@ -774,7 +759,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function cancelBooking(reportId) {
-        showModal('Подтверждение', 'Вы уверены, что хотите отменить эту проверку? Другой агент сможет на нее записаться.', 'confirm', async (confirmed) => {
+        showModal('Подтверждение', 'Вы уверены, что хотите отменить эту проверку?', 'confirm', async (confirmed) => {
             if (confirmed) {
                 try {
                     const reportDoc = await db.collection('reports').doc(reportId).get();
@@ -791,6 +776,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await batch.commit();
                     showModal('Успешно', 'Запись отменена.');
                     loadUserDashboard(auth.currentUser.uid);
+                    renderAvailableSchedules(); 
                 } catch (error) {
                     console.error("Ошибка отмены:", error);
                     showModal('Ошибка', 'Не удалось отменить запись.');
@@ -932,7 +918,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // --- НАВИГАЦИЯ (без изменений) ---
+    // --- НАВИГАЦИЯ ---
     document.querySelectorAll('.menu-btn').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); const target = b.dataset.target; if (target === 'cooperation-screen') { renderAvailableSchedules(); showScreen(target); } else if (target === 'history-screen') { renderHistory(); showScreen(target); } else { showScreen(target); } }));
     document.querySelectorAll('.back-btn').forEach(b => b.addEventListener('click', (e) => { const target = e.currentTarget.dataset.target; showScreen(target); }));
     document.querySelectorAll('.admin-hub-btn').forEach(b => b.addEventListener('click', () => { const target = b.dataset.target; if(target === 'admin-schedule-screen') { loadCitiesForAdmin(); } if(target === 'admin-reports-screen') { renderAllReports(); } if(target === 'admin-users-screen') { renderAllUsers(); } showScreen(target); }));
