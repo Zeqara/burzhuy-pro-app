@@ -11,19 +11,25 @@
     <div id="app-container">
         <div id="loader" class="screen active"><div class="spinner"></div></div>
         
-        <!-- ЭКРАНЫ АВТОРИЗАЦИИ -->
+        <!-- ЭКРАНЫ АВТОРИЗАЦИИ (ИЗМЕНЕНО) -->
         <div id="auth-screen" class="screen">
             <div class="auth-container">
                 <div id="phone-view">
-                    <h2>Вход или Регистрация</h2><p class="auth-toggle">Введите ваш номер телефона для входа или создания нового аккаунта.</p>
-                    <form id="phone-form"><div class="form-group"><input type="tel" id="phone-input" placeholder="+7 (999) 999-99-99" required value="+7"></div><button type="submit" id="send-code-btn" class="btn-primary">Получить код</button></form>
-                </div>
-                <div id="code-view" style="display: none;">
-                    <h2>Подтверждение</h2><p class="auth-toggle">Мы отправили СМС-код на ваш номер. Введите его ниже.</p>
-                    <form id="code-form"><div class="form-group"><input type="text" id="code-input" placeholder="Код из СМС" required></div><button type="submit" class="btn-primary">Войти</button></form>
+                    <h2>Вход или Регистрация</h2>
+                    <p class="auth-toggle">Введите ваш номер и пароль для входа или создания нового аккаунта.</p>
+                    <form id="login-register-form">
+                        <div class="form-group">
+                            <input type="tel" id="phone-input" placeholder="+7 (999) 999-99-99" required value="+7">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" id="password-input" placeholder="Пароль" required>
+                        </div>
+                        <button type="submit" id="login-register-btn" class="btn-primary">Войти / Создать аккаунт</button>
+                    </form>
                 </div>
             </div>
         </div>
+        
         <div id="profile-setup-screen" class="screen">
             <div class="auth-container">
                 <h2>Завершение регистрации</h2><p class="auth-toggle">Пожалуйста, укажите ваше имя и фамилию.</p>
@@ -110,7 +116,6 @@
             <div class="content scrollable instruction-text">
                 <h3>Секретная инструкция для Тайного Агента</h3>
                 <p>Агент, добро пожаловать в элитную команду BURЖУЙ! Ваша задача — помогать нам становиться лучше, оценивая сервис и качество наших блюд. Вы — наши глаза и уши. От вашей внимательности зависит наш успех.</p>
-                
                 <h3>Твоя миссия, если ты решишься ее принять:</h3>
                 <ol>
                     <li><strong>Запись на проверку.</strong> Выбери доступное задание в разделе "Записаться на проверку". Убедись, что дата и место тебе подходят.</li>
@@ -119,7 +124,6 @@
                     <li><strong>Фотоотчет.</strong> Качественные и четкие фотографии — это ключ к успешному отчету. Они должны подтверждать твои слова.</li>
                     <li><strong>Награда.</strong> После отправки отчета он попадает на проверку. Если отчет принят, мы свяжемся с тобой для возврата средств за заказ.</li>
                 </ol>
-
                 <h3>Золотые правила Агента:</h3>
                 <ul>
                     <li><i class="fa-solid fa-eye"></i> <strong>Будь объективен.</strong> Оценивай только то, что видишь. Никаких домыслов.</li>
@@ -134,7 +138,7 @@
     
     <!-- МОДАЛЬНЫЕ ОКНА -->
     <div id="modal-container" class="modal-hidden"><div id="modal-content"><h3 id="modal-title">Подтверждение</h3><p id="modal-text">Вы уверены?</p><div id="modal-buttons"><button id="modal-confirm-btn" class="btn-primary">OK</button><button id="modal-cancel-btn" class="btn-secondary">Отмена</button></div></div></div>
-    <div id="recaptcha-container"></div>
+    <!-- УДАЛЕН КОНТЕЙНЕР RECAPTCHA -->
     <div id="rejection-modal-container" class="modal-hidden"><div id="modal-content"><h3 id="rejection-modal-title">Причина отклонения</h3><p id="rejection-modal-text">Пожалуйста, укажите причину, по которой отчет отклонен. Агент увидит этот комментарий.</p><div class="form-group"><textarea id="rejection-comment-input" rows="4" placeholder="Например: Некачественные фотографии"></textarea></div><div id="modal-buttons"><button id="rejection-modal-confirm-btn" class="btn-primary">Отправить</button><button id="rejection-modal-cancel-btn" class="btn-secondary">Отмена</button></div></div></div>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
