@@ -54,9 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const userNameDisplay = document.getElementById('user-name-display');
     const logoutBtn = document.getElementById('logout-btn');
     const adminMenuBtn = document.getElementById('admin-menu-btn');
-    const scheduleForm = document.getElementById('schedule-form'), scheduleCitySelect = document.getElementById('schedule-city-select'), scheduleLocationSelect = document.getElementById('schedule-location-select'), scheduleDateInput = document.getElementById('schedule-date-input'), scheduleStartTimeInput = document.getElementById('schedule-start-time'), scheduleEndTimeInput = document.getElementById('schedule-end-time'), scheduleUrgentCheckbox = document.getElementById('schedule-urgent-checkbox'), scheduleList = document.getElementById('schedule-list'), viewScheduleBtn = document.getElementById('view-schedule-btn');
+    const scheduleForm = document.getElementById('schedule-form'), scheduleCitySelect = document.getElementById('schedule-city-select'), scheduleLocationSelect = document.getElementById('schedule-location-select'), scheduleDateInput = document.getElementById('schedule-date-input'), scheduleUrgentCheckbox = document.getElementById('schedule-urgent-checkbox'), scheduleList = document.getElementById('schedule-list'), viewScheduleBtn = document.getElementById('view-schedule-btn');
     const scheduleCardsList = document.getElementById('schedule-cards-list'), noSchedulesView = document.getElementById('no-schedules-view');
-    const timePickerForm = document.getElementById('time-picker-form'), pickerLocationTitle = document.getElementById('picker-location-title'), userChosenTimeInput = document.getElementById('user-chosen-time');
+    const timePickerForm = document.getElementById('time-picker-form'), pickerLocationTitle = document.getElementById('picker-location-title');
     const dashboardInfoContainer = document.getElementById('dashboard-info-container');
     const checklistForm = document.getElementById('checklist-form'), checklistAddress = document.getElementById('checklist-address'), checklistDate = document.getElementById('checklist-date');
     const historyList = document.getElementById('history-list');
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         } catch (error) {
             console.error("Ошибка загрузки городов:", error);
-            showModal("Ошибка", "Не удалось загрузить список городов. Убедитесь, что в Firestore есть коллекция 'locations'.");
+            showModal("Ошибка", "Не удалось загрузить список городов.");
         }
     }
 
@@ -210,11 +210,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const city = scheduleCitySelect.value;
         const locationName = scheduleLocationSelect.value;
         const date = scheduleDateInput.value;
-        const startTime = scheduleStartTimeInput.value;
-        const endTime = scheduleEndTimeInput.value;
         const isUrgent = scheduleUrgentCheckbox.checked;
 
-        if (!city || !locationName || !date || !startTime || !endTime) {
+        if (!city || !locationName || !date) {
             return showModal('Ошибка', 'Пожалуйста, заполните все поля.');
         }
 
@@ -227,8 +225,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 city,
                 locationName,
                 date: new Date(date),
-                startTime,
-                endTime,
                 isUrgent,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 isBooked: false
@@ -261,8 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 html += `
                     <li class="menu-list-item">
                         <div>
-                            <strong>${s.locationName} (${s.city})</strong>
-                            <small>Дата: ${date} | Доступно: ${s.startTime} - ${s.endTime} ${s.isUrgent ? '🔥' : ''}</small>
+                            <strong>${s.locationName.replace(/^Б\d+\s*/, '')} (${s.city})</strong>
+                            <small>Дата: ${date} ${s.isUrgent ? '🔥' : ''}</small>
                         </div>
                         <button class="delete-btn" data-id="${doc.id}">&times;</button>
                     </li>
@@ -346,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!reportDoc.exists) throw new Error("Отчет не найден");
             const report = reportDoc.data();
             
-            adminDetailAddress.textContent = report.locationName;
+            adminDetailAddress.textContent = report.locationName.replace(/^Б\d+\s*/, '');
 
             if (report.userId) {
                 const userDoc = await db.collection('users').doc(report.userId).get();
@@ -362,8 +358,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 adminDetailUser.textContent = 'Пользователь не привязан';
                 adminDetailPhone.textContent = '—';
             }
+            
+            const dateOnly = report.checkDate.toDate().toLocaleDateString('ru-RU');
+            const timeInterval = (report.startTime && report.endTime) ? `(${report.startTime} - ${report.endTime})` : '';
+            adminDetailDate.textContent = `${dateOnly} ${timeInterval}`;
 
-            adminDetailDate.textContent = report.checkDate.toDate().toLocaleString('ru-RU');
             adminDetailStatus.innerHTML = `<span class="status-indicator ${report.status}" style="margin-right: 8px;"></span> ${ { booked: 'Забронирован', pending: 'На проверке', approved: 'Принят', rejected: 'Отклонен', paid: 'Оплачен' }[report.status] || report.status}`;
 
             if(report.status === 'rejected' && report.rejectionComment) {
@@ -375,9 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const answers = report.answers || {};
             for(const key in adminDetailAnswers) {
-                if(adminDetailAnswers[key]) {
-                    adminDetailAnswers[key].textContent = answers[key] || '—';
-                }
+                if(adminDetailAnswers[key]) adminDetailAnswers[key].textContent = answers[key] || '—';
             }
 
             adminDetailPhotos.innerHTML = '';
@@ -571,28 +568,19 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-    
-            const snapshot = await db.collection('schedules')
-                .where('date', '>=', today)
-                .orderBy('date')
-                .get();
-    
+            const snapshot = await db.collection('schedules').where('date', '>=', today).orderBy('date').get();
             let availableSchedules = [];
             if (!snapshot.empty) {
                 snapshot.forEach(doc => {
                     const schedule = { id: doc.id, ...doc.data() };
-                    if (!schedule.isBooked) {
-                        availableSchedules.push(schedule);
-                    }
+                    if (!schedule.isBooked) availableSchedules.push(schedule);
                 });
             }
-    
             if (availableSchedules.length === 0) {
                 scheduleCardsList.innerHTML = '';
                 noSchedulesView.style.display = 'block';
                 return;
             }
-    
             let html = '';
             availableSchedules.forEach(s => {
                 const date = s.date.toDate().toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -600,14 +588,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <li class="menu-list-item schedule-card" data-id="${s.id}">
                         ${s.isUrgent ? '<div class="urgent-badge">🔥 Срочно</div>' : ''}
                         <div>
-                            <strong>${s.locationName}</strong>
-                            <small>${s.city} - ${date} | Доступно: ${s.startTime} - ${s.endTime}</small>
+                            <strong>${s.locationName.replace(/^Б\d+\s*/, '')}</strong>
+                            <small>${s.city} - ${date}</small>
                         </div>
                     </li>
                 `;
             });
             scheduleCardsList.innerHTML = html;
-    
             scheduleCardsList.querySelectorAll('.schedule-card').forEach(card => {
                 card.addEventListener('click', () => openTimePicker(card.dataset.id));
             });
@@ -627,12 +614,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             selectedScheduleForBooking = { id: doc.id, ...doc.data() };
-            pickerLocationTitle.textContent = selectedScheduleForBooking.locationName;
-            
-            userChosenTimeInput.min = selectedScheduleForBooking.startTime;
-            userChosenTimeInput.max = selectedScheduleForBooking.endTime;
-            userChosenTimeInput.value = selectedScheduleForBooking.startTime;
-
+            pickerLocationTitle.textContent = selectedScheduleForBooking.locationName.replace(/^Б\d+\s*/, '');
+            document.getElementById('user-start-time').value = '';
+            document.getElementById('user-end-time').value = '';
             showScreen('time-picker-screen');
         } catch (error) {
             console.error("Ошибка:", error);
@@ -642,10 +626,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (timePickerForm) timePickerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const chosenTime = userChosenTimeInput.value;
+        const startTime = document.getElementById('user-start-time').value;
+        const endTime = document.getElementById('user-end-time').value;
         const user = auth.currentUser;
-        if (!chosenTime || !selectedScheduleForBooking || !user) {
-            return showModal('Ошибка', 'Произошла непредвиденная ошибка.');
+
+        if (!startTime || !endTime || !selectedScheduleForBooking || !user) {
+            return showModal('Ошибка', 'Пожалуйста, укажите интервал времени.');
+        }
+        if (startTime >= endTime) {
+            return showModal('Ошибка', 'Время начала должно быть раньше времени окончания.');
         }
         
         const submitBtn = timePickerForm.querySelector('button[type="submit"]');
@@ -659,21 +648,19 @@ document.addEventListener('DOMContentLoaded', () => {
             await db.runTransaction(async (transaction) => {
                 const scheduleDoc = await transaction.get(scheduleRef);
                 if (scheduleDoc.data().isBooked) {
-                    throw new Error("Эта проверка уже забронирована другим агентом.");
+                    throw new Error("Эта проверка уже была забронирована другим агентом.");
                 }
                 
                 transaction.update(scheduleRef, { isBooked: true });
             
-                const checkDateTime = new Date(selectedScheduleForBooking.date.toDate());
-                const [hours, minutes] = chosenTime.split(':');
-                checkDateTime.setHours(hours, minutes);
-
                 transaction.set(reportRef, {
                     userId: user.uid,
                     scheduleId: selectedScheduleForBooking.id,
                     locationName: selectedScheduleForBooking.locationName,
                     city: selectedScheduleForBooking.city,
-                    checkDate: firebase.firestore.Timestamp.fromDate(checkDateTime),
+                    checkDate: selectedScheduleForBooking.date,
+                    startTime: startTime,
+                    endTime: endTime,
                     status: 'booked',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     answers: {},
@@ -682,12 +669,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             await loadUserDashboard(user.uid); 
-
             showModal('Успешно!', 'Вы записались на проверку. Задание появилось на вашем главном экране.', 'alert', () => {
                 showScreen('main-menu-screen');
             });
 
         } catch (error) {
+            console.error("Ошибка записи:", error);
             showModal('Ошибка', error.message || 'Не удалось записаться на проверку.');
         } finally {
             submitBtn.disabled = false;
@@ -700,39 +687,32 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dashboardInfoContainer) return;
         dashboardInfoContainer.innerHTML = '';
         try {
-            const snapshot = await db.collection('reports')
-                .where('userId', '==', userId)
-                .get();
-
+            const snapshot = await db.collection('reports').where('userId', '==', userId).get();
             let activeTasks = [];
             snapshot.forEach(doc => {
                 const report = { id: doc.id, ...doc.data() };
-                if (report.status === 'booked') {
-                    activeTasks.push(report);
-                }
+                if (report.status === 'booked') activeTasks.push(report);
             });
-
             activeTasks.sort((a, b) => a.checkDate.toDate() - b.checkDate.toDate());
-
             if (activeTasks.length === 0) {
                 dashboardInfoContainer.innerHTML = '<div class="empty-state"><p>У вас нет активных заданий. Время выбрать новое!</p></div>';
                 return;
             }
-
             let html = '<h3>Ваши активные задания:</h3><ul class="menu-list">';
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-
             activeTasks.forEach(report => {
                 const checkDate = report.checkDate.toDate();
                 const isCheckDayOrPast = checkDate.getTime() < (today.getTime() + (24 * 60 * 60 * 1000));
                 
-                const dateString = checkDate.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'});
+                const dateString = checkDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+                const timeString = `с ${report.startTime} до ${report.endTime}`;
+
                 html += `
                     <li class="menu-list-item active-task-card">
                         <div>
-                            <strong>${report.locationName}</strong>
-                            <small>Запланировано на: ${dateString}</small>
+                            <strong>${report.locationName.replace(/^Б\d+\s*/, '')}</strong>
+                            <small>Запланировано на: ${dateString} ${timeString}</small>
                             <div class="task-actions">
                                 <button class="btn-fill-checklist" data-id="${report.id}" ${!isCheckDayOrPast ? 'disabled' : ''}>Заполнить чек-лист</button>
                                 <button class="btn-cancel-booking" data-id="${report.id}">Отменить</button>
@@ -743,18 +723,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             html += '</ul>';
             dashboardInfoContainer.innerHTML = html;
-
-            dashboardInfoContainer.querySelectorAll('.btn-fill-checklist').forEach(btn => {
-                btn.addEventListener('click', () => openChecklist(btn.dataset.id));
-            });
-
-            dashboardInfoContainer.querySelectorAll('.btn-cancel-booking').forEach(btn => {
-                btn.addEventListener('click', () => cancelBooking(btn.dataset.id));
-            });
-
+            dashboardInfoContainer.querySelectorAll('.btn-fill-checklist').forEach(btn => btn.addEventListener('click', () => openChecklist(btn.dataset.id)));
+            dashboardInfoContainer.querySelectorAll('.btn-cancel-booking').forEach(btn => btn.addEventListener('click', () => cancelBooking(btn.dataset.id)));
         } catch (error) {
             console.error("Ошибка загрузки дашборда:", error);
-            dashboardInfoContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Не удалось загрузить ваши задания.</p>';
+            dashboardInfoContainer.innerHTML = '<p>Не удалось загрузить ваши задания.</p>';
         }
     }
 
@@ -792,8 +765,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             currentReportId = reportId;
             const report = doc.data();
-            checklistAddress.textContent = report.locationName;
-            checklistDate.textContent = report.checkDate.toDate().toLocaleString('ru-RU');
+            checklistAddress.textContent = report.locationName.replace(/^Б\d+\s*/, '');
+            const dateOnly = report.checkDate.toDate().toLocaleDateString('ru-RU');
+            const timeInterval = (report.startTime && report.endTime) ? `(${report.startTime} - ${report.endTime})` : '';
+            checklistDate.textContent = `${dateOnly} ${timeInterval}`;
             checklistForm.reset();
             showScreen('checklist-screen');
 
@@ -847,7 +822,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             showModal(
                 'Отчет отправлен на проверку!', 
-                'Спасибо за вашу работу. Если отчет будет принят, мы свяжемся с вами по вашему номеру телефона для возврата средств.', 
+                'Спасибо за вашу работу. Если отчет будет принят, мы свяжемся с вами.', 
                 'alert', 
                 () => {
                     showScreen('main-menu-screen');
@@ -857,7 +832,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error("Ошибка отправки отчета:", error);
-            showModal('Ошибка', error.message || 'Произошла ошибка при отправке отчета. Пожалуйста, попробуйте снова.');
+            showModal('Ошибка', error.message || 'Произошла ошибка при отправке отчета.');
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Отправить отчёт';
@@ -871,10 +846,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!user) return; 
         
         try {
-            const snapshot = await db.collection('reports')
-                .where('userId', '==', user.uid)
-                .get();
-
+            const snapshot = await db.collection('reports').where('userId', '==', user.uid).get();
             let userHistory = [];
             snapshot.forEach(doc => {
                 const report = { id: doc.id, ...doc.data() };
