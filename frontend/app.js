@@ -6,7 +6,7 @@ const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
-let confirmationResult = null;
+// let confirmationResult = null; // <-- УДАЛЕНО
 let currentReportId = null;
 let selectedScheduleForBooking = null;
 
@@ -46,11 +46,14 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Элементы
-    const phoneForm = document.getElementById('phone-form'), codeForm = document.getElementById('code-form'), profileSetupForm = document.getElementById('profile-setup-form');
-    const phoneInput = document.getElementById('phone-input'), codeInput = document.getElementById('code-input'), profileNameInput = document.getElementById('profile-name-input');
-    const sendCodeBtn = document.getElementById('send-code-btn');
-    const phoneView = document.getElementById('phone-view'), codeView = document.getElementById('code-view');
-    const userNameDisplay = document.getElementById('user-name-display'), logoutBtn = document.getElementById('logout-btn');
+    const loginRegisterForm = document.getElementById('login-register-form'); // <-- ИЗМЕНЕНО
+    const profileSetupForm = document.getElementById('profile-setup-form');
+    const phoneInput = document.getElementById('phone-input');
+    const passwordInput = document.getElementById('password-input'); // <-- ДОБАВЛЕНО
+    const profileNameInput = document.getElementById('profile-name-input');
+    const loginRegisterBtn = document.getElementById('login-register-btn'); // <-- ИЗМЕНЕНО
+    const userNameDisplay = document.getElementById('user-name-display');
+    const logoutBtn = document.getElementById('logout-btn');
     const adminMenuBtn = document.getElementById('admin-menu-btn');
     const scheduleForm = document.getElementById('schedule-form'), scheduleCitySelect = document.getElementById('schedule-city-select'), scheduleLocationSelect = document.getElementById('schedule-location-select'), scheduleDateInput = document.getElementById('schedule-date-input'), scheduleStartTimeInput = document.getElementById('schedule-start-time'), scheduleEndTimeInput = document.getElementById('schedule-end-time'), scheduleUrgentCheckbox = document.getElementById('schedule-urgent-checkbox'), scheduleList = document.getElementById('schedule-list'), viewScheduleBtn = document.getElementById('view-schedule-btn');
     const scheduleCardsList = document.getElementById('schedule-cards-list'), noSchedulesView = document.getElementById('no-schedules-view');
@@ -62,13 +65,83 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminDetailAddress = document.getElementById('admin-detail-address'), adminDetailUser = document.getElementById('admin-detail-user'), adminDetailPhone = document.getElementById('admin-detail-phone'), adminDetailDate = document.getElementById('admin-detail-date'), adminDetailStatus = document.getElementById('admin-detail-status'), adminDetailPhotos = document.getElementById('admin-detail-photos'), adminDetailRejectionComment = document.getElementById('admin-detail-rejection-comment-container');
     const adminDetailAnswers = { q1: document.getElementById('admin-detail-q1'), q2: document.getElementById('admin-detail-q2'), q3: document.getElementById('admin-detail-q3'), q4: document.getElementById('admin-detail-q4'), q5: document.getElementById('admin-detail-q5'), q6: document.getElementById('admin-detail-q6'), q7: document.getElementById('admin-detail-q7'), q8: document.getElementById('admin-detail-q8'), q9: document.getElementById('admin-detail-q9'), };
     
-    const recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
+    // Вся логика reCAPTCHA и СМС удалена
     if (phoneInput) { phoneInput.addEventListener('input', () => { if (!phoneInput.value.startsWith('+7')) { phoneInput.value = '+7'; } }); }
 
-    // --- АУТЕНТИФИКАЦИЯ ---
-    if(phoneForm) phoneForm.addEventListener('submit', (e) => { e.preventDefault(); let rawPhoneNumber = phoneInput.value, digitsOnly = rawPhoneNumber.replace(/\D/g, ''); if (digitsOnly.startsWith('8')) digitsOnly = '7' + digitsOnly.substring(1); const formattedPhoneNumber = `+${digitsOnly}`; if (digitsOnly.length < 11) return showModal('Ошибка', 'Пожалуйста, введите полный номер телефона.'); sendCodeBtn.disabled = true; sendCodeBtn.textContent = 'Отправка...'; recaptchaVerifier.render().then((widgetId) => { auth.signInWithPhoneNumber(formattedPhoneNumber, recaptchaVerifier).then(result => { confirmationResult = result; phoneView.style.display = 'none'; codeView.style.display = 'block'; showModal('Успешно', 'СМС-код отправлен на ваш номер.'); }).catch(err => { console.error("Ошибка Firebase Auth:", err); showModal('Ошибка', `Произошла ошибка: ${err.message}`); }).finally(() => { sendCodeBtn.disabled = false; sendCodeBtn.textContent = 'Получить код'; }); }).catch(err => { console.error("Ошибка отрисовки reCAPTCHA:", err); showModal('Ошибка', 'Не удалось запустить проверку reCAPTCHA. Попробуйте обновить страницу.'); sendCodeBtn.disabled = false; sendCodeBtn.textContent = 'Получить код'; }); });
-    if(codeForm) codeForm.addEventListener('submit', (e) => { e.preventDefault(); const code = codeInput.value; const confirmBtn = codeForm.querySelector('button[type="submit"]'); if (!code || !confirmationResult) return; confirmBtn.disabled = true; confirmBtn.textContent = 'Проверка...'; confirmationResult.confirm(code).catch(err => { showModal('Ошибка', 'Неверный код. Попробуйте еще раз.'); confirmBtn.disabled = false; confirmBtn.textContent = 'Войти'; }); });
-    if(profileSetupForm) profileSetupForm.addEventListener('submit', (e) => { e.preventDefault(); const user = auth.currentUser, fullName = profileNameInput.value.trim(); if (!user || !fullName) return; db.collection('users').doc(user.uid).set({ fullName, phone: user.phoneNumber, role: 'guest', completedChecks: 0 }).then(() => { userNameDisplay.textContent = fullName; showScreen('main-menu-screen'); }).catch(err => showModal('Ошибка', 'Не удалось сохранить профиль.')); });
+    // --- АУТЕНТИФИКАЦИЯ (ПОЛНОСТЬЮ ПЕРЕПИСАНА) ---
+    if(loginRegisterForm) {
+        loginRegisterForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // 1. Валидация и форматирование номера
+            let rawPhoneNumber = phoneInput.value;
+            let digitsOnly = rawPhoneNumber.replace(/\D/g, '');
+            if (digitsOnly.startsWith('8')) digitsOnly = '7' + digitsOnly.substring(1);
+            if (digitsOnly.length < 11) return showModal('Ошибка', 'Пожалуйста, введите полный номер телефона.');
+            const formattedPhoneNumber = `+${digitsOnly}`;
+
+            const password = passwordInput.value;
+            if (password.length < 6) return showModal('Ошибка', 'Пароль должен содержать не менее 6 символов.');
+
+            // Используем номер телефона как часть email для совместимости с Firebase
+            const email = `${formattedPhoneNumber}@burzhuy-pro.app`;
+
+            loginRegisterBtn.disabled = true;
+            loginRegisterBtn.textContent = 'Обработка...';
+
+            // 2. Пытаемся создать нового пользователя
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    // Успешная регистрация, onAuthStateChanged перенаправит на создание профиля
+                    console.log('Новый пользователь зарегистрирован.');
+                })
+                .catch(error => {
+                    // 3. Если пользователь уже существует, пытаемся войти
+                    if (error.code === 'auth/email-already-in-use') {
+                        auth.signInWithEmailAndPassword(email, password)
+                            .then(userCredential => {
+                                // Успешный вход
+                                console.log('Пользователь успешно вошел.');
+                            })
+                            .catch(signInError => {
+                                // Ошибка входа (например, неверный пароль)
+                                showModal('Ошибка входа', 'Неверный номер телефона или пароль.');
+                            });
+                    } else if (error.code === 'auth/weak-password') {
+                         showModal('Ошибка регистрации', 'Пароль слишком простой. Используйте не менее 6 символов.');
+                    } else {
+                        // Другие ошибки
+                        showModal('Ошибка', `Произошла ошибка: ${error.message}`);
+                    }
+                })
+                .finally(() => {
+                    loginRegisterBtn.disabled = false;
+                    loginRegisterBtn.textContent = 'Войти / Создать аккаунт';
+                });
+        });
+    }
+
+    if(profileSetupForm) {
+        profileSetupForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = auth.currentUser;
+            const fullName = profileNameInput.value.trim();
+            if (!user || !fullName) return;
+
+            // Извлекаем номер телефона из "email" пользователя
+            const phoneNumber = user.email.replace('@burzhuy-pro.app', '');
+
+            db.collection('users').doc(user.uid).set({
+                fullName,
+                phone: phoneNumber, // <-- ИЗМЕНЕНО
+                role: 'guest',
+                completedChecks: 0
+            }).then(() => {
+                userNameDisplay.textContent = fullName;
+                showScreen('main-menu-screen');
+            }).catch(err => showModal('Ошибка', 'Не удалось сохранить профиль.'));
+        });
+    }
 
     // --- ГЛАВНЫЙ КОНТРОЛЛЕР ---
     auth.onAuthStateChanged(user => {
@@ -84,21 +157,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (userData.role === 'admin') loadAdminStats();
                     loadUserDashboard(user.uid);
                     showScreen('main-menu-screen');
-                } else { showScreen('profile-setup-screen'); }
+                } else {
+                    // Если пользователь есть в Auth, но нет профиля в DB -> на страницу создания
+                    showScreen('profile-setup-screen');
+                }
             }, err => {
                 console.error("Ошибка получения профиля:", err);
                 showModal('Критическая ошибка', 'Не удалось загрузить данные профиля. Пожалуйста, обновите страницу.');
             });
         } else {
+            // Если пользователя нет, показываем экран входа/регистрации
             if (adminMenuBtn) adminMenuBtn.style.display = 'none';
-            if (phoneView && codeView) { phoneView.style.display = 'block'; codeView.style.display = 'none'; }
             showScreen('auth-screen');
         }
     });
     
     if(logoutBtn) logoutBtn.addEventListener('click', () => { auth.signOut(); });
 
-    // --- ЛОГИКА АДМИН-ПАНЕЛИ ---
+    // --- ЛОГИКА АДМИН-ПАНЕЛИ (без изменений) ---
     if (adminMenuBtn) adminMenuBtn.addEventListener('click', () => showScreen('admin-hub-screen'));
     
     async function loadAdminStats() {
@@ -502,7 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- ЛОГИКА АГЕНТА ---
+    // --- ЛОГИКА АГЕНТА (без изменений) ---
     async function renderAvailableSchedules() {
         if (!scheduleCardsList) return;
         scheduleCardsList.innerHTML = '<div class="spinner"></div>';
@@ -856,7 +932,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // --- НАВИГАЦИЯ ---
+    // --- НАВИГАЦИЯ (без изменений) ---
     document.querySelectorAll('.menu-btn').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); const target = b.dataset.target; if (target === 'cooperation-screen') { renderAvailableSchedules(); showScreen(target); } else if (target === 'history-screen') { renderHistory(); showScreen(target); } else { showScreen(target); } }));
     document.querySelectorAll('.back-btn').forEach(b => b.addEventListener('click', (e) => { const target = e.currentTarget.dataset.target; showScreen(target); }));
     document.querySelectorAll('.admin-hub-btn').forEach(b => b.addEventListener('click', () => { const target = b.dataset.target; if(target === 'admin-schedule-screen') { loadCitiesForAdmin(); } if(target === 'admin-reports-screen') { renderAllReports(); } if(target === 'admin-users-screen') { renderAllUsers(); } showScreen(target); }));
