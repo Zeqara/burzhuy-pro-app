@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -53,50 +53,56 @@
 
         <!-- АДМИН-ПАНЕЛЬ -->
         <div id="admin-hub-screen" class="screen">
-            <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Центр Управления</h2></header>
+            <header><h2>Центр Управления</h2></header>
+            <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
             <div class="content scrollable"><div id="admin-stats-container"></div><ul class="menu-list"><li class="menu-list-item admin-hub-btn" data-target="admin-schedule-screen"><i class="icon fa-solid fa-calendar-days"></i><div><strong>Управление графиком</strong><small>Создать и удалить проверки</small></div></li><li class="menu-list-item admin-hub-btn" data-target="admin-reports-screen"><i class="icon fa-solid fa-file-signature"></i><div><strong>Просмотр отчетов</strong><small>Проверить и утвердить отчеты</small></div></li><li class="menu-list-item admin-hub-btn" data-target="admin-users-screen"><i class="icon fa-solid fa-users"></i><div><strong>Управление пользователями</strong><small>Просмотр и смена ролей</small></div></li></ul></div>
         </div>
         <div id="admin-schedule-screen" class="screen">
-            <header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Создать проверку</h2></header>
+            <header><h2>Создать проверку</h2></header>
+            <button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
             <div class="content scrollable">
                 <form id="schedule-form">
                     <div class="form-group"><label>1. Выберите город</label><select id="schedule-city-select" required><option value="" disabled selected>-- Выберите город --</option></select></div>
                     <div class="form-group"><label>2. Выберите торговую точку</label><select id="schedule-location-select" required disabled><option value="" disabled selected>-- ... --</option></select></div>
                     <div class="form-group"><label>Дата проверки</label><input type="date" id="schedule-date-input" required></div>
-                    <!-- ИНТЕРВАЛ ВРЕМЕНИ УДАЛЕН ОТСЮДА -->
                     <div class="form-group urgent-checkbox"><input type="checkbox" id="schedule-urgent-checkbox"><label for="schedule-urgent-checkbox">🔥 Срочная проверка</label></div>
                     <div class="action-buttons-container"><button type="submit" class="btn-primary">Опубликовать</button><button type="button" id="view-schedule-btn" class="btn-icon"><i class="fa-solid fa-list-check"></i> К графику</button></div>
                 </form>
             </div>
         </div>
         <div id="admin-view-schedule-screen" class="screen">
-            <header><button class="back-btn" data-target="admin-schedule-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Запланированные проверки</h2></header>
+            <header><h2>Запланированные проверки</h2></header>
+            <button class="back-btn" data-target="admin-schedule-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
             <div class="content scrollable"><div id="schedule-list"></div></div>
         </div>
         <div id="admin-reports-screen" class="screen">
-            <header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Все отчеты</h2></header>
+            <header><h2>Все отчеты</h2></header>
+            <button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
             <div class="content scrollable"><ul id="admin-reports-list" class="menu-list"></ul></div>
         </div>
         <div id="admin-report-detail-screen" class="screen">
-            <header><button class="back-btn" data-target="admin-reports-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Детали отчета</h2></header>
+            <header><h2>Детали отчета</h2></header>
+            <button class="back-btn" data-target="admin-reports-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
             <div class="content scrollable"><div class="report-details"><p><strong>Адрес:</strong> <span id="admin-detail-address"></span></p><p><strong>Агент:</strong> <span id="admin-detail-user"></span></p><p><strong>Телефон:</strong> <span id="admin-detail-phone"></span></p><p><strong>Дата:</strong> <span id="admin-detail-date"></span></p><p><strong>Статус:</strong> <span id="admin-detail-status"></span></p><div id="admin-detail-rejection-comment-container" style="display: none;"></div><hr><h4>Ответы на вопросы:</h4><div class="form-group"><label>Чистота и внешний вид:</label><p id="admin-detail-q1"></p></div><div class="form-group"><label>Чистота внутри:</label><p id="admin-detail-q2"></p></div><div class="form-group"><label>Приветствие и поведение:</label><p id="admin-detail-q3"></p></div><div class="form-group"><label>Предложение дополнений:</label><p id="admin-detail-q4"></p></div><div class="form-group"><label>Действия после заказа:</label><p id="admin-detail-q5"></p></div><div class="form-group"><label>Выдача заказа:</label><p id="admin-detail-q6"></p></div><div class="form-group"><label>Оценка заказа:</label><p id="admin-detail-q7"></p></div><div class="form-group"><label>Оценка блюда №1 (1–5):</label><p id="admin-detail-q8"></p></div><div class="form-group"><label>Дополнительные замечания:</label><p id="admin-detail-q9"></p></div><hr><h4>Прикрепленные фото:</h4><div id="admin-detail-photos"></div><hr><h4>Действия:</h4><div id="admin-detail-actions" style="display: flex; gap: 15px; flex-wrap: wrap;"><button id="admin-action-approve" class="btn-primary" style="background: var(--status-approved);">Принять</button><button id="admin-action-reject" class="btn-primary" style="background: var(--status-rejected);">Отклонить</button><button id="admin-action-paid" class="btn-primary" style="background: var(--status-paid);">✓ Оплачено</button></div></div></div>
         </div>
         <div id="admin-users-screen" class="screen">
-            <header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Все пользователи</h2></header>
+            <header><h2>Все пользователи</h2></header>
+            <button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
             <div class="content scrollable" id="admin-users-list"></div>
         </div>
 
         <!-- ЭКРАНЫ АГЕНТА -->
         <div id="cooperation-screen" class="screen">
-            <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Доступные проверки</h2></header>
+            <header><h2>Доступные проверки</h2></header>
+            <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
             <div class="content scrollable"><ul id="schedule-cards-list" class="menu-list"></ul><div id="no-schedules-view" class="empty-state" style="display: none;"><h3>Пока нет доступных проверок</h3><p>Отличная работа! Все задания выполнены.</p></div></div>
         </div>
         <div id="time-picker-screen" class="screen">
-            <header><button class="back-btn" data-target="cooperation-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Выберите время</h2></header>
+            <header><h2>Выберите время</h2></header>
+            <button class="back-btn" data-target="cooperation-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
             <div class="content scrollable">
                 <h3 id="picker-location-title" style="text-align: center; margin-bottom: 20px;"></h3>
                 <form id="time-picker-form">
-                    <!-- ИЗМЕНЕНО: Теперь здесь два поля для ввода интервала -->
                     <div class="form-group">
                         <label>Укажите удобный для вас интервал времени</label>
                         <div class="time-slot-input">
@@ -110,15 +116,18 @@
             </div>
         </div>
         <div id="checklist-screen" class="screen">
-             <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Чек-лист</h2></header>
+             <header><h2>Чек-лист</h2></header>
+             <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
             <div class="content scrollable"><form id="checklist-form"><p><strong>Адрес:</strong> <span id="checklist-address"></span></p><p><strong>Дата:</strong> <span id="checklist-date"></span></p><div class="form-group"><label>Чистота и внешний вид</label><textarea id="checklist-q1-appearance" required></textarea></div><div class="form-group"><label>Чистота внутри</label><textarea id="checklist-q2-cleanliness" required></textarea></div><div class="form-group"><label>Приветствие и поведение</label><textarea id="checklist-q3-greeting" required></textarea></div><div class="form-group"><label>Предложение дополнений</label><textarea id="checklist-q4-upsell" required></textarea></div><div class="form-group"><label>Действия после заказа</label><textarea id="checklist-q5-actions" required></textarea></div><div class="form-group"><label>Выдача заказа</label><textarea id="checklist-q6-handout" required></textarea></div><div class="form-group"><label>Оценка заказа</label><textarea id="checklist-q7-order-eval" required></textarea></div><div class="form-group"><label>Оценка блюда №1 (1–5)</label><input type="number" id="checklist-q8-food-rating" min="1" max="5" required></div><div class="form-group"><label>Дополнительные замечания</label><textarea id="checklist-q9-comments"></textarea></div><div class="form-group"><label>Прикрепите фото</label><input type="file" id="checklist-photos" multiple accept="image/*" required></div><button type="submit" class="btn-primary">Отправить отчёт</button></form></div>
         </div>
         <div id="history-screen" class="screen">
-            <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>История проверок</h2></header>
+            <header><h2>История проверок</h2></header>
+            <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
             <div class="content scrollable"><ul id="history-list" class="menu-list"></ul></div>
         </div>
         <div id="instruction-screen" class="screen">
-            <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Инструкция</h2></header>
+            <header><h2>Инструкция</h2></header>
+            <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
             <div class="content scrollable instruction-text">
                 <h3>Секретная инструкция для Тайного Агента</h3>
                 <p>Агент, добро пожаловать в элитную команду BURЖУЙ! Ваша задача — помогать нам становиться лучше, оценивая сервис и качество наших блюд. Вы — наши глаза и уши. От вашей внимательности зависит наш успех.</p>
