@@ -2,68 +2,103 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Тайный агент BURЖУЙ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
     <div id="app-container">
+        <!-- ЭКРАН ЗАГРУЗКИ -->
         <div id="loader" class="screen active"><div class="spinner"></div></div>
         
         <!-- ЭКРАНЫ АВТОРИЗАЦИИ -->
         <div id="auth-screen" class="screen">
             <div class="auth-container">
-                <div id="phone-view">
-                    <h2>Вход или Регистрация</h2>
-                    <p class="auth-toggle">Введите ваш номер и пароль для входа или создания нового аккаунта.</p>
-                    <form id="login-register-form">
-                        <div class="form-group">
-                            <input type="tel" id="phone-input" placeholder="+7 (999) 999-99-99" required value="+7">
-                        </div>
-                        <div class="form-group">
-                            <input type="password" id="password-input" placeholder="Пароль" required>
-                        </div>
-                        <button type="submit" id="login-register-btn" class="btn-primary">Войти / Создать аккаунт</button>
-                    </form>
-                </div>
+                <h2>Вход или Регистрация</h2>
+                <p>Введите ваш номер и пароль для входа или создания нового аккаунта.</p>
+                <form id="login-register-form" novalidate>
+                    <div class="form-group">
+                        <input type="tel" id="phone-input" placeholder="+7 (999) 999-99-99" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="password-input" placeholder="Пароль (минимум 6 символов)" required>
+                    </div>
+                    <button type="submit" id="login-register-btn" class="btn-primary">Войти / Создать аккаунт</button>
+                </form>
             </div>
         </div>
         <div id="profile-setup-screen" class="screen">
             <div class="auth-container">
-                <h2>Завершение регистрации</h2><p class="auth-toggle">Пожалуйста, укажите ваше имя и фамилию.</p>
-                <form id="profile-setup-form"><div class="form-group"><label>Имя и Фамилия</label><input type="text" id="profile-name-input" placeholder="Иван Иванов" required></div><button type="submit" class="btn-primary">Сохранить и войти</button></form>
+                <h2>Завершение регистрации</h2>
+                <p>Пожалуйста, укажите ваше имя и фамилию.</p>
+                <form id="profile-setup-form" novalidate>
+                    <div class="form-group">
+                        <label for="profile-name-input">Имя и Фамилия</label>
+                        <input type="text" id="profile-name-input" placeholder="Иван Иванов" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Сохранить и войти</button>
+                </form>
             </div>
         </div>
         
-        <!-- ДАШБОРД -->
+        <!-- ГЛАВНЫЙ ЭКРАН (ДАШБОРД) -->
         <div id="main-menu-screen" class="screen">
             <div class="content">
                 <div class="scrollable">
-                    <div class="dashboard-header"><div class="avatar">Б</div><h2 id="user-name-display">BURЖУЙ</h2><p>Тайный агент</p></div>
-                    <div id="dashboard-info-container"></div>
+                    <div class="dashboard-header">
+                        <div class="avatar">Б</div>
+                        <h2 id="user-name-display">BURЖУЙ</h2>
+                        <p>Тайный агент</p>
+                    </div>
+                    <div id="dashboard-info-container">
+                        <!-- Сюда загружаются активные задания -->
+                    </div>
                     <ul class="menu-list">
-                        <li class="menu-list-item menu-btn" data-target="cooperation-screen"><i class="icon fa-solid fa-calendar-check"></i><div><strong>Записаться на проверку</strong><small>Выбрать доступную точку и время</small></div></li>
-                        <li class="menu-list-item menu-btn" data-target="history-screen"><i class="icon fa-solid fa-list-check"></i><div><strong>История проверок</strong><small>Посмотреть статусы отчетов</small></div></li>
-                        <li class="menu-list-item menu-btn" data-target="instruction-screen"><i class="icon fa-solid fa-book-open"></i><div><strong>Инструкция</strong><small>Правила и требования</small></div></li>
-                        <li id="admin-menu-btn" class="menu-list-item" style="display: none;"><i class="icon fa-solid fa-user-shield"></i><div><strong>Центр Управления</strong><small>Перейти в панель администратора</small></div></li>
+                        <li class="menu-list-item menu-btn" data-target="cooperation-screen">
+                            <i class="icon fa-solid fa-calendar-check"></i>
+                            <div><strong>Записаться на проверку</strong><small>Выбрать доступную точку и время</small></div>
+                        </li>
+                        <li class="menu-list-item menu-btn" data-target="history-screen">
+                            <i class="icon fa-solid fa-list-check"></i>
+                            <div><strong>История проверок</strong><small>Посмотреть статусы отчетов</small></div>
+                        </li>
+                        <li class="menu-list-item menu-btn" data-target="instruction-screen">
+                            <i class="icon fa-solid fa-book-open"></i>
+                            <div><strong>Инструкция</strong><small>Правила и требования</small></div>
+                        </li>
+                        <li id="admin-menu-btn" class="menu-list-item" style="display: none;">
+                            <i class="icon fa-solid fa-user-shield"></i>
+                            <div><strong>Центр Управления</strong><small>Перейти в панель администратора</small></div>
+                        </li>
                     </ul>
                     <button id="logout-btn">Выйти из аккаунта</button>
                 </div>
             </div>
         </div>
 
-        <!-- АДМИН-ПАНЕЛЬ -->
+        <!-- АДМИН-ПАНЕЛЬ: ХАБ -->
         <div id="admin-hub-screen" class="screen">
             <header><h2>Центр Управления</h2></header>
             <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-            <div class="content"><div class="scrollable"><div id="admin-stats-container"></div><ul class="menu-list"><li class="menu-list-item admin-hub-btn" data-target="admin-schedule-screen"><i class="icon fa-solid fa-calendar-days"></i><div><strong>Управление графиком</strong><small>Создать и удалить проверки</small></div></li><li class="menu-list-item admin-hub-btn" data-target="admin-reports-screen"><i class="icon fa-solid fa-file-signature"></i><div><strong>Просмотр отчетов</strong><small>Проверить и утвердить отчеты</small></div></li><li class="menu-list-item admin-hub-btn" data-target="admin-users-screen"><i class="icon fa-solid fa-users"></i><div><strong>Управление пользователями</strong><small>Просмотр и смена ролей</small></div></li></ul></div></div>
+            <div class="content"><div class="scrollable">
+                <div id="admin-stats-container"></div>
+                <ul class="menu-list">
+                    <li class="menu-list-item admin-hub-btn" data-target="admin-schedule-screen"><i class="icon fa-solid fa-calendar-days"></i><div><strong>Управление графиком</strong><small>Создать и удалить проверки</small></div></li>
+                    <li class="menu-list-item admin-hub-btn" data-target="admin-reports-screen"><i class="icon fa-solid fa-file-signature"></i><div><strong>Просмотр отчетов</strong><small>Проверить и утвердить отчеты</small></div></li>
+                    <li class="menu-list-item admin-hub-btn" data-target="admin-users-screen"><i class="icon fa-solid fa-users"></i><div><strong>Управление пользователями</strong><small>Просмотр и смена ролей</small></div></li>
+                </ul>
+            </div></div>
         </div>
+        
+        <!-- АДМИН-ПАНЕЛЬ: УПРАВЛЕНИЕ ГРАФИКОМ -->
         <div id="admin-schedule-screen" class="screen">
             <header><h2>Создать проверку</h2></header>
             <button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
             <div class="content"><div class="scrollable">
-                <form id="schedule-form">
+                <form id="schedule-form" novalidate>
                     <div class="form-group"><label>1. Выберите город</label><select id="schedule-city-select" required><option value="" disabled selected>-- Выберите город --</option></select></div>
                     <div class="form-group"><label>2. Выберите торговую точку</label><select id="schedule-location-select" required disabled><option value="" disabled selected>-- ... --</option></select></div>
                     <div class="form-group"><label>Дата проверки</label><input type="date" id="schedule-date-input" required></div>
@@ -75,8 +110,10 @@
         <div id="admin-view-schedule-screen" class="screen">
             <header><h2>Запланированные проверки</h2></header>
             <button class="back-btn" data-target="admin-schedule-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-            <div class="content"><div class="scrollable"><div id="schedule-list"></div></div></div>
+            <div class="content"><div class="scrollable" id="schedule-list"></div></div>
         </div>
+
+        <!-- АДМИН-ПАНЕЛЬ: ОТЧЕТЫ -->
         <div id="admin-reports-screen" class="screen">
             <header><h2>Все отчеты</h2></header>
             <button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
@@ -85,8 +122,34 @@
         <div id="admin-report-detail-screen" class="screen">
             <header><h2>Детали отчета</h2></header>
             <button class="back-btn" data-target="admin-reports-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-            <div class="content"><div class="scrollable"><div class="report-details"><p><strong>Адрес:</strong> <span id="admin-detail-address"></span></p><p><strong>Агент:</strong> <span id="admin-detail-user"></span></p><p><strong>Телефон:</strong> <span id="admin-detail-phone"></span></p><p><strong>Дата:</strong> <span id="admin-detail-date"></span></p><p><strong>Статус:</strong> <span id="admin-detail-status"></span></p><div id="admin-detail-rejection-comment-container" style="display: none;"></div><hr><h4>Ответы на вопросы:</h4><div class="form-group"><label>Чистота и внешний вид:</label><p id="admin-detail-q1"></p></div><div class="form-group"><label>Чистота внутри:</label><p id="admin-detail-q2"></p></div><div class="form-group"><label>Приветствие и поведение:</label><p id="admin-detail-q3"></p></div><div class="form-group"><label>Предложение дополнений:</label><p id="admin-detail-q4"></p></div><div class="form-group"><label>Действия после заказа:</label><p id="admin-detail-q5"></p></div><div class="form-group"><label>Выдача заказа:</label><p id="admin-detail-q6"></p></div><div class="form-group"><label>Оценка заказа:</label><p id="admin-detail-q7"></p></div><div class="form-group"><label>Оценка блюда №1 (1–5):</label><p id="admin-detail-q8"></p></div><div class="form-group"><label>Дополнительные замечания:</label><p id="admin-detail-q9"></p></div><hr><h4>Прикрепленные фото:</h4><div id="admin-detail-photos"></div><hr><h4>Действия:</h4><div id="admin-detail-actions" style="display: flex; gap: 15px; flex-wrap: wrap;"><button id="admin-action-approve" class="btn-primary" style="background: var(--status-approved);">Принять</button><button id="admin-action-reject" class="btn-primary" style="background: var(--status-rejected);">Отклонить</button><button id="admin-action-paid" class="btn-primary" style="background: var(--status-paid);">✓ Оплачено</button></div></div></div></div>
+            <div class="content"><div class="scrollable"><div class="report-details">
+                <p><strong>Адрес:</strong> <span id="admin-detail-address"></span></p>
+                <p><strong>Агент:</strong> <span id="admin-detail-user"></span></p>
+                <p><strong>Телефон:</strong> <span id="admin-detail-phone"></span></p>
+                <p><strong>Дата:</strong> <span id="admin-detail-date"></span></p>
+                <p><strong>Статус:</strong> <span id="admin-detail-status"></span></p>
+                <div id="admin-detail-rejection-comment-container" style="display: none;"></div><hr>
+                <h4>Ответы на вопросы:</h4>
+                <div class="form-group"><label>Чистота и внешний вид:</label><p id="admin-detail-q1"></p></div>
+                <div class="form-group"><label>Чистота внутри:</label><p id="admin-detail-q2"></p></div>
+                <div class="form-group"><label>Приветствие и поведение:</label><p id="admin-detail-q3"></p></div>
+                <div class="form-group"><label>Предложение дополнений:</label><p id="admin-detail-q4"></p></div>
+                <div class="form-group"><label>Действия после заказа:</label><p id="admin-detail-q5"></p></div>
+                <div class="form-group"><label>Выдача заказа:</label><p id="admin-detail-q6"></p></div>
+                <div class="form-group"><label>Оценка заказа:</label><p id="admin-detail-q7"></p></div>
+                <div class="form-group"><label>Оценка блюда №1 (1–5):</label><p id="admin-detail-q8"></p></div>
+                <div class="form-group"><label>Дополнительные замечания:</label><p id="admin-detail-q9"></p></div><hr>
+                <h4>Прикрепленные фото:</h4><div id="admin-detail-photos"></div><hr>
+                <h4>Действия:</h4>
+                <div id="admin-detail-actions">
+                    <button id="admin-action-approve" class="btn-primary" style="background: var(--status-approved);">Принять</button>
+                    <button id="admin-action-reject" class="btn-primary" style="background: var(--status-rejected);">Отклонить</button>
+                    <button id="admin-action-paid" class="btn-primary" style="background: var(--status-paid);">✓ Оплачено</button>
+                </div>
+            </div></div></div>
         </div>
+
+        <!-- АДМИН-ПАНЕЛЬ: ПОЛЬЗОВАТЕЛИ -->
         <div id="admin-users-screen" class="screen">
             <header><h2>Все пользователи</h2></header>
             <button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
@@ -97,14 +160,20 @@
         <div id="cooperation-screen" class="screen">
             <header><h2>Доступные проверки</h2></header>
             <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-            <div class="content"><div class="scrollable"><ul id="schedule-cards-list" class="menu-list"></ul><div id="no-schedules-view" class="empty-state" style="display: none;"><h3>Пока нет доступных проверок</h3><p>Отличная работа! Все задания выполнены.</p></div></div></div>
+            <div class="content"><div class="scrollable">
+                <ul id="schedule-cards-list" class="menu-list"></ul>
+                <div id="no-schedules-view" class="empty-state" style="display: none;">
+                    <h3>Пока нет доступных проверок</h3>
+                    <p>Отличная работа! Все задания выполнены.</p>
+                </div>
+            </div></div>
         </div>
         <div id="time-picker-screen" class="screen">
             <header><h2>Выберите время</h2></header>
             <button class="back-btn" data-target="cooperation-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
             <div class="content"><div class="scrollable">
-                <h3 id="picker-location-title" style="text-align: center; margin-bottom: 20px;"></h3>
-                <form id="time-picker-form">
+                <h3 id="picker-location-title"></h3>
+                <form id="time-picker-form" novalidate>
                     <div class="form-group">
                         <label>Укажите удобный для вас интервал времени</label>
                         <div class="time-slot-input">
@@ -120,7 +189,21 @@
         <div id="checklist-screen" class="screen">
              <header><h2>Чек-лист</h2></header>
              <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-            <div class="content"><div class="scrollable"><form id="checklist-form"><p><strong>Адрес:</strong> <span id="checklist-address"></span></p><p><strong>Дата:</strong> <span id="checklist-date"></span></p><div class="form-group"><label>Чистота и внешний вид</label><textarea id="checklist-q1-appearance" required></textarea></div><div class="form-group"><label>Чистота внутри</label><textarea id="checklist-q2-cleanliness" required></textarea></div><div class="form-group"><label>Приветствие и поведение</label><textarea id="checklist-q3-greeting" required></textarea></div><div class="form-group"><label>Предложение дополнений</label><textarea id="checklist-q4-upsell" required></textarea></div><div class="form-group"><label>Действия после заказа</label><textarea id="checklist-q5-actions" required></textarea></div><div class="form-group"><label>Выдача заказа</label><textarea id="checklist-q6-handout" required></textarea></div><div class="form-group"><label>Оценка заказа</label><textarea id="checklist-q7-order-eval" required></textarea></div><div class="form-group"><label>Оценка блюда №1 (1–5)</label><input type="number" id="checklist-q8-food-rating" min="1" max="5" required></div><div class="form-group"><label>Дополнительные замечания</label><textarea id="checklist-q9-comments"></textarea></div><div class="form-group"><label>Прикрепите фото</label><input type="file" id="checklist-photos" multiple accept="image/*" required></div><button type="submit" class="btn-primary">Отправить отчёт</button></form></div></div>
+            <div class="content"><div class="scrollable"><form id="checklist-form" novalidate>
+                <p><strong>Адрес:</strong> <span id="checklist-address"></span></p>
+                <p><strong>Дата:</strong> <span id="checklist-date"></span></p>
+                <div class="form-group"><label for="checklist-q1-appearance">Чистота и внешний вид</label><textarea id="checklist-q1-appearance" required></textarea></div>
+                <div class="form-group"><label for="checklist-q2-cleanliness">Чистота внутри</label><textarea id="checklist-q2-cleanliness" required></textarea></div>
+                <div class="form-group"><label for="checklist-q3-greeting">Приветствие и поведение</label><textarea id="checklist-q3-greeting" required></textarea></div>
+                <div class="form-group"><label for="checklist-q4-upsell">Предложение дополнений</label><textarea id="checklist-q4-upsell" required></textarea></div>
+                <div class="form-group"><label for="checklist-q5-actions">Действия после заказа</label><textarea id="checklist-q5-actions" required></textarea></div>
+                <div class="form-group"><label for="checklist-q6-handout">Выдача заказа</label><textarea id="checklist-q6-handout" required></textarea></div>
+                <div class="form-group"><label for="checklist-q7-order-eval">Оценка заказа</label><textarea id="checklist-q7-order-eval" required></textarea></div>
+                <div class="form-group"><label for="checklist-q8-food-rating">Оценка блюда №1 (1–5)</label><input type="number" id="checklist-q8-food-rating" min="1" max="5" required></div>
+                <div class="form-group"><label for="checklist-q9-comments">Дополнительные замечания</label><textarea id="checklist-q9-comments"></textarea></div>
+                <div class="form-group"><label for="checklist-photos">Прикрепите фото (обязательно)</label><input type="file" id="checklist-photos" multiple accept="image/*" required></div>
+                <button type="submit" class="btn-primary">Отправить отчёт</button>
+            </form></div></div>
         </div>
         <div id="history-screen" class="screen">
             <header><h2>История проверок</h2></header>
@@ -133,13 +216,13 @@
             <div class="content"><div class="scrollable instruction-text">
                 <h3>Секретная инструкция для Тайного Агента</h3>
                 <p>Агент, добро пожаловать в элитную команду BURЖУЙ! Ваша задача — помогать нам становиться лучше, оценивая сервис и качество наших блюд. Вы — наши глаза и уши. От вашей внимательности зависит наш успех.</p>
-                <h3>Твоя миссия, если ты решишься ее принять:</h3>
+                <h3>Твоя миссия:</h3>
                 <ol>
-                    <li><strong>Запись на проверку.</strong> Выбери доступное задание в разделе "Записаться на проверку". Убедись, что дата и место тебе подходят.</li>
-                    <li><strong>Визит на точку.</strong> Прибудь на место в указанный день. Веди себя как обычный гость: не привлекай внимания, не делай записей на виду у персонала. Твоя главная сила — незаметность.</li>
-                    <li><strong>Заполнение чек-листа.</strong> Сразу после визита (или в укромном месте) заполни чек-лист. Отвечай на вопросы честно и объективно. Твои комментарии — самая ценная часть отчета.</li>
+                    <li><strong>Запись на проверку.</strong> Выбери доступное задание в разделе "Записаться на проверку".</li>
+                    <li><strong>Визит на точку.</strong> Прибудь на место в указанный день. Веди себя как обычный гость: не привлекай внимания, не делай записей на виду у персонала.</li>
+                    <li><strong>Заполнение чек-листа.</strong> Сразу после визита заполни чек-лист. Отвечай на вопросы честно и объективно.</li>
                     <li><strong>Фотоотчет.</strong> Качественные и четкие фотографии — это ключ к успешному отчету. Они должны подтверждать твои слова.</li>
-                    <li><strong>Награда.</strong> После отправки отчета он попадает на проверку. Если отчет принят, мы свяжемся с тобой для возврата средств за заказ.</li>
+                    <li><strong>Награда.</strong> После отправки отчет попадает на проверку. Если отчет принят, мы свяжемся с тобой для возврата средств за заказ.</li>
                 </ol>
                 <h3>Золотые правила Агента:</h3>
                 <ul>
@@ -154,9 +237,31 @@
     </div>
     
     <!-- МОДАЛЬНЫЕ ОКНА -->
-    <div id="modal-container" class="modal-hidden"><div id="modal-content"><h3 id="modal-title">Подтверждение</h3><p id="modal-text">Вы уверены?</p><div id="modal-buttons"><button id="modal-confirm-btn" class="btn-primary">OK</button><button id="modal-cancel-btn" class="btn-secondary">Отмена</button></div></div></div>
-    <div id="rejection-modal-container" class="modal-hidden"><div id="modal-content"><h3 id="rejection-modal-title">Причина отклонения</h3><p id="rejection-modal-text">Пожалуйста, укажите причину, по которой отчет отклонен. Агент увидит этот комментарий.</p><div class="form-group"><textarea id="rejection-comment-input" rows="4" placeholder="Например: Некачественные фотографии"></textarea></div><div id="modal-buttons"><button id="rejection-modal-confirm-btn" class="btn-primary">Отправить</button><button id="rejection-modal-cancel-btn" class="btn-secondary">Отмена</button></div></div></div>
+    <div id="modal-container" class="modal-hidden">
+        <div id="modal-content">
+            <h3 id="modal-title">Подтверждение</h3>
+            <p id="modal-text">Вы уверены?</p>
+            <div id="modal-buttons">
+                <button id="modal-confirm-btn" class="btn-primary">OK</button>
+                <button id="modal-cancel-btn" class="btn-secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <div id="rejection-modal-container" class="modal-hidden">
+        <div id="modal-content">
+            <h3>Причина отклонения</h3>
+            <p>Пожалуйста, укажите причину, по которой отчет отклонен. Агент увидит этот комментарий.</p>
+            <div class="form-group">
+                <textarea id="rejection-comment-input" rows="4" placeholder="Например: Некачественные фотографии"></textarea>
+            </div>
+            <div id="modal-buttons">
+                <button id="rejection-modal-confirm-btn" class="btn-primary">Отправить</button>
+                <button id="rejection-modal-cancel-btn" class="btn-secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
     
+    <!-- СКРИПТЫ FIREBASE И ПРИЛОЖЕНИЯ -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
