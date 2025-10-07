@@ -8,7 +8,7 @@ const firebaseConfig = {
     storageBucket: "burzhuy-pro-v2.appspot.com",
     messagingSenderId: "627105413900",
     appId: "1:627105413900:web:3a02e926867ff76e256729"
-};
+};Й
 const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
