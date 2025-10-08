@@ -1,8 +1,18 @@
 // =================================================================
+// ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ О БЕЗОПАСНОСТИ!
+// =================================================================
+// НИКОГДА НЕ ХРАНИТЕ КЛЮЧИ API НАПРЯМУЮ В КОДЕ, КОТОРЫЙ ВЫ ЗАГРУЖАЕТЕ НА GITHUB ИЛИ ХОСТИНГ.
+// Это ОЧЕНЬ ОПАСНО. Любой может скопировать эти ключи и использовать вашу базу данных,
+// что может привести к краже данных или большим счетам.
+// Используйте переменные окружения (Environment Variables) на вашем хостинге (Render, Vercel и т.д.)
+// для безопасного хранения этих ключей.
+// =================================================================
+
+// =================================================================
 // КОНФИГУРАЦИЯ И ИНИЦИАЛИЗАЦИЯ FIREBASE
 // =================================================================
 const firebaseConfig = {
-    apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc",
+    apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc", // <-- ЗАМЕНИТЕ ЭТО НА ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ
     authDomain: "burzhuy-pro-v2.firebaseapp.com",
     projectId: "burzhuy-pro-v2",
     storageBucket: "burzhuy-pro-v2.appspot.com",
@@ -188,19 +198,48 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { showModal("Ошибка", "Не удалось загрузить города."); }
     }
     
+    // =================================================================
+    // ИЗМЕНЕНИЕ НАХОДИТСЯ ЗДЕСЬ
+    // =================================================================
     document.getElementById('schedule-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const form = e.currentTarget;
         const city = form.querySelector('#schedule-city-select').value;
         const locationName = form.querySelector('#schedule-location-select').value;
-        const date = form.querySelector('#schedule-date-input').value;
+        const dateString = form.querySelector('#schedule-date-input').value; // Получаем дату как строку 'YYYY-MM-DD'
         const isUrgent = form.querySelector('#schedule-urgent-checkbox').checked;
-        if (!city || !locationName || !date) return showModal('Ошибка', 'Заполните все поля.');
-        await db.collection('schedules').add({ city, locationName, date: new Date(date), isUrgent, createdAt: firebase.firestore.FieldValue.serverTimestamp(), isBooked: false });
+        if (!city || !locationName || !dateString) return showModal('Ошибка', 'Заполните все поля.');
+
+        // -----------------------------------------------------------------
+        // НАЧАЛО ИСПРАВЛЕНИЯ ПРОБЛЕМЫ С ЧАСОВЫМ ПОЯСОМ
+        // -----------------------------------------------------------------
+        // Когда мы создаем дату из строки "2025-10-08", JS создает ее на 00:00 в ЛОКАЛЬНОМ часовом поясе.
+        // Firestore при сохранении конвертирует эту дату в UTC+0. Если ваш часовой пояс UTC+6, то
+        // для Firestore это будет "2025-10-07 18:00". Из-за этого проверка на "сегодня" не работает.
+        // Чтобы это исправить, мы вручную компенсируем сдвиг часового пояса перед отправкой.
+        const localDate = new Date(dateString); 
+        const dateForFirestore = new Date(localDate.getTime() + (localDate.getTimezoneOffset() * 60000));
+        // -----------------------------------------------------------------
+        // КОНЕЦ ИСПРАВЛЕНИЯ
+        // -----------------------------------------------------------------
+        
+        await db.collection('schedules').add({ 
+            city, 
+            locationName, 
+            date: dateForFirestore, // <-- Используем исправленную дату
+            isUrgent, 
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(), 
+            isBooked: false 
+        });
+        
         showModal('Успешно', 'Проверка создана.');
         form.reset();
         document.getElementById('schedule-location-select').disabled = true;
     });
+    // =================================================================
+    // КОНЕЦ ИЗМЕНЕНИЯ
+    // =================================================================
+
 
     async function renderSchedules() {
         const list = document.getElementById('schedule-list');
@@ -220,7 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showModal('Подтверждение', 'Удалить эту проверку?', 'confirm', c => { if (c) db.collection('schedules').doc(id).delete().then(renderSchedules) });
     }
 
-    // ИСПРАВЛЕНИЕ: Функция для удаления отчета из Firestore
     function deleteReport(reportId) {
         showModal('Подтверждение', 'Удалить этот отчет безвозвратно?', 'confirm', confirmed => {
             if (confirmed) {
@@ -519,6 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = auth.currentUser;
         if (!user) return;
         try {
+            // Примечание: для этого запроса может понадобиться составной индекс в Firestore
             const snapshot = await db.collection('reports').where('userId', '==', user.uid).where('status', 'in', ['pending', 'approved', 'rejected', 'paid']).orderBy('createdAt', 'desc').get();
             if (snapshot.empty) {
                 list.innerHTML = '<p class="empty-state">История проверок пуста.</p>';
