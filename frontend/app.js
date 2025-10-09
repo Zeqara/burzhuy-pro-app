@@ -1,18 +1,10 @@
 // =================================================================
-// ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ О БЕЗОПАСНОСТИ!
-// =================================================================
-// НИКОГДА НЕ ХРАНИТЕ КЛЮЧИ API НАПРЯМУЮ В КОДЕ, КОТОРЫЙ ВЫ ЗАГРУЖАЕТЕ НА GITHUB ИЛИ ХОСТИНГ.
-// Это ОЧЕНЬ ОПАСНО. Любой может скопировать эти ключи и использовать вашу базу данных,
-// что может привести к краже данных или большим счетам.
-// Используйте переменные окружения (Environment Variables) на вашем хостинге (Render, Vercel и т.д.)
-// для безопасного хранения этих ключей.
-// =================================================================
-
-// =================================================================
 // КОНФИГУРАЦИЯ И ИНИЦИАЛИЗАЦИЯ FIREBASE
 // =================================================================
+// ВАЖНО: Хранить ключи API в открытом коде небезопасно.
+// Рекомендуется использовать переменные окружения на вашем хостинге.
 const firebaseConfig = {
-    apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc", // <-- ЗАМЕНИТЕ ЭТО НА ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ
+    apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc",
     authDomain: "burzhuy-pro-v2.firebaseapp.com",
     projectId: "burzhuy-pro-v2",
     storageBucket: "burzhuy-pro-v2.appspot.com",
@@ -49,6 +41,7 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
     confirmBtn.textContent = (type === 'confirm') ? 'Подтвердить' : 'OK';
     cancelBtn.style.display = (type === 'confirm') ? 'inline-block' : 'none';
 
+    // Пересоздаем кнопки, чтобы безопасно удалить старые обработчики событий
     const newConfirmBtn = confirmBtn.cloneNode(true);
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
     const newCancelBtn = cancelBtn.cloneNode(true);
@@ -68,6 +61,7 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
 document.addEventListener('DOMContentLoaded', () => {
     const phoneInput = document.getElementById('phone-input');
 
+    // Форматирование номера телефона
     if (phoneInput) {
         const formatPhoneNumber = (value) => {
             let digits = value.replace(/\D/g, '');
@@ -87,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
         phoneInput.value = '+7';
     }
     
+    // Проверка состояния авторизации
     auth.onAuthStateChanged(user => {
         document.getElementById('loader').classList.remove('active');
         if (user) {
@@ -109,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Форма входа/регистрации
     document.getElementById('login-register-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('login-register-btn');
@@ -132,6 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Форма настройки профиля
     document.getElementById('profile-setup-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = auth.currentUser;
@@ -146,8 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
         finally { btn.disabled = false; }
     });
 
+    // Кнопка выхода
     document.getElementById('logout-btn').addEventListener('click', () => { auth.signOut(); });
 
+    // Навигация по экранам
     document.querySelectorAll('.menu-btn, .back-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -156,15 +155,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const loadFunctions = {
                 'cooperation-screen': renderAvailableSchedules, 'history-screen': renderHistory, 'admin-hub-screen': loadAdminStats, 'admin-schedule-screen': loadCitiesForAdmin, 'admin-reports-screen': renderAllReports, 'admin-users-screen': renderAllUsers,
             };
-            loadFunctions[target]?.();
+            if(loadFunctions[target]) {
+                loadFunctions[target]();
+            }
             showScreen(target);
         });
     });
 
+    // Кнопка просмотра графика в админке
     document.getElementById('view-schedule-btn').addEventListener('click', () => {
         renderSchedules();
         showScreen('admin-view-schedule-screen');
     });
+
+    // ========================================
+    // АДМИН-ПАНЕЛЬ: ФУНКЦИИ
+    // ========================================
 
     async function loadAdminStats() {
         const container = document.getElementById('admin-stats-container');
@@ -173,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const reports = await db.collection('reports').where('status', '==', 'pending').get();
             const users = await db.collection('users').get();
             container.innerHTML = `<div class="stat-card"><h3>${reports.size}</h3><p>На проверке</p></div><div class="stat-card"><h3>${users.size}</h3><p>Пользователей</p></div>`;
-        } catch (e) { container.innerHTML = '<p>Ошибка</p>'; }
+        } catch (e) { container.innerHTML = '<p>Ошибка загрузки статистики.</p>'; }
     }
 
     async function loadCitiesForAdmin() {
@@ -198,65 +204,70 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { showModal("Ошибка", "Не удалось загрузить города."); }
     }
     
-    // =================================================================
-    // ИЗМЕНЕНИЕ НАХОДИТСЯ ЗДЕСЬ
-    // =================================================================
+    // ФОРМА СОЗДАНИЯ ПРОВЕРКИ (С ИСПРАВЛЕНИЕМ ДАТЫ)
     document.getElementById('schedule-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const form = e.currentTarget;
         const city = form.querySelector('#schedule-city-select').value;
         const locationName = form.querySelector('#schedule-location-select').value;
-        const dateString = form.querySelector('#schedule-date-input').value; // Получаем дату как строку 'YYYY-MM-DD'
+        const dateString = form.querySelector('#schedule-date-input').value;
         const isUrgent = form.querySelector('#schedule-urgent-checkbox').checked;
         if (!city || !locationName || !dateString) return showModal('Ошибка', 'Заполните все поля.');
-
-        // -----------------------------------------------------------------
-        // НАЧАЛО ИСПРАВЛЕНИЯ ПРОБЛЕМЫ С ЧАСОВЫМ ПОЯСОМ
-        // -----------------------------------------------------------------
-        // Когда мы создаем дату из строки "2025-10-08", JS создает ее на 00:00 в ЛОКАЛЬНОМ часовом поясе.
-        // Firestore при сохранении конвертирует эту дату в UTC+0. Если ваш часовой пояс UTC+6, то
-        // для Firestore это будет "2025-10-07 18:00". Из-за этого проверка на "сегодня" не работает.
-        // Чтобы это исправить, мы вручную компенсируем сдвиг часового пояса перед отправкой.
+        
+        // =================================================================
+        // НАЧАЛО КЛЮЧЕВОГО ИСПРАВЛЕНИЯ (ПРОБЛЕМА С ЧАСОВЫМ ПОЯСОМ)
+        // =================================================================
+        // Создаем дату из строки "YYYY-MM-DD". JavaScript создает ее на 00:00 в ЛОКАЛЬНОМ часовом поясе.
+        // Firestore при сохранении конвертирует эту дату в универсальный формат UTC.
+        // Если ваш пояс UTC+6, то 8 октября 00:00 станет 7 октября 18:00 в базе данных.
+        // Чтобы это исправить, мы вручную компенсируем сдвиг часового пояса перед отправкой в базу.
         const localDate = new Date(dateString); 
         const dateForFirestore = new Date(localDate.getTime() + (localDate.getTimezoneOffset() * 60000));
-        // -----------------------------------------------------------------
+        // =================================================================
         // КОНЕЦ ИСПРАВЛЕНИЯ
-        // -----------------------------------------------------------------
-        
-        await db.collection('schedules').add({ 
-            city, 
-            locationName, 
-            date: dateForFirestore, // <-- Используем исправленную дату
-            isUrgent, 
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(), 
-            isBooked: false 
-        });
-        
-        showModal('Успешно', 'Проверка создана.');
-        form.reset();
-        document.getElementById('schedule-location-select').disabled = true;
-    });
-    // =================================================================
-    // КОНЕЦ ИЗМЕНЕНИЯ
-    // =================================================================
+        // =================================================================
 
+        try {
+            await db.collection('schedules').add({ 
+                city, 
+                locationName, 
+                date: dateForFirestore, // Используем исправленную дату
+                isUrgent, 
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(), 
+                isBooked: false 
+            });
+            showModal('Успешно', 'Проверка создана.');
+            form.reset();
+            document.getElementById('schedule-location-select').disabled = true;
+        } catch (err) {
+            showModal('Ошибка', 'Не удалось создать проверку.');
+        }
+    });
 
     async function renderSchedules() {
         const list = document.getElementById('schedule-list');
         list.innerHTML = '<div class="spinner"></div>';
-        const snapshot = await db.collection('schedules').orderBy('date', 'desc').get();
-        if (snapshot.empty) { list.innerHTML = '<p class="empty-state">Запланированных проверок нет.</p>'; return; }
-        let html = '<ul class="menu-list">';
-        snapshot.forEach(doc => {
-            const s = doc.data();
-            html += `<li class="menu-list-item"><div><strong>${s.locationName} (${s.city})</strong><small>Дата: ${s.date.toDate().toLocaleDateString('ru-RU')} ${s.isUrgent ? '🔥' : ''}</small></div><button class="delete-btn" data-id="${doc.id}">&times;</button></li>`;
-        });
-        list.innerHTML = html + '</ul>';
-        list.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', (e) => deleteSchedule(e.target.dataset.id)));
+        try {
+            const snapshot = await db.collection('schedules').orderBy('date', 'desc').get();
+            if (snapshot.empty) { list.innerHTML = '<p class="empty-state">Запланированных проверок нет.</p>'; return; }
+            let html = '<ul class="menu-list">';
+            snapshot.forEach(doc => {
+                const s = doc.data();
+                html += `<li class="menu-list-item"><div><strong>${s.locationName} (${s.city})</strong><small>Дата: ${s.date.toDate().toLocaleDateString('ru-RU')} ${s.isUrgent ? '🔥' : ''}</small></div><button class="delete-btn" data-id="${doc.id}">&times;</button></li>`;
+            });
+            list.innerHTML = html + '</ul>';
+            list.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', (e) => deleteSchedule(e.target.dataset.id)));
+        } catch (err) {
+             list.innerHTML = '<p>Ошибка загрузки графика.</p>';
+        }
     }
     
     function deleteSchedule(id) {
-        showModal('Подтверждение', 'Удалить эту проверку?', 'confirm', c => { if (c) db.collection('schedules').doc(id).delete().then(renderSchedules) });
+        showModal('Подтверждение', 'Удалить эту проверку?', 'confirm', confirmed => { 
+            if (confirmed) {
+                db.collection('schedules').doc(id).delete().then(renderSchedules).catch(err => showModal('Ошибка', 'Не удалось удалить проверку.'));
+            } 
+        });
     }
 
     function deleteReport(reportId) {
@@ -278,12 +289,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const reportsSnap = await db.collection('reports').orderBy('createdAt', 'desc').get();
             if (reportsSnap.empty) { list.innerHTML = '<p class="empty-state">Отчетов пока нет.</p>'; return; }
+            
             const userIds = [...new Set(reportsSnap.docs.map(doc => doc.data().userId).filter(id => id))];
             const usersMap = new Map();
             if(userIds.length > 0) {
                 const userDocs = await Promise.all(userIds.map(id => db.collection('users').doc(id).get()));
                 userDocs.forEach(doc => { if(doc.exists) usersMap.set(doc.id, doc.data()) });
             }
+            
             let html = reportsSnap.docs.map(doc => {
                 const r = doc.data();
                 const user = usersMap.get(r.userId);
@@ -294,7 +307,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="delete-report-btn" data-id="${doc.id}">Удалить</button>
                 </li>`;
             }).join('');
+            
             list.innerHTML = html;
+            
             list.querySelectorAll('.report-item').forEach(item => item.addEventListener('click', (e) => {
                 if(e.target.classList.contains('delete-report-btn')) return;
                 openAdminReportDetail(item.dataset.id);
@@ -314,9 +329,13 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const reportDoc = await db.collection('reports').doc(id).get();
             if (!reportDoc.exists) throw new Error("Отчет не найден");
+            
             const report = reportDoc.data();
-            const userDoc = report.userId ? await db.collection('users').doc(report.userId).get() : null;
-            const user = userDoc?.exists ? userDoc.data() : null;
+            let user = null;
+            if (report.userId) {
+                const userDoc = await db.collection('users').doc(report.userId).get();
+                if (userDoc.exists) user = userDoc.data();
+            }
             
             document.getElementById('admin-detail-address').textContent = report.locationName || '—';
             document.getElementById('admin-detail-user').textContent = user?.fullName || '—';
@@ -325,8 +344,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('admin-detail-status').innerHTML = `<span class="status-indicator ${report.status}"></span> ${report.status}`;
             
             const rejectionEl = document.getElementById('admin-detail-rejection-comment-container');
-            rejectionEl.style.display = (report.status === 'rejected' && report.rejectionComment) ? 'block' : 'none';
-            if (report.rejectionComment) rejectionEl.innerHTML = `<p><strong>Причина:</strong> ${report.rejectionComment}</p>`;
+            if (report.status === 'rejected' && report.rejectionComment) {
+                rejectionEl.style.display = 'block';
+                rejectionEl.innerHTML = `<p><strong>Причина:</strong> ${report.rejectionComment}</p>`;
+            } else {
+                rejectionEl.style.display = 'none';
+            }
 
             for(let i = 1; i <= 9; i++) {
                 document.getElementById(`admin-detail-q${i}`).textContent = report.answers?.[`q${i}`] || '—';
@@ -340,6 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // Кнопки действий в деталях отчета
     document.getElementById('admin-action-approve').addEventListener('click', () => updateReportStatus('approved'));
     document.getElementById('admin-action-paid').addEventListener('click', () => updateReportStatus('paid'));
     document.getElementById('admin-action-reject').addEventListener('click', () => {
@@ -355,9 +379,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateReportStatus('rejected', commentInput.value.trim());
                 modal.classList.add('modal-hidden');
             } else { alert('Укажите причину.'); }
+            confirmBtn.removeEventListener('click', confirmHandler);
+            cancelBtn.removeEventListener('click', cancelHandler);
         };
-        confirmBtn.addEventListener('click', confirmHandler, { once: true });
-        cancelBtn.addEventListener('click', () => modal.classList.add('modal-hidden'), { once: true });
+        const cancelHandler = () => {
+            modal.classList.add('modal-hidden');
+            confirmBtn.removeEventListener('click', confirmHandler);
+            cancelBtn.removeEventListener('click', cancelHandler);
+        };
+        
+        confirmBtn.addEventListener('click', confirmHandler);
+        cancelBtn.addEventListener('click', cancelHandler);
     });
     
     async function updateReportStatus(status, comment = null) {
@@ -368,8 +400,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const reportRef = db.collection('reports').doc(currentReportId);
             await reportRef.update(updateData);
             if(status === 'approved') {
-                const userId = (await reportRef.get()).data().userId;
-                if(userId) await db.collection('users').doc(userId).update({ completedChecks: firebase.firestore.FieldValue.increment(1) });
+                const reportData = (await reportRef.get()).data();
+                if(reportData.userId) {
+                    await db.collection('users').doc(reportData.userId).update({ completedChecks: firebase.firestore.FieldValue.increment(1) });
+                }
             }
             showModal('Успешно', 'Статус обновлен.');
             openAdminReportDetail(currentReportId);
@@ -403,12 +437,20 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function toggleUserRole(id, role, name) {
         const newRole = role === 'admin' ? 'guest' : 'admin';
-        showModal('Подтверждение', `Сделать ${name} ${newRole === 'admin' ? 'администратором' : 'агентом'}?`, 'confirm', c => { if(c) db.collection('users').doc(id).update({ role: newRole }).then(renderAllUsers); });
+        showModal('Подтверждение', `Сделать ${name} ${newRole === 'admin' ? 'администратором' : 'агентом'}?`, 'confirm', confirmed => { 
+            if(confirmed) db.collection('users').doc(id).update({ role: newRole }).then(renderAllUsers); 
+        });
     }
 
     function deleteUser(id, name) {
-        showModal('Подтверждение', `Удалить пользователя ${name}? Действие нельзя отменить.`, 'confirm', c => { if(c) db.collection('users').doc(id).delete().then(renderAllUsers); });
+        showModal('Подтверждение', `Удалить пользователя ${name}? Действие нельзя отменить.`, 'confirm', confirmed => { 
+            if(confirmed) db.collection('users').doc(id).delete().then(renderAllUsers); 
+        });
     }
+    
+    // ========================================
+    // ПОЛЬЗОВАТЕЛЬСКИЕ ФУНКЦИИ
+    // ========================================
 
     async function renderAvailableSchedules() {
         const list = document.getElementById('schedule-cards-list');
@@ -416,9 +458,13 @@ document.addEventListener('DOMContentLoaded', () => {
         list.innerHTML = '<div class="spinner"></div>';
         noSchedulesView.style.display = 'none';
         try {
+            // Создаем "сегодня" на 00:00:00 в локальном часовом поясе пользователя
             const today = new Date();
             today.setHours(0, 0, 0, 0);
+
+            // Firestore корректно сравнит локальный объект Date с датой в UTC из базы
             const snapshot = await db.collection('schedules').where('isBooked', '==', false).where('date', '>=', today).orderBy('date').get();
+            
             if (snapshot.empty) {
                 list.innerHTML = '';
                 noSchedulesView.style.display = 'block';
@@ -426,12 +472,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             list.innerHTML = snapshot.docs.map(doc => {
                 const s = doc.data();
+                // toDate() вернет дату в локальном часовом поясе, что нам и нужно для отображения
                 return `<li class="menu-list-item" data-id="${doc.id}">${s.isUrgent ? '<div class="urgent-badge">🔥</div>' : ''}<div><strong>${s.locationName}</strong><small>${s.city} - ${s.date.toDate().toLocaleDateString('ru-RU')}</small></div></li>`;
             }).join('');
             list.querySelectorAll('.menu-list-item').forEach(card => card.addEventListener('click', () => openTimePicker(card.dataset.id)));
         } catch (error) {
-            console.error("ОШИБКА FIRESTORE: Убедитесь, что вы создали КОМБИНИРОВАННЫЙ ИНДЕКС для коллекции 'schedules' по полям 'isBooked' (по возрастанию) и 'date' (по возрастанию).", error);
-            list.innerHTML = '<p>Не удалось загрузить данные.</p>';
+            console.error("ОШИБКА FIRESTORE:", error);
+            list.innerHTML = '<p>Не удалось загрузить данные. Возможно, требуется создать композитный индекс в базе данных.</p>';
         }
     }
 
@@ -457,19 +504,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = auth.currentUser;
         if (!startTime || !endTime) return showModal('Ошибка', 'Укажите интервал времени.');
         if (startTime >= endTime) return showModal('Ошибка', 'Время начала должно быть раньше окончания.');
+        
         const btn = e.currentTarget.querySelector('button[type="submit"]');
         btn.disabled = true;
+        
         const scheduleRef = db.collection('schedules').doc(selectedScheduleForBooking.id);
         const reportRef = db.collection('reports').doc();
+        
         try {
-            await db.runTransaction(async t => {
-                if ((await t.get(scheduleRef)).data().isBooked) throw new Error("Проверка уже забронирована.");
-                t.update(scheduleRef, { isBooked: true });
-                t.set(reportRef, { userId: user.uid, scheduleId: selectedScheduleForBooking.id, locationName: selectedScheduleForBooking.locationName, city: selectedScheduleForBooking.city, checkDate: selectedScheduleForBooking.date, startTime, endTime, status: 'booked', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            await db.runTransaction(async (transaction) => {
+                const scheduleDoc = await transaction.get(scheduleRef);
+                if (!scheduleDoc.exists || scheduleDoc.data().isBooked) {
+                    throw new Error("Проверка уже забронирована другим агентом.");
+                }
+                transaction.update(scheduleRef, { isBooked: true });
+                transaction.set(reportRef, { 
+                    userId: user.uid, 
+                    scheduleId: selectedScheduleForBooking.id, 
+                    locationName: selectedScheduleForBooking.locationName, 
+                    city: selectedScheduleForBooking.city, 
+                    checkDate: selectedScheduleForBooking.date, 
+                    startTime, 
+                    endTime, 
+                    status: 'booked', 
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp() 
+                });
             });
             await loadUserDashboard(user.uid);
-            showModal('Успешно!', 'Вы записались. Задание на главном экране.', 'alert', () => showScreen('main-menu-screen'));
-        } catch(err) { showModal('Ошибка', err.message); } finally { btn.disabled = false; renderAvailableSchedules(); }
+            showModal('Успешно!', 'Вы записались. Задание появилось на главном экране.', 'alert', () => showScreen('main-menu-screen'));
+        } catch(err) { 
+            showModal('Ошибка', err.message); 
+            renderAvailableSchedules(); // Обновляем список, т.к. проверка могла быть занята
+        } finally { 
+            btn.disabled = false; 
+        }
     });
 
     async function loadUserDashboard(userId) {
@@ -487,10 +555,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             container.innerHTML = '<h3>Активные задания:</h3><ul class="menu-list">' + tasks.map(report => {
                 const checkDate = report.checkDate.toDate();
-                const today = new Date(); today.setHours(0,0,0,0);
-                const canFill = checkDate.getTime() <= today.getTime();
+                const today = new Date(); 
+                today.setHours(0,0,0,0);
+                // Кнопка "Заполнить" активна только в день проверки или после него
+                const canFill = checkDate.getTime() <= new Date().getTime();
                 return `<li class="menu-list-item"><div><strong>${report.locationName}</strong><small>${checkDate.toLocaleDateString('ru-RU')}</small><div class="task-actions"><button class="btn-fill-checklist" data-id="${report.id}" ${canFill ? '' : 'disabled'}>Заполнить</button><button class="btn-cancel-booking" data-id="${report.id}">Отменить</button></div></div></li>`;
             }).join('') + '</ul>';
+            
             container.querySelectorAll('.btn-fill-checklist').forEach(btn => btn.addEventListener('click', e => openChecklist(e.target.dataset.id)));
             container.querySelectorAll('.btn-cancel-booking').forEach(btn => btn.addEventListener('click', e => cancelBooking(e.target.dataset.id)));
         } catch (error) {
@@ -499,18 +570,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function cancelBooking(id) {
-        showModal('Подтверждение', 'Отменить эту проверку?', 'confirm', async c => {
-            if (c) {
+        showModal('Подтверждение', 'Отменить эту проверку?', 'confirm', async confirmed => {
+            if (confirmed) {
                 try {
-                    const reportDoc = await db.collection('reports').doc(id).get();
+                    const reportRef = db.collection('reports').doc(id);
+                    const reportDoc = await reportRef.get();
+                    if (!reportDoc.exists) throw new Error("Отчет не найден");
+                    
                     const scheduleId = reportDoc.data().scheduleId;
+                    
                     const batch = db.batch();
-                    batch.delete(db.collection('reports').doc(id));
-                    if (scheduleId) batch.update(db.collection('schedules').doc(scheduleId), { isBooked: false });
+                    batch.delete(reportRef);
+                    if (scheduleId) {
+                        const scheduleRef = db.collection('schedules').doc(scheduleId);
+                        batch.update(scheduleRef, { isBooked: false });
+                    }
                     await batch.commit();
+                    
                     showModal('Успешно', 'Запись отменена.');
                     loadUserDashboard(auth.currentUser.uid);
-                } catch (e) { showModal('Ошибка', 'Не удалось отменить запись.'); }
+                    // Не нужно вызывать renderAvailableSchedules(), т.к. пользователь на главном экране
+                } catch (e) { 
+                    showModal('Ошибка', 'Не удалось отменить запись. ' + e.message); 
+                }
             }
         });
     }
@@ -519,8 +601,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const doc = await db.collection('reports').doc(id).get();
             if (!doc.exists) return showModal('Ошибка', 'Задание не найдено.');
+            
             currentReportId = id;
             const report = doc.data();
+            
             document.getElementById('checklist-address').textContent = report.locationName;
             document.getElementById('checklist-date').textContent = report.checkDate.toDate().toLocaleDateString('ru-RU');
             document.getElementById('checklist-form').reset();
@@ -532,23 +616,41 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const user = auth.currentUser;
         if (!user || !currentReportId) return;
+        
         const btn = e.currentTarget.querySelector('button[type="submit"]');
         btn.disabled = true;
+        btn.innerHTML = '<div class="spinner-small"></div>';
+
         try {
             const answers = {
                 q1: document.getElementById('checklist-q1-appearance').value, q2: document.getElementById('checklist-q2-cleanliness').value, q3: document.getElementById('checklist-q3-greeting').value, q4: document.getElementById('checklist-q4-upsell').value, q5: document.getElementById('checklist-q5-actions').value, q6: document.getElementById('checklist-q6-handout').value, q7: document.getElementById('checklist-q7-order-eval').value, q8: document.getElementById('checklist-q8-food-rating').value, q9: document.getElementById('checklist-q9-comments').value
             };
             const files = document.getElementById('checklist-photos').files;
-            if (files.length === 0) throw new Error("Прикрепите фото.");
+            if (files.length === 0) throw new Error("Пожалуйста, прикрепите хотя бы одно фото.");
+            
             const photoUrls = [];
             for (const file of files) {
                 const filePath = `reports/${currentReportId}/${Date.now()}_${file.name}`;
                 const fileSnapshot = await storage.ref(filePath).put(file);
                 photoUrls.push(await fileSnapshot.ref.getDownloadURL());
             }
-            await db.collection('reports').doc(currentReportId).update({ answers, photoUrls, status: 'pending', submittedAt: firebase.firestore.FieldValue.serverTimestamp() });
-            showModal('Отчет отправлен!', 'Спасибо!', 'alert', () => { showScreen('main-menu-screen'); loadUserDashboard(user.uid); });
-        } catch(err) { showModal('Ошибка', err.message); } finally { btn.disabled = false; }
+            
+            await db.collection('reports').doc(currentReportId).update({ 
+                answers, 
+                photoUrls, 
+                status: 'pending', 
+                submittedAt: firebase.firestore.FieldValue.serverTimestamp() 
+            });
+            showModal('Отчет отправлен!', 'Спасибо! Он появится в истории после проверки.', 'alert', () => { 
+                showScreen('main-menu-screen'); 
+                loadUserDashboard(user.uid); 
+            });
+        } catch(err) { 
+            showModal('Ошибка', err.message); 
+        } finally { 
+            btn.disabled = false; 
+            btn.textContent = 'Отправить';
+        }
     });
 
     async function renderHistory() {
@@ -557,7 +659,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = auth.currentUser;
         if (!user) return;
         try {
-            // Примечание: для этого запроса может понадобиться составной индекс в Firestore
             const snapshot = await db.collection('reports').where('userId', '==', user.uid).where('status', 'in', ['pending', 'approved', 'rejected', 'paid']).orderBy('createdAt', 'desc').get();
             if (snapshot.empty) {
                 list.innerHTML = '<p class="empty-state">История проверок пуста.</p>';
@@ -567,10 +668,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const r = doc.data();
                 const statusMap = { pending: 'на проверке', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' };
                 const comment = (r.status === 'rejected' && r.rejectionComment) ? `<small style="color:var(--status-rejected); display:block; margin-top:5px;"><b>Причина:</b> ${r.rejectionComment}</small>` : '';
-                return `<li class="menu-list-item"><div class="status-indicator ${r.status}"></div><div><strong>${r.locationName}</strong><small>Статус: ${statusMap[r.status]}</small>${comment}</div></li>`;
+                return `<li class="menu-list-item"><div class="status-indicator ${r.status}"></div><div><strong>${r.locationName}</strong><small>Статус: ${statusMap[r.status] || r.status}</small>${comment}</div></li>`;
             }).join('') + '</ul>';
         } catch (error) {
-            list.innerHTML = '<p>Ошибка загрузки истории.</p>';
+            console.error("Ошибка загрузки истории:", error);
+            list.innerHTML = '<p>Ошибка загрузки истории. Возможно, требуется создать индекс в Firestore.</p>';
         }
     }
 });
