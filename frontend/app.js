@@ -1,5 +1,5 @@
 // =================================================================
-// КОНФИГУРАЦИЯ И ИНИЦИАЛ-ИЗАЦИЯ FIREBASE (ФИНАЛЬНАЯ ВЕРСИЯ)
+// КОНФИГУРАЦИЯ И ИНИЦИАЛИЗАЦИЯ FIREBASE (ФИНАЛЬНАЯ ВЕРСИЯ)
 // =================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc",
@@ -459,8 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             container.innerHTML = '<h3>Активные задания:</h3><ul class="menu-list">' + tasks.map(report => {
                 const checkDate = report.checkDate.toDate();
-                const today = new Date(); today.setHours(0,0,0,0);
-                const canFill = checkDate.getTime() <= new Date().setHours(0,0,0,0); // Можно заполнять в день проверки
+                const canFill = checkDate.getTime() <= new Date().setHours(0,0,0,0);
                 return `<li class="menu-list-item"><div><strong>${formatLocationNameForUser(report.locationName)}</strong><small>${checkDate.toLocaleDateString('ru-RU')}</small><div class="task-actions"><button class="btn-fill-checklist" data-id="${report.id}" ${canFill ? '' : 'disabled'}>Заполнить</button><button class="btn-cancel-booking" data-id="${report.id}">Отменить</button></div></div></li>`;
             }).join('') + '</ul>';
             container.querySelectorAll('.btn-fill-checklist').forEach(btn => btn.addEventListener('click', e => openChecklist(e.target.dataset.id)));
@@ -487,7 +486,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ИСПРАВЛЕНО: Добавлена очистка формы
     async function openChecklist(id) {
         try {
             const doc = await db.collection('reports').doc(id).get();
@@ -496,12 +494,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const report = doc.data();
             document.getElementById('checklist-address').textContent = formatLocationNameForUser(report.locationName);
             document.getElementById('checklist-date').textContent = report.checkDate.toDate().toLocaleDateString('ru-RU');
-            document.getElementById('checklist-form').reset(); // Очищаем форму перед показом
+            document.getElementById('checklist-form').reset();
             showScreen('checklist-screen');
         } catch (error) { showModal('Ошибка', 'Не удалось загрузить чек-лист.'); }
     }
     
-    // НОВАЯ ФУНКЦИЯ: Открывает чек-лист для редактирования с заполненными данными
     async function openChecklistForEdit(id) {
         try {
             const doc = await db.collection('reports').doc(id).get();
@@ -538,24 +535,35 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const user = auth.currentUser;
         if (!user || !currentReportId) return;
+        
         const btn = e.currentTarget.querySelector('button[type="submit"]');
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner-small"></div>';
+
         try {
             const answers = {
                 q1: document.getElementById('checklist-q1-appearance').value, q2: document.getElementById('checklist-q2-cleanliness').value, q3: document.getElementById('checklist-q3-greeting').value, q4: document.getElementById('checklist-q4-upsell').value, q5: document.getElementById('checklist-q5-actions').value, q6: document.getElementById('checklist-q6-handout').value, q7: document.getElementById('checklist-q7-order-eval').value, q8: document.getElementById('checklist-q8-food-rating').value, q9: document.getElementById('checklist-q9-comments').value
             };
             const files = document.getElementById('checklist-photos').files;
-            if (files.length === 0) throw new Error("Прикрепите фото. При редактировании старые фото не сохраняются.");
             
-            const photoUrls = [];
-            for (const file of files) {
-                const filePath = `reports/${currentReportId}/${Date.now()}_${file.name}`;
-                const fileSnapshot = await storage.ref(filePath).put(file);
-                photoUrls.push(await fileSnapshot.ref.getDownloadURL());
+            const reportRef = db.collection('reports').doc(currentReportId);
+            const originalReportDoc = await reportRef.get();
+            const isEditing = originalReportDoc.exists && originalReportDoc.data().answers;
+
+            let photoUrls = originalReportDoc.data().photoUrls || [];
+
+            if (files.length > 0) {
+                photoUrls = [];
+                for (const file of files) {
+                    const filePath = `reports/${currentReportId}/${Date.now()}_${file.name}`;
+                    const fileSnapshot = await storage.ref(filePath).put(file);
+                    photoUrls.push(await fileSnapshot.ref.getDownloadURL());
+                }
+            } else if (!isEditing) {
+                throw new Error("Пожалуйста, прикрепите фото.");
             }
 
-            await db.collection('reports').doc(currentReportId).update({ 
+            await reportRef.update({ 
                 answers, 
                 photoUrls, 
                 status: 'pending', 
@@ -563,8 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 rejectionComment: firebase.firestore.FieldValue.delete()
             });
 
-            // ИСПРАВЛЕНО: Улучшен текст в модальном окне
-            const modalTitle = 'Отчет отправлен на проверку!';
+            const modalTitle = isEditing ? 'Отчет исправлен!' : 'Отчет отправлен на проверку!';
             const modalText = 'Спасибо! Мы свяжемся с вами по указанному в профиле номеру после проверки отчета.';
             showModal(modalTitle, modalText, 'alert', () => { 
                 showScreen('main-menu-screen'); 
