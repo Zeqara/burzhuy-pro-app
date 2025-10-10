@@ -3,7 +3,7 @@
 // =================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc",
-  authDomain: "burzhuy-pro-v2.firebaseapp.com",
+  authDomain: "burzhuy-pro-vv2.firebaseapp.com",
   projectId: "burzhuy-pro-v2",
   storageBucket: "burzhuy-pro-v2.firebasestorage.app",
   messagingSenderId: "627105413900",
@@ -51,6 +51,13 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
     
     modalContainer.classList.remove('modal-hidden');
 }
+
+// НОВАЯ ФУНКЦИЯ: Убирает префикс "Б..." из названия для пользователя
+function formatLocationNameForUser(name) {
+    if (!name) return '';
+    return name.replace(/^Б\d+\s/, '');
+}
+
 
 // =================================================================
 // ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
@@ -391,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             list.innerHTML = snapshot.docs.map(doc => {
                 const s = doc.data();
-                return `<li class="menu-list-item" data-id="${doc.id}">${s.isUrgent ? '<div class="urgent-badge">🔥</div>' : ''}<div><strong>${s.locationName}</strong><small>${s.city} - ${s.date.toDate().toLocaleDateString('ru-RU')}</small></div></li>`;
+                return `<li class="menu-list-item" data-id="${doc.id}">${s.isUrgent ? '<div class="urgent-badge">🔥</div>' : ''}<div><strong>${formatLocationNameForUser(s.locationName)}</strong><small>${s.city} - ${s.date.toDate().toLocaleDateString('ru-RU')}</small></div></li>`;
             }).join('');
             list.querySelectorAll('.menu-list-item').forEach(card => card.addEventListener('click', () => openTimePicker(card.dataset.id)));
         } catch (error) {
@@ -409,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             selectedScheduleForBooking = { id: doc.id, ...doc.data() };
-            document.getElementById('picker-location-title').textContent = selectedScheduleForBooking.locationName;
+            document.getElementById('picker-location-title').textContent = formatLocationNameForUser(selectedScheduleForBooking.locationName);
             document.getElementById('time-picker-form').reset();
             showScreen('time-picker-screen');
         } catch (error) { showModal('Ошибка', 'Не удалось получить данные о проверке.'); }
@@ -454,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const checkDate = report.checkDate.toDate();
                 const today = new Date(); today.setHours(0,0,0,0);
                 const canFill = checkDate.getTime() <= today.getTime();
-                return `<li class="menu-list-item"><div><strong>${report.locationName}</strong><small>${checkDate.toLocaleDateString('ru-RU')}</small><div class="task-actions"><button class="btn-fill-checklist" data-id="${report.id}" ${canFill ? '' : 'disabled'}>Заполнить</button><button class="btn-cancel-booking" data-id="${report.id}">Отменить</button></div></div></li>`;
+                return `<li class="menu-list-item"><div><strong>${formatLocationNameForUser(report.locationName)}</strong><small>${checkDate.toLocaleDateString('ru-RU')}</small><div class="task-actions"><button class="btn-fill-checklist" data-id="${report.id}" ${canFill ? '' : 'disabled'}>Заполнить</button><button class="btn-cancel-booking" data-id="${report.id}">Отменить</button></div></div></li>`;
             }).join('') + '</ul>';
             container.querySelectorAll('.btn-fill-checklist').forEach(btn => btn.addEventListener('click', e => openChecklist(e.target.dataset.id)));
             container.querySelectorAll('.btn-cancel-booking').forEach(btn => btn.addEventListener('click', e => cancelBooking(e.target.dataset.id)));
@@ -486,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!doc.exists) return showModal('Ошибка', 'Задание не найдено.');
             currentReportId = id;
             const report = doc.data();
-            document.getElementById('checklist-address').textContent = report.locationName;
+            document.getElementById('checklist-address').textContent = formatLocationNameForUser(report.locationName);
             document.getElementById('checklist-date').textContent = report.checkDate.toDate().toLocaleDateString('ru-RU');
             document.getElementById('checklist-form').reset();
             showScreen('checklist-screen');
@@ -531,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const r = doc.data();
                 const statusMap = { pending: 'на проверке', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' };
                 const comment = (r.status === 'rejected' && r.rejectionComment) ? `<small style="color:var(--status-rejected); display:block; margin-top:5px;"><b>Причина:</b> ${r.rejectionComment}</small>` : '';
-                return `<li class="menu-list-item"><div class="status-indicator ${r.status}"></div><div><strong>${r.locationName}</strong><small>Статус: ${statusMap[r.status]}</small>${comment}</div></li>`;
+                return `<li class="menu-list-item"><div class="status-indicator ${r.status}"></div><div><strong>${formatLocationNameForUser(r.locationName)}</strong><small>Статус: ${statusMap[r.status]}</small>${comment}</div></li>`;
             }).join('') + '</ul>';
         } catch (error) {
             list.innerHTML = '<p>Ошибка загрузки истории.</p>';
