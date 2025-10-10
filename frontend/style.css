@@ -233,11 +233,9 @@ button#logout-btn {
 #admin-detail-actions button#admin-action-reject { background: var(--status-rejected); }
 #admin-detail-actions button#admin-action-paid { background: var(--status-paid); }
 
-/* ИСПРАВЛЕНИЕ #1: Стили для фото в отчете */
 #admin-detail-photos { display: flex; flex-wrap: wrap; gap: 10px; }
 #admin-detail-photos img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); }
 
-/* ИСПРАВЛЕНИЕ #2: Стили для кнопки удаления отчета */
 .delete-report-btn { margin-left: auto; background: var(--status-rejected); color: white; border: none; border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
 .delete-btn { background: none; border: none; color: var(--status-rejected); font-size: 20px; cursor: pointer; margin-left: auto; padding: 0 10px; }
 
@@ -272,3 +270,17 @@ button#logout-btn {
 .instruction-text p, .instruction-text li { color: var(--text-secondary); line-height: 1.7; margin-bottom: 10px; }
 .instruction-text ol, .instruction-text ul { padding-left: 25px; }
 .instruction-text i { color: var(--primary-color); margin-right: 10px; }
+
+/* ======================================== */
+/* НОВЫЙ СТИЛЬ ДЛЯ КНОПКИ РЕДАКТИРОВАНИЯ    */
+/* ======================================== */
+.btn-edit-report {
+    background: var(--status-paid); /* Используем синий цвет для акцента */
+    color: #fff;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-size: 12px;
+}
