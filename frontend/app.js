@@ -3,7 +3,7 @@
 // =================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc",
-  authDomain: "burzhuy-pro-vv2.firebaseapp.com",
+  authDomain: "burzhuy-pro-v2.firebaseapp.com",
   projectId: "burzhuy-pro-v2",
   storageBucket: "burzhuy-pro-v2.firebasestorage.app",
   messagingSenderId: "627105413900",
@@ -52,7 +52,7 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
     modalContainer.classList.remove('modal-hidden');
 }
 
-// НОВАЯ ФУНКЦИЯ: Убирает префикс "Б..." из названия для пользователя
+// Убирает префикс "Б..." из названия для пользователя
 function formatLocationNameForUser(name) {
     if (!name) return '';
     return name.replace(/^Б\d+\s/, '');
@@ -499,6 +499,39 @@ document.addEventListener('DOMContentLoaded', () => {
             showScreen('checklist-screen');
         } catch (error) { showModal('Ошибка', 'Не удалось загрузить чек-лист.'); }
     }
+    
+    // НОВАЯ ФУНКЦИЯ: Открывает чек-лист для редактирования с заполненными данными
+    async function openChecklistForEdit(id) {
+        try {
+            const doc = await db.collection('reports').doc(id).get();
+            if (!doc.exists) return showModal('Ошибка', 'Отчет не найден.');
+    
+            currentReportId = id;
+            const report = doc.data();
+    
+            document.getElementById('checklist-address').textContent = formatLocationNameForUser(report.locationName);
+            document.getElementById('checklist-date').textContent = report.checkDate.toDate().toLocaleDateString('ru-RU');
+            
+            const form = document.getElementById('checklist-form');
+            form.reset(); 
+            
+            if (report.answers) {
+                form.querySelector('#checklist-q1-appearance').value = report.answers.q1 || '';
+                form.querySelector('#checklist-q2-cleanliness').value = report.answers.q2 || '';
+                form.querySelector('#checklist-q3-greeting').value = report.answers.q3 || '';
+                form.querySelector('#checklist-q4-upsell').value = report.answers.q4 || '';
+                form.querySelector('#checklist-q5-actions').value = report.answers.q5 || '';
+                form.querySelector('#checklist-q6-handout').value = report.answers.q6 || '';
+                form.querySelector('#checklist-q7-order-eval').value = report.answers.q7 || '';
+                form.querySelector('#checklist-q8-food-rating').value = report.answers.q8 || '';
+                form.querySelector('#checklist-q9-comments').value = report.answers.q9 || '';
+            }
+    
+            showScreen('checklist-screen');
+        } catch (error) {
+            showModal('Ошибка', 'Не удалось загрузить данные для редактирования.');
+        }
+    }
 
     document.getElementById('checklist-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -506,21 +539,39 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!user || !currentReportId) return;
         const btn = e.currentTarget.querySelector('button[type="submit"]');
         btn.disabled = true;
+        btn.innerHTML = '<div class="spinner-small"></div>';
         try {
             const answers = {
                 q1: document.getElementById('checklist-q1-appearance').value, q2: document.getElementById('checklist-q2-cleanliness').value, q3: document.getElementById('checklist-q3-greeting').value, q4: document.getElementById('checklist-q4-upsell').value, q5: document.getElementById('checklist-q5-actions').value, q6: document.getElementById('checklist-q6-handout').value, q7: document.getElementById('checklist-q7-order-eval').value, q8: document.getElementById('checklist-q8-food-rating').value, q9: document.getElementById('checklist-q9-comments').value
             };
             const files = document.getElementById('checklist-photos').files;
-            if (files.length === 0) throw new Error("Прикрепите фото.");
+            if (files.length === 0) throw new Error("Прикрепите новые фото. Старые не сохраняются.");
+            
             const photoUrls = [];
             for (const file of files) {
                 const filePath = `reports/${currentReportId}/${Date.now()}_${file.name}`;
                 const fileSnapshot = await storage.ref(filePath).put(file);
                 photoUrls.push(await fileSnapshot.ref.getDownloadURL());
             }
-            await db.collection('reports').doc(currentReportId).update({ answers, photoUrls, status: 'pending', submittedAt: firebase.firestore.FieldValue.serverTimestamp() });
-            showModal('Отчет отправлен!', 'Спасибо!', 'alert', () => { showScreen('main-menu-screen'); loadUserDashboard(user.uid); });
-        } catch(err) { showModal('Ошибка', err.message); } finally { btn.disabled = false; }
+
+            await db.collection('reports').doc(currentReportId).update({ 
+                answers, 
+                photoUrls, 
+                status: 'pending', 
+                submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                rejectionComment: firebase.firestore.FieldValue.delete() // Удаляем старую причину отклонения
+            });
+
+            showModal('Отчет исправлен!', 'Спасибо! Он снова отправлен на проверку.', 'alert', () => { 
+                showScreen('main-menu-screen'); 
+                loadUserDashboard(user.uid); 
+            });
+        } catch(err) { 
+            showModal('Ошибка', err.message); 
+        } finally { 
+            btn.disabled = false; 
+            btn.textContent = 'Отправить';
+        }
     });
 
     async function renderHistory() {
@@ -534,12 +585,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 list.innerHTML = '<p class="empty-state">История проверок пуста.</p>';
                 return;
             }
-            list.innerHTML = '<ul class="menu-list">' + snapshot.docs.map(doc => {
+            let html = '<ul class="menu-list">';
+            html += snapshot.docs.map(doc => {
                 const r = doc.data();
                 const statusMap = { pending: 'на проверке', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' };
                 const comment = (r.status === 'rejected' && r.rejectionComment) ? `<small style="color:var(--status-rejected); display:block; margin-top:5px;"><b>Причина:</b> ${r.rejectionComment}</small>` : '';
-                return `<li class="menu-list-item"><div class="status-indicator ${r.status}"></div><div><strong>${formatLocationNameForUser(r.locationName)}</strong><small>Статус: ${statusMap[r.status]}</small>${comment}</div></li>`;
-            }).join('') + '</ul>';
+                const editButton = (r.status === 'rejected') ? `<div class="task-actions"><button class="btn-edit-report" data-id="${doc.id}">Редактировать</button></div>` : '';
+
+                return `<li class="menu-list-item">
+                            <div class="status-indicator ${r.status}"></div>
+                            <div style="flex-grow: 1;">
+                                <strong>${formatLocationNameForUser(r.locationName)}</strong>
+                                <small>Статус: ${statusMap[r.status]}</small>
+                                ${comment}
+                                ${editButton}
+                            </div>
+                        </li>`;
+            }).join('');
+            html += '</ul>';
+            list.innerHTML = html;
+
+            list.querySelectorAll('.btn-edit-report').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openChecklistForEdit(e.target.dataset.id);
+                });
+            });
+
         } catch (error) {
             list.innerHTML = '<p>Ошибка загрузки истории.</p>';
         }
