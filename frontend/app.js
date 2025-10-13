@@ -6,7 +6,7 @@ const firebaseConfig = {
   authDomain: "burzhuy-pro-v2.firebaseapp.com",
   projectId: "burzhuy-pro-v2",
   // ИСПРАВЛЕНО: Указан правильный адрес для Storage Bucket
-  storageBucket: "burzhuy-pro-v2.appspot.com",
+  storageBucket: "burzhuy-pro-v2.firebasestorage.app",
   messagingSenderId: "627105413900",
   appId: "1:627105413900:web:3a02e926867ff76e256729"
 };
