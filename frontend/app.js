@@ -2,19 +2,32 @@
 // КОНФИГУРАЦИЯ И ИНИЦИАЛИЗАЦИЯ FIREBASE (ФИНАЛЬНАЯ ВЕРСИЯ)
 // =================================================================
 const firebaseConfig = {
-  apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc",
+  apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc", // ВАЖНО: Не забудьте защитить этот ключ в Google Cloud Console
   authDomain: "burzhuy-pro-v2.firebaseapp.com",
   projectId: "burzhuy-pro-v2",
-  storageBucket: "burzhuy-pro-v2.firebasestorage.app",
+  // ИСПРАВЛЕНО: Указан правильный адрес для Storage Bucket
+  storageBucket: "burzhuy-pro-v2.appspot.com",
   messagingSenderId: "627105413900",
   appId: "1:627105413900:web:3a02e926867ff76e256729"
 };
+
+// Инициализация Firebase
 const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
+
+// УЛУЧШЕНИЕ: Централизованное состояние приложения для избежания race conditions
+let appState = {
+    user: null,       // Объект пользователя из Auth
+    userData: null,   // Данные пользователя из Firestore (профиль)
+    unsubscribeUserListener: null // Функция для отписки от слушателя профиля
+};
+
+// Общие переменные
 let currentReportId = null;
 let selectedScheduleForBooking = null;
+const FAKE_EMAIL_DOMAIN = '@burzhuy-pro.app'; // УЛУЧШЕНИЕ: "магическая строка" вынесена в константу
 
 // =================================================================
 // ГЛАВНЫЕ ФУНКЦИИ (ХЕЛПЕРЫ)
@@ -39,6 +52,7 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
     confirmBtn.textContent = (type === 'confirm') ? 'Подтвердить' : 'OK';
     cancelBtn.style.display = (type === 'confirm') ? 'inline-block' : 'none';
 
+    // Пересоздаем кнопки, чтобы очистить старые обработчики
     const newConfirmBtn = confirmBtn.cloneNode(true);
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
     const newCancelBtn = cancelBtn.cloneNode(true);
@@ -52,12 +66,10 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
     modalContainer.classList.remove('modal-hidden');
 }
 
-// Убирает префикс "Б..." из названия для пользователя
 function formatLocationNameForUser(name) {
     if (!name) return '';
     return name.replace(/^Б\d+\s/, '');
 }
-
 
 // =================================================================
 // ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
@@ -84,23 +96,49 @@ document.addEventListener('DOMContentLoaded', () => {
         phoneInput.value = '+7';
     }
     
+    // =================================================================
+    // ГЛАВНЫЙ СЛУШАТЕЛЬ СОСТОЯНИЯ АУТЕНТИФИКАЦИИ (ИСПРАВЛЕН И УЛУЧШЕН)
+    // =================================================================
     auth.onAuthStateChanged(user => {
         document.getElementById('loader').classList.remove('active');
+
+        // Если есть активный слушатель профиля от предыдущего пользователя, отключаем его
+        if (appState.unsubscribeUserListener) {
+            appState.unsubscribeUserListener();
+            appState.unsubscribeUserListener = null;
+        }
+
         if (user) {
-            db.collection('users').doc(user.uid).onSnapshot(doc => {
+            // Пользователь вошел в систему
+            appState.user = user;
+
+            // Устанавливаем слушатель на документ профиля пользователя
+            appState.unsubscribeUserListener = db.collection('users').doc(user.uid).onSnapshot(doc => {
                 if (doc.exists) {
-                    const userData = doc.data();
-                    document.getElementById('user-name-display').textContent = userData.fullName;
-                    document.querySelector('.dashboard-header .avatar').textContent = userData.fullName?.charAt(0).toUpperCase() || '?';
-                    document.getElementById('admin-menu-btn').style.display = (userData.role === 'admin') ? 'flex' : 'none';
-                    if (userData.role === 'admin') loadAdminStats();
+                    // Профиль существует, сохраняем данные и показываем главный экран
+                    appState.userData = doc.data();
+                    document.getElementById('user-name-display').textContent = appState.userData.fullName;
+                    document.querySelector('.dashboard-header .avatar').textContent = appState.userData.fullName?.charAt(0).toUpperCase() || '?';
+                    
+                    const isAdmin = appState.userData.role === 'admin';
+                    document.getElementById('admin-menu-btn').style.display = isAdmin ? 'flex' : 'none';
+                    
+                    if (isAdmin) loadAdminStats();
                     loadUserDashboard(user.uid);
                     showScreen('main-menu-screen');
                 } else {
+                    // Профиля еще нет, показываем экран создания профиля
+                    appState.userData = null;
                     showScreen('profile-setup-screen');
                 }
-            }, err => { showModal('Критическая ошибка', 'Не удалось загрузить данные профиля.'); });
+            }, err => {
+                console.error("Ошибка при загрузке профиля:", err);
+                showModal('Критическая ошибка', 'Не удалось загрузить данные профиля.');
+            });
         } else {
+            // Пользователь вышел из системы
+            appState.user = null;
+            appState.userData = null;
             document.getElementById('admin-menu-btn').style.display = 'none';
             showScreen('auth-screen');
         }
@@ -113,16 +151,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('password-input').value;
         if (digits.length !== 11) return showModal('Ошибка', 'Введите полный номер телефона.');
         if (password.length < 6) return showModal('Ошибка', 'Пароль должен быть не менее 6 символов.');
-        const email = `+${digits}@burzhuy-pro.app`;
+        
+        const email = `+${digits}${FAKE_EMAIL_DOMAIN}`; // Используем константу
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner-small"></div>';
+        
         try {
-            await auth.createUserWithEmailAndPassword(email, password);
+            // Сначала пытаемся войти
+            await auth.signInWithEmailAndPassword(email, password);
         } catch (error) {
-            if (error.code === 'auth/email-already-in-use') {
-                try { await auth.signInWithEmailAndPassword(email, password); }
-                catch (e) { showModal('Ошибка входа', 'Неверный номер или пароль.'); }
-            } else { showModal('Ошибка', error.message); }
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                // Если пользователя нет или пароль неверный, пробуем создать нового
+                 try {
+                     await auth.createUserWithEmailAndPassword(email, password);
+                 } catch (creationError) {
+                      showModal('Ошибка регистрации', creationError.message);
+                 }
+            } else {
+                showModal('Ошибка входа', 'Неверный номер или пароль.');
+            }
         } finally {
             btn.disabled = false;
             btn.textContent = 'Продолжить';
@@ -131,20 +178,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('profile-setup-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const user = auth.currentUser;
+        const user = appState.user; // УЛУЧШЕНИЕ: Берем пользователя из надежного источника
         const fullName = document.getElementById('profile-name-input').value.trim();
         if (!user) return showModal('Ошибка', 'Сессия истекла, войдите снова.');
         if (!fullName) return showModal('Внимание', 'Введите ваше имя и фамилию.');
+        
         const btn = e.currentTarget.querySelector('button[type="submit"]');
         btn.disabled = true;
         try {
-            await db.collection('users').doc(user.uid).set({ fullName, phone: user.email.replace('@burzhuy-pro.app', ''), role: 'guest', completedChecks: 0 });
-        } catch (err) { showModal('Ошибка', 'Не удалось сохранить профиль.'); }
-        finally { btn.disabled = false; }
+            // Создаем профиль. Новые пользователи всегда 'guest'
+            await db.collection('users').doc(user.uid).set({ 
+                fullName, 
+                phone: user.email.replace(FAKE_EMAIL_DOMAIN, ''), 
+                role: 'guest', 
+                completedChecks: 0 
+            });
+        } catch (err) { 
+            showModal('Ошибка', 'Не удалось сохранить профиль.'); 
+        } finally { 
+            btn.disabled = false; 
+        }
     });
 
     document.getElementById('logout-btn').addEventListener('click', () => { auth.signOut(); });
 
+    // Остальной код остается практически без изменений, т.к. его логика верна
+    // ... (вставляем сюда весь ваш код начиная с document.querySelectorAll('.menu-btn, .back-btn')...)
+    // ...
     document.querySelectorAll('.menu-btn, .back-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -275,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 deleteReport(e.target.dataset.id);
             }));
-        } catch (e) { list.innerHTML = '<p>Ошибка загрузки отчетов.</p>'; }
+        } catch (e) { console.error(e); list.innerHTML = '<p>Ошибка загрузки отчетов.</p>'; }
     }
 
     async function openAdminReportDetail(id) {
@@ -328,8 +388,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 modal.classList.add('modal-hidden');
             } else { alert('Укажите причину.'); }
         };
-        confirmBtn.addEventListener('click', confirmHandler, { once: true });
-        cancelBtn.addEventListener('click', () => modal.classList.add('modal-hidden'), { once: true });
+
+        // Очистка старых слушателей
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+        newConfirmBtn.addEventListener('click', confirmHandler, { once: true });
+        newCancelBtn.addEventListener('click', () => modal.classList.add('modal-hidden'), { once: true });
     });
     
     async function updateReportStatus(status, comment = null) {
@@ -426,7 +493,8 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const startTime = document.getElementById('user-start-time').value;
         const endTime = document.getElementById('user-end-time').value;
-        const user = auth.currentUser;
+        const user = appState.user; // УЛУЧШЕНИЕ: Берем пользователя из надежного источника
+        if (!user) return showModal('Ошибка', 'Нет активного пользователя.');
         if (!startTime || !endTime) return showModal('Ошибка', 'Укажите интервал времени.');
         if (startTime >= endTime) return showModal('Ошибка', 'Время начала должно быть раньше окончания.');
         const btn = e.currentTarget.querySelector('button[type="submit"]');
@@ -473,6 +541,8 @@ document.addEventListener('DOMContentLoaded', () => {
         showModal('Подтверждение', 'Отменить эту проверку?', 'confirm', async c => {
             if (c) {
                 try {
+                    const user = appState.user;
+                    if (!user) throw new Error("Пользователь не найден");
                     const reportDoc = await db.collection('reports').doc(id).get();
                     const scheduleId = reportDoc.data().scheduleId;
                     const batch = db.batch();
@@ -480,7 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (scheduleId) batch.update(db.collection('schedules').doc(scheduleId), { isBooked: false });
                     await batch.commit();
                     showModal('Успешно', 'Запись отменена.');
-                    loadUserDashboard(auth.currentUser.uid);
+                    loadUserDashboard(user.uid);
                 } catch (e) { showModal('Ошибка', 'Не удалось отменить запись.'); }
             }
         });
@@ -533,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('checklist-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const user = auth.currentUser;
+        const user = appState.user; // УЛУЧШЕНИЕ: Берем пользователя из надежного источника
         if (!user || !currentReportId) return;
         
         const btn = e.currentTarget.querySelector('button[type="submit"]');
@@ -553,7 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let photoUrls = originalReportDoc.data().photoUrls || [];
 
             if (files.length > 0) {
-                photoUrls = [];
+                photoUrls = []; // Если добавляются новые файлы, старые заменяются
                 for (const file of files) {
                     const filePath = `reports/${currentReportId}/${Date.now()}_${file.name}`;
                     const fileSnapshot = await storage.ref(filePath).put(file);
@@ -589,7 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function renderHistory() {
         const list = document.getElementById('history-list');
         list.innerHTML = '<div class="spinner"></div>';
-        const user = auth.currentUser;
+        const user = appState.user; // УЛУЧШЕНИЕ: Берем пользователя из надежного источника
         if (!user) return;
         try {
             const snapshot = await db.collection('reports').where('userId', '==', user.uid).where('status', 'in', ['pending', 'approved', 'rejected', 'paid']).orderBy('createdAt', 'desc').get();
