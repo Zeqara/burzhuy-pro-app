@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Тайный агент BURЖУЙ</title>
+    <!-- Иконки уже подключены, это отлично -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,6 +14,39 @@
     <div id="app-container">
         <!-- ЭКРАН ЗАГРУЗКИ -->
         <div id="loader" class="screen active"><div class="spinner"></div></div>
+
+        <!-- ======================================== -->
+        <!-- НАЧАЛО НОВОГО КОДА: СТАРТОВЫЙ ЭКРАН      -->
+        <!-- ======================================== -->
+        <div id="welcome-screen" class="screen">
+            <div class="welcome-container">
+                <h1>Добро пожаловать в «Тайный агент BURЖУЙ»</h1>
+                <p class="subtitle">Станьте частью команды контроля качества и получайте вознаграждение за проверки.</p>
+        
+                <div class="how-it-works">
+                    <div class="step">
+                        <div class="icon-container"><i class="fas fa-user-plus"></i></div>
+                        <h3>Регистрируйтесь</h3>
+                        <p>Пройдите быструю регистрацию по номеру телефона.</p>
+                    </div>
+                    <div class="step">
+                        <div class="icon-container"><i class="fas fa-tasks"></i></div>
+                        <h3>Выполняйте задания</h3>
+                        <p>Выбирайте доступные проверки в вашем городе и заполняйте чек-листы.</p>
+                    </div>
+                    <div class="step">
+                        <div class="icon-container"><i class="fas fa-wallet"></i></div>
+                        <h3>Получайте вознаграждение</h3>
+                        <p>Мы проверим ваш отчет и выплатим вознаграждение за качественную работу.</p>
+                    </div>
+                </div>
+        
+                <button id="start-button" class="btn-primary">Начать</button>
+            </div>
+        </div>
+        <!-- ======================================== -->
+        <!-- КОНЕЦ НОВОГО КОДА                        -->
+        <!-- ======================================== -->
         
         <!-- ЭКРАНЫ АВТОРИЗАЦИИ -->
         <div id="auth-screen" class="screen">
@@ -46,54 +80,21 @@
                     <li class="menu-list-item menu-btn" data-target="cooperation-screen"><i class="icon fa-solid fa-calendar-check"></i><div><strong>Записаться на проверку</strong><small>Выбрать доступную точку и время</small></div></li>
                     <li class="menu-list-item menu-btn" data-target="history-screen"><i class="icon fa-solid fa-list-check"></i><div><strong>История проверок</strong><small>Посмотреть статусы отчетов</small></div></li>
                     <li class="menu-list-item menu-btn" data-target="instruction-screen"><i class="icon fa-solid fa-book-open"></i><div><strong>Инструкция</strong><small>Правила и требования</small></div></li>
-                    
-                    <!-- ======================================== -->
-                    <!-- НАЧАЛО НОВОГО КОДА: ТЕХПОДДЕРЖКА         -->
-                    <!-- ======================================== -->
                     <a href="https://t.me/gdyhrhf" target="_blank" style="text-decoration: none; color: inherit;">
                         <li class="menu-list-item">
                             <i class="icon fa-solid fa-headset"></i>
                             <div><strong>Техническая поддержка</strong><small>Связаться в Telegram</small></div>
                         </li>
                     </a>
-                    <!-- ======================================== -->
-                    <!-- КОНЕЦ НОВОГО КОДА                        -->
-                    <!-- ======================================== -->
-                    
                     <li id="admin-menu-btn" class="menu-list-item menu-btn" data-target="admin-hub-screen" style="display: none;"><i class="icon fa-solid fa-user-shield"></i><div><strong>Центр Управления</strong><small>Перейти в панель администратора</small></div></li>
                 </ul>
                 <button id="logout-btn">Выйти из аккаунта</button>
             </div>
         </div>
 
-        <!-- ЭКРАНЫ С ШАПКОЙ И ПРОКРУТКОЙ -->
-        <div id="admin-hub-screen" class="screen with-header">
-            <header><h2>Центр Управления</h2></header>
-            <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-            <div class="scrollable-content">
-                <div id="admin-stats-container"></div>
-                <ul class="menu-list">
-                    <li class="menu-list-item menu-btn" data-target="admin-schedule-screen"><i class="icon fa-solid fa-calendar-days"></i><div><strong>Управление графиком</strong><small>Создать и удалить проверки</small></div></li>
-                    <li class="menu-list-item menu-btn" data-target="admin-reports-screen"><i class="icon fa-solid fa-file-signature"></i><div><strong>Просмотр отчетов</strong><small>Проверить и утвердить отчеты</small></div></li>
-                    <li class="menu-list-item menu-btn" data-target="admin-users-screen"><i class="icon fa-solid fa-users"></i><div><strong>Управление пользователями</strong><small>Просмотр и смена ролей</small></div></li>
-                </ul>
-            </div>
-        </div>
-        
-        <div id="admin-schedule-screen" class="screen with-header">
-            <header><h2>Создать проверку</h2></header>
-            <button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-            <div class="scrollable-content">
-                <form id="schedule-form" novalidate>
-                    <div class="form-group"><label>1. Город</label><select id="schedule-city-select" required><option value="" disabled selected>-- Выбор --</option></select></div>
-                    <div class="form-group"><label>2. Точка</label><select id="schedule-location-select" required disabled><option value="" disabled selected>-- ... --</option></select></div>
-                    <div class="form-group"><label>Дата</label><input type="date" id="schedule-date-input" required></div>
-                    <div class="form-group urgent-checkbox"><input type="checkbox" id="schedule-urgent-checkbox"><label for="schedule-urgent-checkbox">🔥 Срочная</label></div>
-                    <div class="action-buttons-container"><button type="submit" class="btn-primary">Опубликовать</button><button type="button" id="view-schedule-btn" class="btn-icon">К графику</button></div>
-                </form>
-            </div>
-        </div>
-
+        <!-- ОСТАЛЬНЫЕ ЭКРАНЫ (без изменений) -->
+        <div id="admin-hub-screen" class="screen with-header"><header><h2>Центр Управления</h2></header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><div id="admin-stats-container"></div><ul class="menu-list"><li class="menu-list-item menu-btn" data-target="admin-schedule-screen"><i class="icon fa-solid fa-calendar-days"></i><div><strong>Управление графиком</strong><small>Создать и удалить проверки</small></div></li><li class="menu-list-item menu-btn" data-target="admin-reports-screen"><i class="icon fa-solid fa-file-signature"></i><div><strong>Просмотр отчетов</strong><small>Проверить и утвердить отчеты</small></div></li><li class="menu-list-item menu-btn" data-target="admin-users-screen"><i class="icon fa-solid fa-users"></i><div><strong>Управление пользователями</strong><small>Просмотр и смена ролей</small></div></li></ul></div></div>
+        <div id="admin-schedule-screen" class="screen with-header"><header><h2>Создать проверку</h2></header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><form id="schedule-form" novalidate><div class="form-group"><label>1. Город</label><select id="schedule-city-select" required><option value="" disabled selected>-- Выбор --</option></select></div><div class="form-group"><label>2. Точка</label><select id="schedule-location-select" required disabled><option value="" disabled selected>-- ... --</option></select></div><div class="form-group"><label>Дата</label><input type="date" id="schedule-date-input" required></div><div class="form-group urgent-checkbox"><input type="checkbox" id="schedule-urgent-checkbox"><label for="schedule-urgent-checkbox">🔥 Срочная</label></div><div class="action-buttons-container"><button type="submit" class="btn-primary">Опубликовать</button><button type="button" id="view-schedule-btn" class="btn-icon">К графику</button></div></form></div></div>
         <div id="admin-view-schedule-screen" class="screen with-header"><header><h2>Запланированные проверки</h2></header><button class="back-btn" data-target="admin-schedule-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content" id="schedule-list"></div></div>
         <div id="admin-reports-screen" class="screen with-header"><header><h2>Все отчеты</h2></header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><ul id="admin-reports-list" class="menu-list"></ul></div></div>
         <div id="admin-report-detail-screen" class="screen with-header"><header><h2>Детали отчета</h2></header><button class="back-btn" data-target="admin-reports-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><div class="report-details"><p><strong>Адрес:</strong> <span id="admin-detail-address"></span></p><p><strong>Агент:</strong> <span id="admin-detail-user"></span></p><p><strong>Телефон:</strong> <span id="admin-detail-phone"></span></p><p><strong>Дата:</strong> <span id="admin-detail-date"></span></p><p><strong>Статус:</strong> <span id="admin-detail-status"></span></p><div id="admin-detail-rejection-comment-container" style="display: none;"></div><hr><h4>Ответы на вопросы:</h4><div class="form-group"><label>1. Внешний вид:</label><p id="admin-detail-q1"></p></div><div class="form-group"><label>2. Чистота:</label><p id="admin-detail-q2"></p></div><div class="form-group"><label>3. Приветствие:</label><p id="admin-detail-q3"></p></div><div class="form-group"><label>4. Дополнения:</label><p id="admin-detail-q4"></p></div><div class="form-group"><label>5. Действия после заказа:</label><p id="admin-detail-q5"></p></div><div class="form-group"><label>6. Выдача заказа:</label><p id="admin-detail-q6"></p></div><div class="form-group"><label>7. Оценка заказа:</label><p id="admin-detail-q7"></p></div><div class="form-group"><label>8. Оценка блюда (1-5):</label><p id="admin-detail-q8"></p></div><div class="form-group"><label>9. Замечания:</label><p id="admin-detail-q9"></p></div><hr><h4>Прикрепленные фото:</h4><div id="admin-detail-photos"></div><hr><h4>Действия:</h4><div id="admin-detail-actions"><button id="admin-action-approve">Принять</button><button id="admin-action-reject">Отклонить</button><button id="admin-action-paid">✓ Оплачено</button></div></div></div></div>
