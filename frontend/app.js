@@ -95,6 +95,16 @@ document.addEventListener('DOMContentLoaded', () => {
         phoneInput.addEventListener('input', (e) => { e.target.value = formatPhoneNumber(e.target.value); });
         phoneInput.value = '+7';
     }
+
+    // =================================================================
+    // ИЗМЕНЕНИЕ 1: ДОБАВЛЕН ОБРАБОТЧИК ДЛЯ КНОПКИ "НАЧАТЬ"
+    // =================================================================
+    const startButton = document.getElementById('start-button');
+    if (startButton) {
+        startButton.addEventListener('click', () => {
+            showScreen('auth-screen'); // Переход на экран авторизации
+        });
+    }
     
     // =================================================================
     // ГЛАВНЫЙ СЛУШАТЕЛЬ СОСТОЯНИЯ АУТЕНТИФИКАЦИИ (ИСПРАВЛЕН И УЛУЧШЕН)
@@ -140,7 +150,11 @@ document.addEventListener('DOMContentLoaded', () => {
             appState.user = null;
             appState.userData = null;
             document.getElementById('admin-menu-btn').style.display = 'none';
-            showScreen('auth-screen');
+            
+            // =================================================================
+            // ИЗМЕНЕНИЕ 2: ПОКАЗЫВАЕМ СТАРТОВЫЙ ЭКРАН ВМЕСТО ЭКРАНА ВХОДА
+            // =================================================================
+            showScreen('welcome-screen');
         }
     });
 
