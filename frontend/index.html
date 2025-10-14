@@ -14,38 +14,23 @@
 </head>
 <body>
     <div id="app-container">
-        <!-- ЭКРАН ЗАГРУЗКИ -->
+        <!-- ЭКРАН ЗАГРУЗКИ (Loader) -->
         <div id="loader" class="screen active"><div class="spinner"></div></div>
 
-        <!-- НОВЫЙ СТАРТОВЫЙ ЭКРАН (WELCOME SCREEN) -->
+        <!-- НОВЫЙ СТАРТОВЫЙ ЭКРАН С АГЕНТОМ (Welcome Screen) -->
         <div id="welcome-screen" class="screen">
-            <div class="welcome-container">
+            <div class="agent-welcome-container">
+                <!-- Убедитесь, что файл 'agent.png' находится в той же папке, что и index.html, или укажите правильный путь -->
+                <img src="agent.png" alt="Тайный Агент BURЖУЙ" class="agent-image">
                 <h1>Добро пожаловать в «Тайный агент BURЖУЙ»</h1>
-                <p class="subtitle">Станьте частью команды контроля качества и получайте вознаграждение за проверки.</p>
-        
-                <div class="how-it-works">
-                    <div class="step">
-                        <div class="icon-container"><i class="fas fa-user-plus"></i></div>
-                        <h3>Регистрируйтесь</h3>
-                        <p>Пройдите быструю регистрацию по номеру телефона.</p>
-                    </div>
-                    <div class="step">
-                        <div class="icon-container"><i class="fas fa-tasks"></i></div>
-                        <h3>Выполняйте задания</h3>
-                        <p>Выбирайте доступные проверки в вашем городе и заполняйте чек-листы.</p>
-                    </div>
-                    <div class="step">
-                        <div class="icon-container"><i class="fas fa-wallet"></i></div>
-                        <h3>Получайте вознаграждение</h3>
-                        <p>Мы проверим ваш отчет и выплатим вознаграждение за качественную работу.</p>
-                    </div>
-                </div>
-        
-                <button id="start-button" class="btn-primary">Начать</button>
+                <p class="subtitle">
+                    Станьте частью команды контроля качества и получайте вознаграждение за проверки.
+                </p>
+                <button id="start-mission-button" class="btn-primary">Начать миссию</button>
             </div>
         </div>
         
-        <!-- ЭКРАНЫ АВТОРИЗАЦИИ -->
+        <!-- ЭКРАНЫ АВТОРИЗАЦИИ (Authorization Screens) -->
         <div id="auth-screen" class="screen">
             <div class="auth-container">
                 <h2>Вход или Регистрация</h2>
@@ -68,7 +53,7 @@
             </div>
         </div>
         
-        <!-- ГЛАВНЫЙ ЭКРАН (ДАШБОРД) -->
+        <!-- ГЛАВНЫЙ ЭКРАН ПОЛЬЗОВАТЕЛЯ (Dashboard) -->
         <div id="main-menu-screen" class="screen">
             <div class="scrollable-content">
                 <div class="dashboard-header"><div class="avatar">Б</div><h2 id="user-name-display">BURЖУЙ</h2><p>Тайный агент</p></div>
@@ -89,7 +74,7 @@
             </div>
         </div>
 
-        <!-- ЭКРАНЫ АДМИНИСТРАТОРА -->
+        <!-- ЭКРАНЫ АДМИНИСТРАТОРА (Admin Screens) -->
         <div id="admin-hub-screen" class="screen with-header">
             <header><h2>Центр Управления</h2></header>
             <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
@@ -122,7 +107,7 @@
         <div id="admin-report-detail-screen" class="screen with-header"><header><h2>Детали отчета</h2></header><button class="back-btn" data-target="admin-reports-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><div class="report-details"><p><strong>Адрес:</strong> <span id="admin-detail-address"></span></p><p><strong>Агент:</strong> <span id="admin-detail-user"></span></p><p><strong>Телефон:</strong> <span id="admin-detail-phone"></span></p><p><strong>Дата:</strong> <span id="admin-detail-date"></span></p><p><strong>Статус:</strong> <span id="admin-detail-status"></span></p><div id="admin-detail-rejection-comment-container" style="display: none;"></div><hr><h4>Ответы на вопросы:</h4><div class="form-group"><label>1. Внешний вид:</label><p id="admin-detail-q1"></p></div><div class="form-group"><label>2. Чистота:</label><p id="admin-detail-q2"></p></div><div class="form-group"><label>3. Приветствие:</label><p id="admin-detail-q3"></p></div><div class="form-group"><label>4. Дополнения:</label><p id="admin-detail-q4"></p></div><div class="form-group"><label>5. Действия после заказа:</label><p id="admin-detail-q5"></p></div><div class="form-group"><label>6. Выдача заказа:</label><p id="admin-detail-q6"></p></div><div class="form-group"><label>7. Оценка заказа:</label><p id="admin-detail-q7"></p></div><div class="form-group"><label>8. Оценка блюда (1-5):</label><p id="admin-detail-q8"></p></div><div class="form-group"><label>9. Замечания:</label><p id="admin-detail-q9"></p></div><hr><h4>Прикрепленные фото:</h4><div id="admin-detail-photos"></div><hr><h4>Действия:</h4><div id="admin-detail-actions"><button id="admin-action-approve">Принять</button><button id="admin-action-reject">Отклонить</button><button id="admin-action-paid">✓ Оплачено</button></div></div></div></div>
         <div id="admin-users-screen" class="screen with-header"><header><h2>Все пользователи</h2></header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content" id="admin-users-list"></div></div>
         
-        <!-- ЭКРАНЫ ПОЛЬЗОВАТЕЛЯ -->
+        <!-- ЭКРАНЫ ПОЛЬЗОВАТЕЛЯ (User Screens) -->
         <div id="cooperation-screen" class="screen with-header"><header><h2>Доступные проверки</h2></header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><ul id="schedule-cards-list" class="menu-list"></ul><div id="no-schedules-view" class="empty-state" style="display: none;"><h3>Нет доступных проверок</h3></div></div></div>
         <div id="time-picker-screen" class="screen with-header"><header><h2>Выберите время</h2></header><button class="back-btn" data-target="cooperation-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><h3 id="picker-location-title"></h3><form id="time-picker-form" novalidate><div class="form-group"><label>Укажите интервал времени</label><div class="time-slot-input"><input type="time" id="user-start-time" required><span>-</span><input type="time" id="user-end-time" required></div></div><button type="submit" class="btn-primary">Подтвердить</button></form></div></div>
         <div id="checklist-screen" class="screen with-header"><header><h2>Чек-лист</h2></header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><form id="checklist-form" novalidate><p><strong>Адрес:</strong> <span id="checklist-address"></span></p><p><strong>Дата:</strong> <span id="checklist-date"></span></p><div class="form-group"><label for="checklist-q1-appearance">1. Внешний вид</label><textarea id="checklist-q1-appearance" required></textarea></div><div class="form-group"><label for="checklist-q2-cleanliness">2. Чистота</label><textarea id="checklist-q2-cleanliness" required></textarea></div><div class="form-group"><label for="checklist-q3-greeting">3. Приветствие</label><textarea id="checklist-q3-greeting" required></textarea></div><div class="form-group"><label for="checklist-q4-upsell">4. Дополнения</label><textarea id="checklist-q4-upsell" required></textarea></div><div class="form-group"><label for="checklist-q5-actions">5. Действия после заказа</label><textarea id="checklist-q5-actions" required></textarea></div><div class="form-group"><label for="checklist-q6-handout">6. Выдача</label><textarea id="checklist-q6-handout" required></textarea></div><div class="form-group"><label for="checklist-q7-order-eval">7. Оценка заказа</label><textarea id="checklist-q7-order-eval" required></textarea></div><div class="form-group"><label for="checklist-q8-food-rating">8. Оценка блюда (1-5)</label><input type="number" id="checklist-q8-food-rating" min="1" max="5" required></div><div class="form-group"><label for="checklist-q9-comments">9. Замечания</label><textarea id="checklist-q9-comments"></textarea></div><div class="form-group"><label for="checklist-photos">Фото (обязательно)</label><input type="file" id="checklist-photos" multiple accept="image/*" required></div><button type="submit" class="btn-primary">Отправить</button></form></div></div>
@@ -130,7 +115,7 @@
         <div id="instruction-screen" class="screen with-header"><header><h2>Инструкция</h2></header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content instruction-text"><h3>Секретная инструкция</h3><p>Ваша задача — помогать нам становиться лучше, оценивая сервис и качество. Вы — наши глаза и уши.</p><h3>Миссия:</h3><ol><li><strong>Запись.</strong> Выберите доступное задание.</li><li><strong>Визит.</strong> Прибудьте на место как обычный гость.</li><li><strong>Чек-лист.</strong> Сразу после визита заполните чек-лист.</li><li><strong>Фотоотчет.</strong> Качественные фото — ключ к успеху.</li><li><strong>Награда.</strong> После принятия отчета мы свяжемся с вами.</li></ol><h3>Правила:</h3><ul><li><i class="fa-solid fa-eye"></i> Будьте объективны.</li><li><i class="fa-solid fa-user-secret"></i> Будьте незаметны.</li><li><i class="fa-solid fa-check-double"></i> Будьте честны.</li><li><i class="fa-solid fa-camera"></i> Фото — ваше всё.</li></ul><p>Удачи, агент!</p></div></div>
     </div>
     
-    <!-- МОДАЛЬНЫЕ ОКНА -->
+    <!-- МОДАЛЬНЫЕ ОКНА (Modals) -->
     <div id="modal-container" class="modal-hidden"><div id="modal-content"><h3 id="modal-title"></h3><p id="modal-text"></p><div id="modal-buttons"><button id="modal-confirm-btn" class="btn-primary">OK</button><button id="modal-cancel-btn" class="btn-secondary">Отмена</button></div></div></div>
     <div id="rejection-modal-container" class="modal-hidden"><div id="modal-content"><h3>Причина отклонения</h3><p>Агент увидит этот комментарий.</p><div class="form-group"><textarea id="rejection-comment-input" rows="4"></textarea></div><div id="modal-buttons"><button id="rejection-modal-confirm-btn" class="btn-primary">Отправить</button><button id="rejection-modal-cancel-btn" class="btn-secondary">Отмена</button></div></div></div>
     
