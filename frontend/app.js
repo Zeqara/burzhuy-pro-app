@@ -5,7 +5,6 @@ const firebaseConfig = {
   apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc", // ВАЖНО: Не забудьте защитить этот ключ в Google Cloud Console
   authDomain: "burzhuy-pro-v2.firebaseapp.com",
   projectId: "burzhuy-pro-v2",
-  // ИСПРАВЛЕНО: Указан правильный адрес для Storage Bucket
   storageBucket: "burzhuy-pro-v2.firebasestorage.app",
   messagingSenderId: "627105413900",
   appId: "1:627105413900:web:3a02e926867ff76e256729"
@@ -17,17 +16,17 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// УЛУЧШЕНИЕ: Централизованное состояние приложения для избежания race conditions
+// Централизованное состояние приложения
 let appState = {
-    user: null,       // Объект пользователя из Auth
-    userData: null,   // Данные пользователя из Firestore (профиль)
-    unsubscribeUserListener: null // Функция для отписки от слушателя профиля
+    user: null,
+    userData: null,
+    unsubscribeUserListener: null
 };
 
 // Общие переменные
 let currentReportId = null;
 let selectedScheduleForBooking = null;
-const FAKE_EMAIL_DOMAIN = '@burzhuy-pro.app'; // УЛУЧШЕНИЕ: "магическая строка" вынесена в константу
+const FAKE_EMAIL_DOMAIN = '@burzhuy-pro.app';
 
 // =================================================================
 // ГЛАВНЫЕ ФУНКЦИИ (ХЕЛПЕРЫ)
@@ -97,22 +96,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // ИЗМЕНЕНИЕ 1: ДОБАВЛЕН ОБРАБОТЧИК ДЛЯ КНОПКИ "НАЧАТЬ"
+    // ИЗМЕНЕНИЕ 1: ОБРАБОТЧИК ДЛЯ КНОПКИ НА СТАРТОВОМ ЭКРАНЕ
     // =================================================================
-    const startButton = document.getElementById('start-button');
-    if (startButton) {
-        startButton.addEventListener('click', () => {
+    const startMissionButton = document.getElementById('start-mission-button');
+    if (startMissionButton) {
+        startMissionButton.addEventListener('click', () => {
             showScreen('auth-screen'); // Переход на экран авторизации
         });
     }
     
     // =================================================================
-    // ГЛАВНЫЙ СЛУШАТЕЛЬ СОСТОЯНИЯ АУТЕНТИФИКАЦИИ (ИСПРАВЛЕН И УЛУЧШЕН)
+    // ГЛАВНЫЙ СЛУШАТЕЛЬ СОСТОЯНИЯ АУТЕНТИФИКАЦИИ
     // =================================================================
     auth.onAuthStateChanged(user => {
         document.getElementById('loader').classList.remove('active');
 
-        // Если есть активный слушатель профиля от предыдущего пользователя, отключаем его
         if (appState.unsubscribeUserListener) {
             appState.unsubscribeUserListener();
             appState.unsubscribeUserListener = null;
@@ -121,11 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             // Пользователь вошел в систему
             appState.user = user;
-
-            // Устанавливаем слушатель на документ профиля пользователя
             appState.unsubscribeUserListener = db.collection('users').doc(user.uid).onSnapshot(doc => {
                 if (doc.exists) {
-                    // Профиль существует, сохраняем данные и показываем главный экран
                     appState.userData = doc.data();
                     document.getElementById('user-name-display').textContent = appState.userData.fullName;
                     document.querySelector('.dashboard-header .avatar').textContent = appState.userData.fullName?.charAt(0).toUpperCase() || '?';
@@ -137,7 +132,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadUserDashboard(user.uid);
                     showScreen('main-menu-screen');
                 } else {
-                    // Профиля еще нет, показываем экран создания профиля
                     appState.userData = null;
                     showScreen('profile-setup-screen');
                 }
@@ -166,16 +160,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (digits.length !== 11) return showModal('Ошибка', 'Введите полный номер телефона.');
         if (password.length < 6) return showModal('Ошибка', 'Пароль должен быть не менее 6 символов.');
         
-        const email = `+${digits}${FAKE_EMAIL_DOMAIN}`; // Используем константу
+        const email = `+${digits}${FAKE_EMAIL_DOMAIN}`;
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner-small"></div>';
         
         try {
-            // Сначала пытаемся войти
             await auth.signInWithEmailAndPassword(email, password);
         } catch (error) {
             if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                // Если пользователя нет или пароль неверный, пробуем создать нового
                  try {
                      await auth.createUserWithEmailAndPassword(email, password);
                  } catch (creationError) {
@@ -192,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('profile-setup-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const user = appState.user; // УЛУЧШЕНИЕ: Берем пользователя из надежного источника
+        const user = appState.user;
         const fullName = document.getElementById('profile-name-input').value.trim();
         if (!user) return showModal('Ошибка', 'Сессия истекла, войдите снова.');
         if (!fullName) return showModal('Внимание', 'Введите ваше имя и фамилию.');
@@ -200,7 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = e.currentTarget.querySelector('button[type="submit"]');
         btn.disabled = true;
         try {
-            // Создаем профиль. Новые пользователи всегда 'guest'
             await db.collection('users').doc(user.uid).set({ 
                 fullName, 
                 phone: user.email.replace(FAKE_EMAIL_DOMAIN, ''), 
@@ -216,16 +207,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('logout-btn').addEventListener('click', () => { auth.signOut(); });
 
-    // Остальной код остается практически без изменений, т.к. его логика верна
-    // ... (вставляем сюда весь ваш код начиная с document.querySelectorAll('.menu-btn, .back-btn')...)
-    // ...
+    // Обработчики кнопок меню и "Назад"
     document.querySelectorAll('.menu-btn, .back-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             const target = e.currentTarget.dataset.target;
             if (!target) return;
             const loadFunctions = {
-                'cooperation-screen': renderAvailableSchedules, 'history-screen': renderHistory, 'admin-hub-screen': loadAdminStats, 'admin-schedule-screen': loadCitiesForAdmin, 'admin-reports-screen': renderAllReports, 'admin-users-screen': renderAllUsers,
+                'cooperation-screen': renderAvailableSchedules, 
+                'history-screen': renderHistory, 
+                'admin-hub-screen': loadAdminStats, 
+                'admin-schedule-screen': loadCitiesForAdmin, 
+                'admin-reports-screen': renderAllReports, 
+                'admin-users-screen': renderAllUsers,
             };
             loadFunctions[target]?.();
             showScreen(target);
@@ -236,6 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSchedules();
         showScreen('admin-view-schedule-screen');
     });
+
+    // ... ВСЕ ВАШИ ФУНКЦИИ АДМИН-ПАНЕЛИ И ПОЛЬЗОВАТЕЛЯ ОСТАЛИСЬ ЗДЕСЬ БЕЗ ИЗМЕНЕНИЙ ...
 
     async function loadAdminStats() {
         const container = document.getElementById('admin-stats-container');
@@ -403,7 +399,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else { alert('Укажите причину.'); }
         };
 
-        // Очистка старых слушателей
         const newConfirmBtn = confirmBtn.cloneNode(true);
         confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
         const newCancelBtn = cancelBtn.cloneNode(true);
@@ -507,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const startTime = document.getElementById('user-start-time').value;
         const endTime = document.getElementById('user-end-time').value;
-        const user = appState.user; // УЛУЧШЕНИЕ: Берем пользователя из надежного источника
+        const user = appState.user;
         if (!user) return showModal('Ошибка', 'Нет активного пользователя.');
         if (!startTime || !endTime) return showModal('Ошибка', 'Укажите интервал времени.');
         if (startTime >= endTime) return showModal('Ошибка', 'Время начала должно быть раньше окончания.');
@@ -617,7 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('checklist-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const user = appState.user; // УЛУЧШЕНИЕ: Берем пользователя из надежного источника
+        const user = appState.user;
         if (!user || !currentReportId) return;
         
         const btn = e.currentTarget.querySelector('button[type="submit"]');
@@ -637,7 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let photoUrls = originalReportDoc.data().photoUrls || [];
 
             if (files.length > 0) {
-                photoUrls = []; // Если добавляются новые файлы, старые заменяются
+                photoUrls = [];
                 for (const file of files) {
                     const filePath = `reports/${currentReportId}/${Date.now()}_${file.name}`;
                     const fileSnapshot = await storage.ref(filePath).put(file);
@@ -673,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function renderHistory() {
         const list = document.getElementById('history-list');
         list.innerHTML = '<div class="spinner"></div>';
-        const user = appState.user; // УЛУЧШЕНИЕ: Берем пользователя из надежного источника
+        const user = appState.user;
         if (!user) return;
         try {
             const snapshot = await db.collection('reports').where('userId', '==', user.uid).where('status', 'in', ['pending', 'approved', 'rejected', 'paid']).orderBy('createdAt', 'desc').get();
