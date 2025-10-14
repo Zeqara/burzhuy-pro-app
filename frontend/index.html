@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Тайный агент BURЖУЙ</title>
-    <!-- Подключение иконок Font Awesome -->
+    
+    <!-- Иконка для вкладки браузера -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Подключение файла стилей -->
     <link rel="stylesheet" href="style.css">
-    <!-- Мета-теги для корректного отображения на iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
@@ -17,10 +18,9 @@
         <!-- ЭКРАН ЗАГРУЗКИ (Loader) -->
         <div id="loader" class="screen active"><div class="spinner"></div></div>
 
-        <!-- НОВЫЙ СТАРТОВЫЙ ЭКРАН С АГЕНТОМ (Welcome Screen) -->
+        <!-- СТАРТОВЫЙ ЭКРАН С АГЕНТОМ (Welcome Screen) -->
         <div id="welcome-screen" class="screen">
             <div class="agent-welcome-container">
-                <!-- Убедитесь, что файл 'agent.png' находится в той же папке, что и index.html, или укажите правильный путь -->
                 <img src="agent.png" alt="Тайный Агент BURЖУЙ" class="agent-image">
                 <h1>Добро пожаловать в «Тайный агент BURЖУЙ»</h1>
                 <p class="subtitle">
@@ -87,21 +87,7 @@
                 </ul>
             </div>
         </div>
-        
-        <div id="admin-schedule-screen" class="screen with-header">
-            <header><h2>Создать проверку</h2></header>
-            <button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-            <div class="scrollable-content">
-                <form id="schedule-form" novalidate>
-                    <div class="form-group"><label>1. Город</label><select id="schedule-city-select" required><option value="" disabled selected>-- Выбор --</option></select></div>
-                    <div class="form-group"><label>2. Точка</label><select id="schedule-location-select" required disabled><option value="" disabled selected>-- ... --</option></select></div>
-                    <div class="form-group"><label>Дата</label><input type="date" id="schedule-date-input" required></div>
-                    <div class="form-group urgent-checkbox"><input type="checkbox" id="schedule-urgent-checkbox"><label for="schedule-urgent-checkbox">🔥 Срочная</label></div>
-                    <div class="action-buttons-container"><button type="submit" class="btn-primary">Опубликовать</button><button type="button" id="view-schedule-btn" class="btn-icon">К графику</button></div>
-                </form>
-            </div>
-        </div>
-
+        <div id="admin-schedule-screen" class="screen with-header"><header><h2>Создать проверку</h2></header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><form id="schedule-form" novalidate><div class="form-group"><label>1. Город</label><select id="schedule-city-select" required><option value="" disabled selected>-- Выбор --</option></select></div><div class="form-group"><label>2. Точка</label><select id="schedule-location-select" required disabled><option value="" disabled selected>-- ... --</option></select></div><div class="form-group"><label>Дата</label><input type="date" id="schedule-date-input" required></div><div class="form-group urgent-checkbox"><input type="checkbox" id="schedule-urgent-checkbox"><label for="schedule-urgent-checkbox">🔥 Срочная</label></div><div class="action-buttons-container"><button type="submit" class="btn-primary">Опубликовать</button><button type="button" id="view-schedule-btn" class="btn-icon">К графику</button></div></form></div></div>
         <div id="admin-view-schedule-screen" class="screen with-header"><header><h2>Запланированные проверки</h2></header><button class="back-btn" data-target="admin-schedule-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content" id="schedule-list"></div></div>
         <div id="admin-reports-screen" class="screen with-header"><header><h2>Все отчеты</h2></header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><ul id="admin-reports-list" class="menu-list"></ul></div></div>
         <div id="admin-report-detail-screen" class="screen with-header"><header><h2>Детали отчета</h2></header><button class="back-btn" data-target="admin-reports-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><div class="report-details"><p><strong>Адрес:</strong> <span id="admin-detail-address"></span></p><p><strong>Агент:</strong> <span id="admin-detail-user"></span></p><p><strong>Телефон:</strong> <span id="admin-detail-phone"></span></p><p><strong>Дата:</strong> <span id="admin-detail-date"></span></p><p><strong>Статус:</strong> <span id="admin-detail-status"></span></p><div id="admin-detail-rejection-comment-container" style="display: none;"></div><hr><h4>Ответы на вопросы:</h4><div class="form-group"><label>1. Внешний вид:</label><p id="admin-detail-q1"></p></div><div class="form-group"><label>2. Чистота:</label><p id="admin-detail-q2"></p></div><div class="form-group"><label>3. Приветствие:</label><p id="admin-detail-q3"></p></div><div class="form-group"><label>4. Дополнения:</label><p id="admin-detail-q4"></p></div><div class="form-group"><label>5. Действия после заказа:</label><p id="admin-detail-q5"></p></div><div class="form-group"><label>6. Выдача заказа:</label><p id="admin-detail-q6"></p></div><div class="form-group"><label>7. Оценка заказа:</label><p id="admin-detail-q7"></p></div><div class="form-group"><label>8. Оценка блюда (1-5):</label><p id="admin-detail-q8"></p></div><div class="form-group"><label>9. Замечания:</label><p id="admin-detail-q9"></p></div><hr><h4>Прикрепленные фото:</h4><div id="admin-detail-photos"></div><hr><h4>Действия:</h4><div id="admin-detail-actions"><button id="admin-action-approve">Принять</button><button id="admin-action-reject">Отклонить</button><button id="admin-action-paid">✓ Оплачено</button></div></div></div></div>
@@ -112,7 +98,67 @@
         <div id="time-picker-screen" class="screen with-header"><header><h2>Выберите время</h2></header><button class="back-btn" data-target="cooperation-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><h3 id="picker-location-title"></h3><form id="time-picker-form" novalidate><div class="form-group"><label>Укажите интервал времени</label><div class="time-slot-input"><input type="time" id="user-start-time" required><span>-</span><input type="time" id="user-end-time" required></div></div><button type="submit" class="btn-primary">Подтвердить</button></form></div></div>
         <div id="checklist-screen" class="screen with-header"><header><h2>Чек-лист</h2></header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><form id="checklist-form" novalidate><p><strong>Адрес:</strong> <span id="checklist-address"></span></p><p><strong>Дата:</strong> <span id="checklist-date"></span></p><div class="form-group"><label for="checklist-q1-appearance">1. Внешний вид</label><textarea id="checklist-q1-appearance" required></textarea></div><div class="form-group"><label for="checklist-q2-cleanliness">2. Чистота</label><textarea id="checklist-q2-cleanliness" required></textarea></div><div class="form-group"><label for="checklist-q3-greeting">3. Приветствие</label><textarea id="checklist-q3-greeting" required></textarea></div><div class="form-group"><label for="checklist-q4-upsell">4. Дополнения</label><textarea id="checklist-q4-upsell" required></textarea></div><div class="form-group"><label for="checklist-q5-actions">5. Действия после заказа</label><textarea id="checklist-q5-actions" required></textarea></div><div class="form-group"><label for="checklist-q6-handout">6. Выдача</label><textarea id="checklist-q6-handout" required></textarea></div><div class="form-group"><label for="checklist-q7-order-eval">7. Оценка заказа</label><textarea id="checklist-q7-order-eval" required></textarea></div><div class="form-group"><label for="checklist-q8-food-rating">8. Оценка блюда (1-5)</label><input type="number" id="checklist-q8-food-rating" min="1" max="5" required></div><div class="form-group"><label for="checklist-q9-comments">9. Замечания</label><textarea id="checklist-q9-comments"></textarea></div><div class="form-group"><label for="checklist-photos">Фото (обязательно)</label><input type="file" id="checklist-photos" multiple accept="image/*" required></div><button type="submit" class="btn-primary">Отправить</button></form></div></div>
         <div id="history-screen" class="screen with-header"><header><h2>История проверок</h2></header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content"><ul id="history-list" class="menu-list"></ul></div></div>
-        <div id="instruction-screen" class="screen with-header"><header><h2>Инструкция</h2></header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><div class="scrollable-content instruction-text"><h3>Секретная инструкция</h3><p>Ваша задача — помогать нам становиться лучше, оценивая сервис и качество. Вы — наши глаза и уши.</p><h3>Миссия:</h3><ol><li><strong>Запись.</strong> Выберите доступное задание.</li><li><strong>Визит.</strong> Прибудьте на место как обычный гость.</li><li><strong>Чек-лист.</strong> Сразу после визита заполните чек-лист.</li><li><strong>Фотоотчет.</strong> Качественные фото — ключ к успеху.</li><li><strong>Награда.</strong> После принятия отчета мы свяжемся с вами.</li></ol><h3>Правила:</h3><ul><li><i class="fa-solid fa-eye"></i> Будьте объективны.</li><li><i class="fa-solid fa-user-secret"></i> Будьте незаметны.</li><li><i class="fa-solid fa-check-double"></i> Будьте честны.</li><li><i class="fa-solid fa-camera"></i> Фото — ваше всё.</li></ul><p>Удачи, агент!</p></div></div>
+        
+        <!-- ======================================================= -->
+        <!-- НАЧАЛО ИЗМЕНЕНИЙ: ОБНОВЛЕННЫЙ ЭКРАН ИНСТРУКЦИИ          -->
+        <!-- ======================================================= -->
+        <div id="instruction-screen" class="screen with-header">
+            <header><h2>Инструкция</h2></header>
+            <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
+            <div class="scrollable-content instruction-text">
+                <h3>🎯 Проект «Тайный агент BURЖУЙ»</h3>
+                <p>Добро пожаловать в проект «Тайный агент BURЖУЙ»! 🎉 Спасибо, что решил(а) помочь нам стать лучше — а себе обеспечить вкусный обед за наш счёт. 🍔☕️</p>
+                
+                <h3>🔍 Как проходит проверка</h3>
+                <ol>
+                    <li>
+                        <strong>Изучи чек-лист.</strong><br>
+                        Важно понять, на что обращать внимание во время проверки и какие фотографии необходимо сделать.
+                    </li>
+                    <li>
+                        <strong>Соверши покупку за свой счёт.</strong><br>
+                        Не забудь сохранить чек — он потребуется для отчёта.
+                    </li>
+                    <li>
+                        <strong>Проведи проверку согласно чек-листу.</strong><br>
+                        Следуй всем пунктам инструкции и не отклоняйся от сценария.
+                    </li>
+                    <li>
+                        <strong>Заполни чек-лист после проверки.</strong><br>
+                        Сделай это в течение двух часов после визита. Не забудь прикрепить все необходимые фотографии.
+                        <br><em>⏳ Проверка отчёта занимает до 12 часов (отчёты обрабатываются только в будние дни).</em>
+                    </li>
+                    <li>
+                        <strong>Получение компенсации.</strong><br>
+                        После принятия отчёта менеджером 💸 деньги возвращаются тебе на карту.
+                        <br><em>⚠️ Компенсация возможна только при корректной и полной сдаче всех материалов.</em>
+                    </li>
+                </ol>
+
+                <h3>📸 Необходимые фотографии</h3>
+                <p>При проверке сделай следующие фото:</p>
+                <ul>
+                    <li>📍 Фото чека;</li>
+                    <li>📍 Фото торгового павильона (общий вид с улицы);</li>
+                    <li>📍 Фото готовых блюд.</li>
+                </ul>
+                <p>Не удаляй фотографии до того, как отчёт будет принят менеджером.</p>
+                
+                <h3>✅ Основные правила</h3>
+                <ul>
+                    <li>Веди себя естественно — не раскрывай, что ты тайный агент.</li>
+                    <li>Следуй инструкции и чек-листу.</li>
+                    <li>Делай чёткие фото без вспышки и звука камеры.</li>
+                    <li>Если не можешь провести проверку — заранее предупреди через раздел «Техническая поддержка», чтобы можно было перенести задание.</li>
+                </ul>
+
+                <h3>💬 Вопросы</h3>
+                <p>Все вопросы можно задать в разделе «Техническая поддержка» — команда оперативно поможет тебе разобраться.</p>
+            </div>
+        </div>
+        <!-- ======================================================= -->
+        <!-- КОНЕЦ ИЗМЕНЕНИЙ                                         -->
+        <!-- ======================================================= -->
     </div>
     
     <!-- МОДАЛЬНЫЕ ОКНА (Modals) -->
