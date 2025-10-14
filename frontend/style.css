@@ -54,7 +54,7 @@ body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    background-color: var(--bg-color); /* Исправление для фона */
+    background-color: var(--bg-color);
 }
 
 /* ======================================== */
@@ -82,13 +82,19 @@ body {
     justify-content: center;
     align-items: center;
 }
+
+/* ======================================== */
+/* ИЗМЕНЕНИЕ ЗДЕСЬ: УНИВЕРСАЛЬНОЕ ИСПРАВЛЕНИЕ ДЛЯ ПРОКРУТКИ */
+/* ======================================== */
 .scrollable-content {
     width: 100%;
     overflow-y: auto;
     flex-grow: 1;
     padding: 20px;
     -webkit-overflow-scrolling: touch;
+    min-height: 0; /* <<<< ВОТ ИСПРАВЛЕНИЕ, КОТОРОЕ ВСЁ РЕШАЕТ */
 }
+
 .screen.with-header .scrollable-content {
     padding-top: 15px;
 }
@@ -385,4 +391,4 @@ button#logout-btn:hover {
 #start-mission-button:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(229, 57, 53, 0.4);
-}```
+}
