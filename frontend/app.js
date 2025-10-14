@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // ИЗМЕНЕНИЕ 1: ОБРАБОТЧИК ДЛЯ КНОПКИ НА СТАРТОВОМ ЭКРАНЕ
+    // ОБРАБОТЧИК ДЛЯ КНОПКИ НА СТАРТОВОМ ЭКРАНЕ
     // =================================================================
     const startMissionButton = document.getElementById('start-mission-button');
     if (startMissionButton) {
@@ -145,9 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             appState.userData = null;
             document.getElementById('admin-menu-btn').style.display = 'none';
             
-            // =================================================================
-            // ИЗМЕНЕНИЕ 2: ПОКАЗЫВАЕМ СТАРТОВЫЙ ЭКРАН ВМЕСТО ЭКРАНА ВХОДА
-            // =================================================================
+            // Показываем стартовый экран вместо экрана входа
             showScreen('welcome-screen');
         }
     });
@@ -230,8 +228,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSchedules();
         showScreen('admin-view-schedule-screen');
     });
-
-    // ... ВСЕ ВАШИ ФУНКЦИИ АДМИН-ПАНЕЛИ И ПОЛЬЗОВАТЕЛЯ ОСТАЛИСЬ ЗДЕСЬ БЕЗ ИЗМЕНЕНИЙ ...
 
     async function loadAdminStats() {
         const container = document.getElementById('admin-stats-container');
