@@ -43,6 +43,10 @@ body {
     position: relative;
     overflow: hidden;
 }
+
+/* ======================================== */
+/* ГЛАВНЫЙ КОНТЕЙНЕР ПРИЛОЖЕНИЯ (ИЗМЕНЕНИЕ ЗДЕСЬ) */
+/* ======================================== */
 #app-container {
     max-width: 480px;
     margin: 0 auto;
@@ -50,7 +54,7 @@ body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    background-color: var(--bg-color);
+    background-color: var(--bg-color); /* <<<< ВОТ ИСПРАВЛЕНИЕ */
 }
 
 /* ======================================== */
@@ -290,7 +294,7 @@ button#logout-btn:hover {
     justify-content: center;
     align-items: center;
     padding: 20px;
-    background-color: var(--bg-color); /* Используем основной светло-серый фон */
+    /* Этот фон теперь будет виден, т.к. #app-container тоже серый */
     animation: fadeIn 0.5s ease-in-out; /* Плавное появление */
 }
 
