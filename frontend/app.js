@@ -2,7 +2,7 @@
 // КОНФИГУРАЦИЯ И ИНИЦИАЛИЗАЦИЯ FIREBASE (ФИНАЛЬНАЯ ВЕРСИЯ)
 // =================================================================
 const firebaseConfig = {
-  apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc", // ВАЖНО: Не забудьте защитить этот ключ в Google Cloud Console
+  apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc",
   authDomain: "burzhuy-pro-v2.firebaseapp.com",
   projectId: "burzhuy-pro-v2",
   storageBucket: "burzhuy-pro-v2.firebasestorage.app",
@@ -95,39 +95,29 @@ document.addEventListener('DOMContentLoaded', () => {
         phoneInput.value = '+7';
     }
 
-    // =================================================================
-    // ОБРАБОТЧИК ДЛЯ КНОПКИ НА СТАРТОВОМ ЭКРАНЕ
-    // =================================================================
     const startMissionButton = document.getElementById('start-mission-button');
     if (startMissionButton) {
         startMissionButton.addEventListener('click', () => {
-            showScreen('auth-screen'); // Переход на экран авторизации
+            showScreen('auth-screen');
         });
     }
     
-    // =================================================================
-    // ГЛАВНЫЙ СЛУШАТЕЛЬ СОСТОЯНИЯ АУТЕНТИФИКАЦИИ
-    // =================================================================
     auth.onAuthStateChanged(user => {
         document.getElementById('loader').classList.remove('active');
-
         if (appState.unsubscribeUserListener) {
             appState.unsubscribeUserListener();
             appState.unsubscribeUserListener = null;
         }
 
         if (user) {
-            // Пользователь вошел в систему
             appState.user = user;
             appState.unsubscribeUserListener = db.collection('users').doc(user.uid).onSnapshot(doc => {
                 if (doc.exists) {
                     appState.userData = doc.data();
                     document.getElementById('user-name-display').textContent = appState.userData.fullName;
                     document.querySelector('.dashboard-header .avatar').textContent = appState.userData.fullName?.charAt(0).toUpperCase() || '?';
-                    
                     const isAdmin = appState.userData.role === 'admin';
                     document.getElementById('admin-menu-btn').style.display = isAdmin ? 'flex' : 'none';
-                    
                     if (isAdmin) loadAdminStats();
                     loadUserDashboard(user.uid);
                     showScreen('main-menu-screen');
@@ -140,12 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 showModal('Критическая ошибка', 'Не удалось загрузить данные профиля.');
             });
         } else {
-            // Пользователь вышел из системы
             appState.user = null;
             appState.userData = null;
             document.getElementById('admin-menu-btn').style.display = 'none';
-            
-            // Показываем стартовый экран вместо экрана входа
             showScreen('welcome-screen');
         }
     });
@@ -157,20 +144,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('password-input').value;
         if (digits.length !== 11) return showModal('Ошибка', 'Введите полный номер телефона.');
         if (password.length < 6) return showModal('Ошибка', 'Пароль должен быть не менее 6 символов.');
-        
         const email = `+${digits}${FAKE_EMAIL_DOMAIN}`;
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner-small"></div>';
-        
         try {
             await auth.signInWithEmailAndPassword(email, password);
         } catch (error) {
             if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                 try {
-                     await auth.createUserWithEmailAndPassword(email, password);
-                 } catch (creationError) {
-                      showModal('Ошибка регистрации', creationError.message);
-                 }
+                try {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                } catch (creationError) {
+                    showModal('Ошибка регистрации', creationError.message);
+                }
             } else {
                 showModal('Ошибка входа', 'Неверный номер или пароль.');
             }
@@ -186,37 +171,37 @@ document.addEventListener('DOMContentLoaded', () => {
         const fullName = document.getElementById('profile-name-input').value.trim();
         if (!user) return showModal('Ошибка', 'Сессия истекла, войдите снова.');
         if (!fullName) return showModal('Внимание', 'Введите ваше имя и фамилию.');
-        
         const btn = e.currentTarget.querySelector('button[type="submit"]');
         btn.disabled = true;
         try {
-            await db.collection('users').doc(user.uid).set({ 
-                fullName, 
-                phone: user.email.replace(FAKE_EMAIL_DOMAIN, ''), 
-                role: 'guest', 
-                completedChecks: 0 
+            await db.collection('users').doc(user.uid).set({
+                fullName,
+                phone: user.email.replace(FAKE_EMAIL_DOMAIN, ''),
+                role: 'guest',
+                completedChecks: 0
             });
-        } catch (err) { 
-            showModal('Ошибка', 'Не удалось сохранить профиль.'); 
-        } finally { 
-            btn.disabled = false; 
+        } catch (err) {
+            showModal('Ошибка', 'Не удалось сохранить профиль.');
+        } finally {
+            btn.disabled = false;
         }
     });
 
-    document.getElementById('logout-btn').addEventListener('click', () => { auth.signOut(); });
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        auth.signOut();
+    });
 
-    // Обработчики кнопок меню и "Назад"
     document.querySelectorAll('.menu-btn, .back-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             const target = e.currentTarget.dataset.target;
             if (!target) return;
             const loadFunctions = {
-                'cooperation-screen': renderAvailableSchedules, 
-                'history-screen': renderHistory, 
-                'admin-hub-screen': loadAdminStats, 
-                'admin-schedule-screen': loadCitiesForAdmin, 
-                'admin-reports-screen': renderAllReports, 
+                'cooperation-screen': renderAvailableSchedules,
+                'history-screen': renderHistory,
+                'admin-hub-screen': loadAdminStats,
+                'admin-schedule-screen': loadCitiesForAdmin,
+                'admin-reports-screen': renderAllReports,
                 'admin-users-screen': renderAllUsers,
             };
             loadFunctions[target]?.();
@@ -236,7 +221,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const reports = await db.collection('reports').where('status', '==', 'pending').get();
             const users = await db.collection('users').get();
             container.innerHTML = `<div class="stat-card"><h3>${reports.size}</h3><p>На проверке</p></div><div class="stat-card"><h3>${users.size}</h3><p>Пользователей</p></div>`;
-        } catch (e) { container.innerHTML = '<p>Ошибка</p>'; }
+        } catch (e) {
+            container.innerHTML = '<p>Ошибка</p>';
+        }
     }
 
     async function loadCitiesForAdmin() {
@@ -258,9 +245,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 cities[citySelect.value]?.sort().forEach(loc => locationSelect.innerHTML += `<option value="${loc}">${loc}</option>`);
                 locationSelect.disabled = false;
             };
-        } catch (e) { showModal("Ошибка", "Не удалось загрузить города."); }
+        } catch (e) {
+            showModal("Ошибка", "Не удалось загрузить города.");
+        }
     }
-    
+
     document.getElementById('schedule-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const form = e.currentTarget;
@@ -269,11 +258,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const date = form.querySelector('#schedule-date-input').value;
         const isUrgent = form.querySelector('#schedule-urgent-checkbox').checked;
         if (!city || !locationName || !date) return showModal('Ошибка', 'Заполните все поля.');
-        
-        const localDate = new Date(date); 
+        const localDate = new Date(date);
         const dateForFirestore = new Date(localDate.getTime() + (localDate.getTimezoneOffset() * 60000));
-
-        await db.collection('schedules').add({ city, locationName, date: dateForFirestore, isUrgent, createdAt: firebase.firestore.FieldValue.serverTimestamp(), isBooked: false });
+        await db.collection('schedules').add({
+            city,
+            locationName,
+            date: dateForFirestore,
+            isUrgent,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isBooked: false
+        });
         showModal('Успешно', 'Проверка создана.');
         form.reset();
         document.getElementById('schedule-location-select').disabled = true;
@@ -283,7 +277,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const list = document.getElementById('schedule-list');
         list.innerHTML = '<div class="spinner"></div>';
         const snapshot = await db.collection('schedules').orderBy('date', 'desc').get();
-        if (snapshot.empty) { list.innerHTML = '<p class="empty-state">Запланированных проверок нет.</p>'; return; }
+        if (snapshot.empty) {
+            list.innerHTML = '<p class="empty-state">Запланированных проверок нет.</p>';
+            return;
+        }
         let html = '<ul class="menu-list">';
         snapshot.forEach(doc => {
             const s = doc.data();
@@ -292,9 +289,11 @@ document.addEventListener('DOMContentLoaded', () => {
         list.innerHTML = html + '</ul>';
         list.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', (e) => deleteSchedule(e.target.dataset.id)));
     }
-    
+
     function deleteSchedule(id) {
-        showModal('Подтверждение', 'Удалить эту проверку?', 'confirm', c => { if (c) db.collection('schedules').doc(id).delete().then(renderSchedules) });
+        showModal('Подтверждение', 'Удалить эту проверку?', 'confirm', c => {
+            if (c) db.collection('schedules').doc(id).delete().then(renderSchedules)
+        });
     }
 
     function deleteReport(reportId) {
@@ -315,17 +314,28 @@ document.addEventListener('DOMContentLoaded', () => {
         list.innerHTML = '<div class="spinner"></div>';
         try {
             const reportsSnap = await db.collection('reports').orderBy('createdAt', 'desc').get();
-            if (reportsSnap.empty) { list.innerHTML = '<p class="empty-state">Отчетов пока нет.</p>'; return; }
+            if (reportsSnap.empty) {
+                list.innerHTML = '<p class="empty-state">Отчетов пока нет.</p>';
+                return;
+            }
             const userIds = [...new Set(reportsSnap.docs.map(doc => doc.data().userId).filter(id => id))];
             const usersMap = new Map();
-            if(userIds.length > 0) {
+            if (userIds.length > 0) {
                 const userDocs = await Promise.all(userIds.map(id => db.collection('users').doc(id).get()));
-                userDocs.forEach(doc => { if(doc.exists) usersMap.set(doc.id, doc.data()) });
+                userDocs.forEach(doc => {
+                    if (doc.exists) usersMap.set(doc.id, doc.data())
+                });
             }
             let html = reportsSnap.docs.map(doc => {
                 const r = doc.data();
                 const user = usersMap.get(r.userId);
-                const statusMap = { pending: 'на проверке', approved: 'принят', rejected: 'отклонен', paid: 'оплачен', booked: 'забронирован' };
+                const statusMap = {
+                    pending: 'на проверке',
+                    approved: 'принят',
+                    rejected: 'отклонен',
+                    paid: 'оплачен',
+                    booked: 'забронирован'
+                };
                 return `<li class="menu-list-item report-item" data-id="${doc.id}">
                     <div class="status-indicator ${r.status}"></div>
                     <div style="flex-grow: 1;"><strong>${r.locationName}</strong><small>${user?.fullName || 'Агент'} - ${statusMap[r.status] || r.status}</small></div>
@@ -334,14 +344,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }).join('');
             list.innerHTML = html;
             list.querySelectorAll('.report-item').forEach(item => item.addEventListener('click', (e) => {
-                if(e.target.classList.contains('delete-report-btn')) return;
+                if (e.target.classList.contains('delete-report-btn')) return;
                 openAdminReportDetail(item.dataset.id);
             }));
             list.querySelectorAll('.delete-report-btn').forEach(btn => btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 deleteReport(e.target.dataset.id);
             }));
-        } catch (e) { console.error(e); list.innerHTML = '<p>Ошибка загрузки отчетов.</p>'; }
+        } catch (e) {
+            console.error(e);
+            list.innerHTML = '<p>Ошибка загрузки отчетов.</p>';
+        }
     }
 
     async function openAdminReportDetail(id) {
@@ -355,29 +368,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const report = reportDoc.data();
             const userDoc = report.userId ? await db.collection('users').doc(report.userId).get() : null;
             const user = userDoc?.exists ? userDoc.data() : null;
-            
+
             document.getElementById('admin-detail-address').textContent = report.locationName || '—';
             document.getElementById('admin-detail-user').textContent = user?.fullName || '—';
             document.getElementById('admin-detail-phone').textContent = user?.phone || '—';
             document.getElementById('admin-detail-date').textContent = report.checkDate?.toDate().toLocaleDateString('ru-RU') || '—';
             document.getElementById('admin-detail-status').innerHTML = `<span class="status-indicator ${report.status}"></span> ${report.status}`;
-            
+
             const rejectionEl = document.getElementById('admin-detail-rejection-comment-container');
             rejectionEl.style.display = (report.status === 'rejected' && report.rejectionComment) ? 'block' : 'none';
             if (report.rejectionComment) rejectionEl.innerHTML = `<p><strong>Причина:</strong> ${report.rejectionComment}</p>`;
 
-            for(let i = 1; i <= 9; i++) {
-                document.getElementById(`admin-detail-q${i}`).textContent = report.answers?.[`q${i}`] || '—';
+            // =================================================================
+            // ИЗМЕНЕНИЕ: Отображение всех 12 ответов
+            // =================================================================
+            for (let i = 1; i <= 12; i++) {
+                const element = document.getElementById(`admin-detail-q${i}`);
+                if (element) {
+                    element.textContent = report.answers?.[`q${i}`] || '—';
+                }
             }
+
             document.getElementById('admin-detail-photos').innerHTML = report.photoUrls?.map(url => `<a href="${url}" target="_blank"><img src="${url}" alt="фото-отчет"></a>`).join('') || '<p>Фото нет.</p>';
-        } catch(err) {
+        } catch (err) {
             showModal('Ошибка', 'Не удалось загрузить отчет.');
             showScreen('admin-reports-screen');
         } finally {
             detailContainer.style.opacity = '1';
         }
     }
-    
+
     document.getElementById('admin-action-approve').addEventListener('click', () => updateReportStatus('approved'));
     document.getElementById('admin-action-paid').addEventListener('click', () => updateReportStatus('paid'));
     document.getElementById('admin-action-reject').addEventListener('click', () => {
@@ -387,37 +407,46 @@ document.addEventListener('DOMContentLoaded', () => {
         const commentInput = document.getElementById('rejection-comment-input');
         commentInput.value = '';
         modal.classList.remove('modal-hidden');
-        
         const confirmHandler = () => {
             if (commentInput.value.trim()) {
                 updateReportStatus('rejected', commentInput.value.trim());
                 modal.classList.add('modal-hidden');
-            } else { alert('Укажите причину.'); }
+            } else {
+                alert('Укажите причину.');
+            }
         };
-
         const newConfirmBtn = confirmBtn.cloneNode(true);
         confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
         const newCancelBtn = cancelBtn.cloneNode(true);
         cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-
-        newConfirmBtn.addEventListener('click', confirmHandler, { once: true });
-        newCancelBtn.addEventListener('click', () => modal.classList.add('modal-hidden'), { once: true });
+        newConfirmBtn.addEventListener('click', confirmHandler, {
+            once: true
+        });
+        newCancelBtn.addEventListener('click', () => modal.classList.add('modal-hidden'), {
+            once: true
+        });
     });
-    
+
     async function updateReportStatus(status, comment = null) {
         if (!currentReportId) return;
-        const updateData = { status };
+        const updateData = {
+            status
+        };
         if (comment) updateData.rejectionComment = comment;
         try {
             const reportRef = db.collection('reports').doc(currentReportId);
             await reportRef.update(updateData);
-            if(status === 'approved') {
+            if (status === 'approved') {
                 const userId = (await reportRef.get()).data().userId;
-                if(userId) await db.collection('users').doc(userId).update({ completedChecks: firebase.firestore.FieldValue.increment(1) });
+                if (userId) await db.collection('users').doc(userId).update({
+                    completedChecks: firebase.firestore.FieldValue.increment(1)
+                });
             }
             showModal('Успешно', 'Статус обновлен.');
             openAdminReportDetail(currentReportId);
-        } catch(err) { showModal('Ошибка', 'Не удалось обновить статус.'); }
+        } catch (err) {
+            showModal('Ошибка', 'Не удалось обновить статус.');
+        }
     }
 
     async function renderAllUsers() {
@@ -425,7 +454,10 @@ document.addEventListener('DOMContentLoaded', () => {
         list.innerHTML = '<div class="spinner"></div>';
         try {
             const snapshot = await db.collection('users').get();
-            if (snapshot.empty) { list.innerHTML = '<p class="empty-state">Пользователей не найдено.</p>'; return; }
+            if (snapshot.empty) {
+                list.innerHTML = '<p class="empty-state">Пользователей не найдено.</p>';
+                return;
+            }
             list.innerHTML = snapshot.docs.map(doc => {
                 const user = doc.data();
                 const isAdmin = user.role === 'admin';
@@ -442,16 +474,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }).join('');
             list.querySelectorAll('.role-toggle-btn').forEach(btn => btn.addEventListener('click', e => toggleUserRole(e.target.dataset.id, e.target.dataset.role, e.target.dataset.name)));
             list.querySelectorAll('.delete-user-btn').forEach(btn => btn.addEventListener('click', e => deleteUser(e.target.dataset.id, e.target.dataset.name)));
-        } catch (error) { list.innerHTML = '<p>Ошибка загрузки пользователей.</p>'; }
+        } catch (error) {
+            list.innerHTML = '<p>Ошибка загрузки пользователей.</p>';
+        }
     }
-    
+
     function toggleUserRole(id, role, name) {
         const newRole = role === 'admin' ? 'guest' : 'admin';
-        showModal('Подтверждение', `Сделать ${name} ${newRole === 'admin' ? 'администратором' : 'агентом'}?`, 'confirm', c => { if(c) db.collection('users').doc(id).update({ role: newRole }).then(renderAllUsers); });
+        showModal('Подтверждение', `Сделать ${name} ${newRole === 'admin' ? 'администратором' : 'агентом'}?`, 'confirm', c => {
+            if (c) db.collection('users').doc(id).update({
+                role: newRole
+            }).then(renderAllUsers);
+        });
     }
 
     function deleteUser(id, name) {
-        showModal('Подтверждение', `Удалить пользователя ${name}? Действие нельзя отменить.`, 'confirm', c => { if(c) db.collection('users').doc(id).delete().then(renderAllUsers); });
+        showModal('Подтверждение', `Удалить пользователя ${name}? Действие нельзя отменить.`, 'confirm', c => {
+            if (c) db.collection('users').doc(id).delete().then(renderAllUsers);
+        });
     }
 
     async function renderAvailableSchedules() {
@@ -487,11 +527,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderAvailableSchedules();
                 return;
             }
-            selectedScheduleForBooking = { id: doc.id, ...doc.data() };
+            selectedScheduleForBooking = {
+                id: doc.id,
+                ...doc.data()
+            };
             document.getElementById('picker-location-title').textContent = formatLocationNameForUser(selectedScheduleForBooking.locationName);
             document.getElementById('time-picker-form').reset();
             showScreen('time-picker-screen');
-        } catch (error) { showModal('Ошибка', 'Не удалось получить данные о проверке.'); }
+        } catch (error) {
+            showModal('Ошибка', 'Не удалось получить данные о проверке.');
+        }
     }
 
     document.getElementById('time-picker-form').addEventListener('submit', async (e) => {
@@ -509,12 +554,29 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await db.runTransaction(async t => {
                 if ((await t.get(scheduleRef)).data().isBooked) throw new Error("Проверка уже забронирована.");
-                t.update(scheduleRef, { isBooked: true });
-                t.set(reportRef, { userId: user.uid, scheduleId: selectedScheduleForBooking.id, locationName: selectedScheduleForBooking.locationName, city: selectedScheduleForBooking.city, checkDate: selectedScheduleForBooking.date, startTime, endTime, status: 'booked', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                t.update(scheduleRef, {
+                    isBooked: true
+                });
+                t.set(reportRef, {
+                    userId: user.uid,
+                    scheduleId: selectedScheduleForBooking.id,
+                    locationName: selectedScheduleForBooking.locationName,
+                    city: selectedScheduleForBooking.city,
+                    checkDate: selectedScheduleForBooking.date,
+                    startTime,
+                    endTime,
+                    status: 'booked',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
             });
             await loadUserDashboard(user.uid);
             showModal('Успешно!', 'Вы записались. Задание на главном экране.', 'alert', () => showScreen('main-menu-screen'));
-        } catch(err) { showModal('Ошибка', err.message); } finally { btn.disabled = false; renderAvailableSchedules(); }
+        } catch (err) {
+            showModal('Ошибка', err.message);
+        } finally {
+            btn.disabled = false;
+            renderAvailableSchedules();
+        }
     });
 
     async function loadUserDashboard(userId) {
@@ -527,12 +589,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             let tasks = [];
-            snapshot.forEach(doc => tasks.push({ id: doc.id, ...doc.data() }));
-            tasks.sort((a,b) => a.checkDate.toDate() - b.checkDate.toDate());
-
+            snapshot.forEach(doc => tasks.push({
+                id: doc.id,
+                ...doc.data()
+            }));
+            tasks.sort((a, b) => a.checkDate.toDate() - b.checkDate.toDate());
             container.innerHTML = '<h3>Активные задания:</h3><ul class="menu-list">' + tasks.map(report => {
                 const checkDate = report.checkDate.toDate();
-                const canFill = checkDate.getTime() <= new Date().setHours(0,0,0,0);
+                const canFill = checkDate.getTime() <= new Date().setHours(0, 0, 0, 0);
                 return `<li class="menu-list-item"><div><strong>${formatLocationNameForUser(report.locationName)}</strong><small>${checkDate.toLocaleDateString('ru-RU')}</small><div class="task-actions"><button class="btn-fill-checklist" data-id="${report.id}" ${canFill ? '' : 'disabled'}>Заполнить</button><button class="btn-cancel-booking" data-id="${report.id}">Отменить</button></div></div></li>`;
             }).join('') + '</ul>';
             container.querySelectorAll('.btn-fill-checklist').forEach(btn => btn.addEventListener('click', e => openChecklist(e.target.dataset.id)));
@@ -552,11 +616,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const scheduleId = reportDoc.data().scheduleId;
                     const batch = db.batch();
                     batch.delete(db.collection('reports').doc(id));
-                    if (scheduleId) batch.update(db.collection('schedules').doc(scheduleId), { isBooked: false });
+                    if (scheduleId) batch.update(db.collection('schedules').doc(scheduleId), {
+                        isBooked: false
+                    });
                     await batch.commit();
                     showModal('Успешно', 'Запись отменена.');
                     loadUserDashboard(user.uid);
-                } catch (e) { showModal('Ошибка', 'Не удалось отменить запись.'); }
+                } catch (e) {
+                    showModal('Ошибка', 'Не удалось отменить запись.');
+                }
             }
         });
     }
@@ -571,35 +639,33 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('checklist-date').textContent = report.checkDate.toDate().toLocaleDateString('ru-RU');
             document.getElementById('checklist-form').reset();
             showScreen('checklist-screen');
-        } catch (error) { showModal('Ошибка', 'Не удалось загрузить чек-лист.'); }
+        } catch (error) {
+            showModal('Ошибка', 'Не удалось загрузить чек-лист.');
+        }
     }
-    
+
     async function openChecklistForEdit(id) {
         try {
             const doc = await db.collection('reports').doc(id).get();
             if (!doc.exists) return showModal('Ошибка', 'Отчет не найден.');
-    
             currentReportId = id;
             const report = doc.data();
-    
             document.getElementById('checklist-address').textContent = formatLocationNameForUser(report.locationName);
             document.getElementById('checklist-date').textContent = report.checkDate.toDate().toLocaleDateString('ru-RU');
-            
             const form = document.getElementById('checklist-form');
-            form.reset(); 
-            
+            form.reset();
+
+            // =================================================================
+            // ИЗМЕНЕНИЕ: Заполнение всех 12 полей формы при редактировании
+            // =================================================================
             if (report.answers) {
-                form.querySelector('#checklist-q1-appearance').value = report.answers.q1 || '';
-                form.querySelector('#checklist-q2-cleanliness').value = report.answers.q2 || '';
-                form.querySelector('#checklist-q3-greeting').value = report.answers.q3 || '';
-                form.querySelector('#checklist-q4-upsell').value = report.answers.q4 || '';
-                form.querySelector('#checklist-q5-actions').value = report.answers.q5 || '';
-                form.querySelector('#checklist-q6-handout').value = report.answers.q6 || '';
-                form.querySelector('#checklist-q7-order-eval').value = report.answers.q7 || '';
-                form.querySelector('#checklist-q8-food-rating').value = report.answers.q8 || '';
-                form.querySelector('#checklist-q9-comments').value = report.answers.q9 || '';
+                for(let i = 1; i <= 12; i++) {
+                    const element = form.querySelector(`#checklist-q${i}`);
+                    if (element) {
+                        element.value = report.answers[`q${i}`] || '';
+                    }
+                }
             }
-    
             showScreen('checklist-screen');
         } catch (error) {
             showModal('Ошибка', 'Не удалось загрузить данные для редактирования.');
@@ -610,21 +676,23 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const user = appState.user;
         if (!user || !currentReportId) return;
-        
+
         const btn = e.currentTarget.querySelector('button[type="submit"]');
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner-small"></div>';
-
         try {
-            const answers = {
-                q1: document.getElementById('checklist-q1-appearance').value, q2: document.getElementById('checklist-q2-cleanliness').value, q3: document.getElementById('checklist-q3-greeting').value, q4: document.getElementById('checklist-q4-upsell').value, q5: document.getElementById('checklist-q5-actions').value, q6: document.getElementById('checklist-q6-handout').value, q7: document.getElementById('checklist-q7-order-eval').value, q8: document.getElementById('checklist-q8-food-rating').value, q9: document.getElementById('checklist-q9-comments').value
-            };
+            // =================================================================
+            // ИЗМЕНЕНИЕ: Сбор данных со всех 12 полей формы
+            // =================================================================
+            const answers = {};
+            for (let i = 1; i <= 12; i++) {
+                answers[`q${i}`] = document.getElementById(`checklist-q${i}`).value;
+            }
+
             const files = document.getElementById('checklist-photos').files;
-            
             const reportRef = db.collection('reports').doc(currentReportId);
             const originalReportDoc = await reportRef.get();
             const isEditing = originalReportDoc.exists && originalReportDoc.data().answers;
-
             let photoUrls = originalReportDoc.data().photoUrls || [];
 
             if (files.length > 0) {
@@ -638,25 +706,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error("Пожалуйста, прикрепите фото.");
             }
 
-            await reportRef.update({ 
-                answers, 
-                photoUrls, 
-                status: 'pending', 
+            await reportRef.update({
+                answers,
+                photoUrls,
+                status: 'pending',
                 submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 rejectionComment: firebase.firestore.FieldValue.delete()
             });
 
             const modalTitle = isEditing ? 'Отчет исправлен!' : 'Отчет отправлен на проверку!';
             const modalText = 'Спасибо! Мы свяжемся с вами по указанному в профиле номеру после проверки отчета.';
-            showModal(modalTitle, modalText, 'alert', () => { 
-                showScreen('main-menu-screen'); 
-                loadUserDashboard(user.uid); 
+            showModal(modalTitle, modalText, 'alert', () => {
+                showScreen('main-menu-screen');
+                loadUserDashboard(user.uid);
             });
-
-        } catch(err) { 
-            showModal('Ошибка', err.message); 
-        } finally { 
-            btn.disabled = false; 
+        } catch (err) {
+            showModal('Ошибка', err.message);
+        } finally {
+            btn.disabled = false;
             btn.textContent = 'Отправить';
         }
     });
@@ -675,7 +742,12 @@ document.addEventListener('DOMContentLoaded', () => {
             let html = '<ul class="menu-list">';
             html += snapshot.docs.map(doc => {
                 const r = doc.data();
-                const statusMap = { pending: 'на проверке', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' };
+                const statusMap = {
+                    pending: 'на проверке',
+                    approved: 'принят',
+                    rejected: 'отклонен',
+                    paid: 'оплачен'
+                };
                 const comment = (r.status === 'rejected' && r.rejectionComment) ? `<small style="color:var(--status-rejected); display:block; margin-top:5px;"><b>Причина:</b> ${r.rejectionComment}</small>` : '';
                 const editButton = (r.status === 'rejected') ? `<div class="task-actions"><button class="btn-edit-report" data-id="${doc.id}">Редактировать</button></div>` : '';
 
