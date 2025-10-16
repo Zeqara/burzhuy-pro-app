@@ -50,7 +50,7 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
     const cancelBtn = document.getElementById('modal-cancel-btn');
 
     modalTitle.textContent = title;
-    modalText.innerHTML = text; // Используем innerHTML для поддержки тегов
+    modalText.innerHTML = text;
     confirmBtn.textContent = (type === 'confirm') ? 'Подтвердить' : 'OK';
     cancelBtn.style.display = (type === 'confirm') ? 'inline-block' : 'none';
 
@@ -77,13 +77,11 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
     modalContainer.classList.remove('modal-hidden');
 }
 
-// Форматирует название точки для пользователя (убирает код)
 function formatLocationNameForUser(name) {
     if (!name) return 'Неизвестная точка';
     return name.replace(/^Б\d+\s/, '');
 }
 
-// Показывает/скрывает спиннер на кнопке
 function toggleButtonSpinner(button, show) {
     if (show) {
         button.disabled = true;
@@ -94,7 +92,6 @@ function toggleButtonSpinner(button, show) {
         button.innerHTML = button.dataset.originalText || 'Действие';
     }
 }
-
 
 // =================================================================
 // ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
@@ -118,14 +115,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return formatted;
         };
         phoneInput.addEventListener('input', (e) => { e.target.value = formatPhoneNumber(e.target.value); });
-        phoneInput.value = '+7'; // Начальное значение
+        phoneInput.value = '+7';
     }
 
     // Слушатель состояния аутентификации
     auth.onAuthStateChanged(user => {
         document.getElementById('loader').classList.remove('active');
         
-        // Отписываемся от старого слушателя данных пользователя
         if (appState.unsubscribeUserListener) {
             appState.unsubscribeUserListener();
             appState.unsubscribeUserListener = null;
@@ -133,16 +129,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (user) {
             appState.user = user;
-            // Подписываемся на изменения данных пользователя в Firestore
             appState.unsubscribeUserListener = db.collection('users').doc(user.uid).onSnapshot(doc => {
                 if (doc.exists) {
                     appState.userData = doc.data();
-                    updateUIForUser(); // Обновляем интерфейс
+                    updateUIForUser();
                     loadUserDashboard(user.uid);
                     showScreen('main-menu-screen');
                 } else {
                     appState.userData = null;
-                    showScreen('profile-setup-screen'); // Пользователь есть, но профиля нет
+                    showScreen('profile-setup-screen');
                 }
             }, err => {
                 console.error("Ошибка при загрузке профиля:", err);
@@ -182,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
             await auth.signInWithEmailAndPassword(email, password);
         } catch (error) {
             if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                // Если юзера нет, пробуем зарегистрировать
                 try {
                     await auth.createUserWithEmailAndPassword(email, password);
                 } catch (creationError) {
@@ -212,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await db.collection('users').doc(user.uid).set({
                 fullName,
                 phone: user.email.replace(FAKE_EMAIL_DOMAIN, ''),
-                role: 'guest', // Роль по умолчанию
+                role: 'guest',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
         } catch (err) {
@@ -226,6 +220,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Выход из аккаунта
     document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
 
+    // Кнопка "Начать миссию"
+    const startMissionButton = document.getElementById('start-mission-button');
+    if (startMissionButton) {
+        startMissionButton.addEventListener('click', () => {
+            showScreen('auth-screen');
+        });
+    }
+
     // =================================================================
     // НАВИГАЦИЯ И ЗАГРУЗКА ДАННЫХ ДЛЯ ЭКРАНОВ
     // =================================================================
@@ -236,7 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
         'admin-schedule-screen': loadCitiesForAdmin,
         'admin-reports-screen': renderAllReports,
         'admin-users-screen': renderAllUsers,
-        'admin-view-schedule-screen': renderSchedules,
     };
 
     document.querySelectorAll('.menu-btn, .back-btn').forEach(btn => {
@@ -245,7 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetScreenId = e.currentTarget.dataset.target;
             if (!targetScreenId) return;
             
-            // Вызываем функцию загрузки данных, если она есть для этого экрана
             const loadFunction = screenLoadFunctions[targetScreenId];
             if (loadFunction) {
                 loadFunction();
@@ -254,11 +254,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    document.getElementById('view-schedule-btn').addEventListener('click', () => {
+        renderSchedules();
+        showScreen('admin-view-schedule-screen');
+    });
+
     // =================================================================
     // ФУНКЦИИ АДМИНИСТРАТОРА
     // =================================================================
     
-    // Загрузка статистики для админ-панели
     async function loadAdminStats() {
         const container = document.getElementById('admin-stats-container');
         container.innerHTML = '<div class="spinner"></div>';
@@ -275,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Загрузка городов для формы создания расписания
     async function loadCitiesForAdmin() {
         const citySelect = document.getElementById('schedule-city-select');
         const locationSelect = document.getElementById('schedule-location-select');
@@ -306,7 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Форма создания новой проверки (расписания)
     document.getElementById('schedule-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const form = e.currentTarget;
@@ -343,7 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Рендер всех запланированных проверок для админа
     async function renderSchedules() {
         const list = document.getElementById('schedule-list');
         list.innerHTML = '<div class="spinner"></div>';
@@ -377,14 +378,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Удаление проверки (расписания)
     function deleteSchedule(id) {
         showModal('Подтверждение', 'Удалить эту проверку?', 'confirm', async (confirmed) => {
             if (confirmed) {
                 try {
                     await db.collection('schedules').doc(id).delete();
                     showModal('Успешно', 'Проверка удалена.');
-                    renderSchedules(); // Обновляем список
+                    renderSchedules();
                 } catch (err) {
                     showModal('Ошибка', 'Не удалось удалить проверку.');
                 }
@@ -392,7 +392,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Рендер всех отчетов для админа
     async function renderAllReports() {
         const list = document.getElementById('admin-reports-list');
         list.innerHTML = '<div class="spinner"></div>';
@@ -453,7 +452,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Удаление отчета
     function deleteReport(reportId) {
         showModal('Подтверждение', 'Удалить этот отчет безвозвратно?', 'confirm', async (confirmed) => {
             if (confirmed) {
@@ -468,12 +466,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Открытие деталей отчета для админа
     async function openAdminReportDetail(id) {
         currentReportId = id;
         showScreen('admin-report-detail-screen');
         const detailContainer = document.querySelector('#admin-report-detail-screen .scrollable-content');
-        detailContainer.style.opacity = '0.5'; // Визуальный эффект загрузки
+        detailContainer.style.opacity = '0.5';
         try {
             const reportDoc = await db.collection('reports').doc(id).get();
             if (!reportDoc.exists) throw new Error("Отчет не найден");
@@ -485,7 +482,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (userDoc.exists) user = userDoc.data();
             }
 
-            // Заполнение полей
             document.getElementById('admin-detail-address').textContent = report.locationName || '—';
             document.getElementById('admin-detail-user').textContent = user?.fullName || '—';
             document.getElementById('admin-detail-phone').textContent = user?.phone || '—';
@@ -500,7 +496,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 rejectionEl.style.display = 'none';
             }
 
-            // Отображение всех 12 ответов
             for (let i = 1; i <= 12; i++) {
                 const element = document.getElementById(`admin-detail-q${i}`);
                 if (element) {
@@ -513,13 +508,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error("Ошибка загрузки деталей отчета: ", err);
             showModal('Ошибка', 'Не удалось загрузить отчет.');
-            showScreen('admin-reports-screen'); // Возвращаем назад в случае ошибки
+            showScreen('admin-reports-screen');
         } finally {
             detailContainer.style.opacity = '1';
         }
     }
     
-    // Обновление статуса отчета админом
     async function updateReportStatus(status, comment = null) {
         if (!currentReportId) return;
         const updateData = { status };
@@ -539,14 +533,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             showModal('Успешно', 'Статус обновлен.');
-            openAdminReportDetail(currentReportId); // Обновляем детали
+            openAdminReportDetail(currentReportId);
         } catch (err) {
             console.error("Ошибка обновления статуса: ", err);
             showModal('Ошибка', 'Не удалось обновить статус.');
         }
     }
     
-    // Обработчики кнопок действий админа
     document.getElementById('admin-action-approve').addEventListener('click', () => updateReportStatus('approved'));
     document.getElementById('admin-action-paid').addEventListener('click', () => updateReportStatus('paid'));
     document.getElementById('admin-action-reject').addEventListener('click', () => {
@@ -557,7 +550,6 @@ document.addEventListener('DOMContentLoaded', () => {
         commentInput.value = '';
         modal.classList.remove('modal-hidden');
 
-        // Очистка старых обработчиков
         const newConfirmBtn = confirmBtn.cloneNode(true);
         confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
         const newCancelBtn = cancelBtn.cloneNode(true);
@@ -576,7 +568,6 @@ document.addEventListener('DOMContentLoaded', () => {
         newCancelBtn.addEventListener('click', () => modal.classList.add('modal-hidden'), { once: true });
     });
 
-    // Рендер всех пользователей
     async function renderAllUsers() {
         const list = document.getElementById('admin-users-list');
         list.innerHTML = '<div class="spinner"></div>';
@@ -621,7 +612,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Смена роли пользователя
     function toggleUserRole(id, role, name) {
         const newRole = role === 'admin' ? 'guest' : 'admin';
         const actionText = newRole === 'admin' ? 'администратором' : 'агентом';
@@ -629,7 +619,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (confirmed) {
                 try {
                     await db.collection('users').doc(id).update({ role: newRole });
-                    renderAllUsers(); // Обновляем список
+                    renderAllUsers();
                 } catch (err) {
                     showModal('Ошибка', 'Не удалось сменить роль.');
                 }
@@ -637,17 +627,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Удаление пользователя
     function deleteUser(id, name) {
         showModal('Подтверждение', `Удалить пользователя ${name}? Это действие нельзя отменить.`, 'confirm', async (confirmed) => {
             if (confirmed) {
                 try {
                     await db.collection('users').doc(id).delete();
-                    renderAllUsers(); // Обновляем список
+                    renderAllUsers();
                 } catch (err) {
-                    // ВАЖНО: Функцию для удаления пользователя из Firebase Auth нужно вызывать из бэкенда (Cloud Functions)
-                    // Прямое удаление из клиента требует недавнего входа пользователя.
-                    // Пока просто удаляем из Firestore.
                     showModal('Ошибка', 'Не удалось удалить пользователя из базы данных.');
                 }
             }
@@ -658,7 +644,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ФУНКЦИИ ПОЛЬЗОВАТЕЛЯ
     // =================================================================
 
-    // Рендер доступных для записи проверок
     async function renderAvailableSchedules() {
         const list = document.getElementById('schedule-cards-list');
         const noSchedulesView = document.getElementById('no-schedules-view');
@@ -669,7 +654,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             
-            // ПРАВИЛЬНЫЙ ЗАПРОС С ИНДЕКСОМ: isBooked (asc), date (asc)
             const snapshot = await db.collection('schedules')
                 .where('isBooked', '==', false)
                 .where('date', '>=', today)
@@ -696,18 +680,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             list.querySelectorAll('.menu-list-item').forEach(card => card.addEventListener('click', () => openTimePicker(card.dataset.id)));
         } catch (error) {
-            console.error("ОШИБКА FIRESTORE при загрузке расписаний:", error);
-            list.innerHTML = '<p class="error-message">Не удалось загрузить данные. Убедитесь, что создан композитный индекс для коллекции `schedules` по полям `isBooked` (по возрастанию) и `date` (по возрастанию).</p>';
+            console.error("ОШИБКА FIRESTORE:", error);
+            list.innerHTML = '<p class="error-message">Не удалось загрузить данные. Убедитесь, что создан композитный индекс.</p>';
         }
     }
 
-    // Открытие экрана выбора времени
     async function openTimePicker(id) {
         try {
             const doc = await db.collection('schedules').doc(id).get();
             if (!doc.exists || doc.data().isBooked) {
                 showModal('Ошибка', 'Эта проверка больше недоступна.');
-                renderAvailableSchedules(); // Обновляем список, так как он устарел
+                renderAvailableSchedules();
                 return;
             }
             selectedScheduleForBooking = { id: doc.id, ...doc.data() };
@@ -719,7 +702,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Форма подтверждения записи на проверку
     document.getElementById('time-picker-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const startTime = document.getElementById('user-start-time').value;
@@ -734,10 +716,9 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleButtonSpinner(btn, true);
 
         const scheduleRef = db.collection('schedules').doc(selectedScheduleForBooking.id);
-        const reportRef = db.collection('reports').doc(); // Генерируем новый ID для отчета
+        const reportRef = db.collection('reports').doc();
         
         try {
-            // Используем транзакцию для атомарного бронирования
             await db.runTransaction(async t => {
                 const scheduleDoc = await t.get(scheduleRef);
                 if (scheduleDoc.data()?.isBooked) {
@@ -761,13 +742,12 @@ document.addEventListener('DOMContentLoaded', () => {
             showModal('Успешно!', 'Вы записались. Задание появилось на главном экране.', 'alert', () => showScreen('main-menu-screen'));
         } catch (err) {
             showModal('Ошибка бронирования', err.message);
-            renderAvailableSchedules(); // Обновляем список доступных проверок
+            renderAvailableSchedules();
         } finally {
             toggleButtonSpinner(btn, false);
         }
     });
 
-    // Загрузка активных заданий пользователя на главный экран
     async function loadUserDashboard(userId) {
         const container = document.getElementById('dashboard-info-container');
         container.innerHTML = '';
@@ -812,7 +792,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Отмена бронирования
     function cancelBooking(id) {
         showModal('Подтверждение', 'Отменить эту проверку?', 'confirm', async (confirmed) => {
             if (confirmed) {
@@ -842,7 +821,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Открытие чек-листа (для нового или редактируемого отчета)
     async function openChecklist(id, isEdit = false) {
         try {
             const doc = await db.collection('reports').doc(id).get();
@@ -851,14 +829,12 @@ document.addEventListener('DOMContentLoaded', () => {
             currentReportId = id;
             const report = doc.data();
             
-            // Заполняем заголовок
             document.getElementById('checklist-address').textContent = formatLocationNameForUser(report.locationName);
             document.getElementById('checklist-date').textContent = report.checkDate.toDate().toLocaleDateString('ru-RU');
             
             const form = document.getElementById('checklist-form');
             form.reset();
             
-            // Если это редактирование, заполняем поля формы
             if (isEdit && report.answers) {
                 for(let i = 1; i <= 12; i++) {
                     const element = form.querySelector(`#checklist-q${i}`);
@@ -873,7 +849,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Форма отправки чек-листа
     document.getElementById('checklist-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = appState.user;
@@ -898,7 +873,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let photoUrls = originalReportData.photoUrls || [];
 
             if (files.length > 0) {
-                // Если добавлены новые файлы, перезаписываем старые
                 photoUrls = []; 
                 for (const file of files) {
                     const filePath = `reports/${currentReportId}/${Date.now()}_${file.name}`;
@@ -906,7 +880,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     photoUrls.push(await fileSnapshot.ref.getDownloadURL());
                 }
             } else if (photoUrls.length === 0) {
-                // Если фото не было и новых не добавили
                 throw new Error("Пожалуйста, прикрепите фото.");
             }
             
@@ -915,7 +888,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 photoUrls,
                 status: 'pending',
                 submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                rejectionComment: firebase.firestore.FieldValue.delete() // Удаляем причину отклонения
+                rejectionComment: firebase.firestore.FieldValue.delete()
             });
 
             const modalTitle = isEditing ? 'Отчет исправлен!' : 'Отчет отправлен на проверку!';
@@ -930,7 +903,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Рендер истории проверок пользователя
     async function renderHistory() {
         const list = document.getElementById('history-list');
         list.innerHTML = '<div class="spinner"></div>';
@@ -977,7 +949,7 @@ document.addEventListener('DOMContentLoaded', () => {
             list.querySelectorAll('.btn-edit-report').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    openChecklist(e.target.dataset.id, true); // Вызываем с флагом редактирования
+                    openChecklist(e.target.dataset.id, true);
                 });
             });
 
