@@ -2,13 +2,14 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <!-- ИСПРАВЛЕНО: Добавлен maximum-scale=1.0 для надежного отключения масштабирования -->
+    <!-- ИСПРАВЛЕНО: Финальная версия для надежной блокировки масштабирования -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Тайный агент BURЖУЙ</title>
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <!-- ИСПРАВЛЕНО: Добавлен слэш для корректного пути от корня сайта -->
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- ИСПРАВЛЕНО: Добавлен слэш для корректного пути от корня сайта -->
+    <link rel="stylesheet" href="/style.css">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
@@ -16,10 +17,10 @@
         <!-- ЭКРАН ЗАГРУЗКИ (Loader) -->
         <div id="loader" class="screen active"><div class="spinner"></div></div>
 
-        <!-- СТАРТОВЫЙ ЭКРАН С АГЕНТОМ (Welcome Screen) -->
+        <!-- СТАРТОВЫЙ ЭКРАН (Welcome Screen) -->
         <div id="welcome-screen" class="screen">
             <div class="agent-welcome-container">
-                <img src="agent.png" alt="Тайный Агент BURЖУЙ" class="agent-image">
+                <!-- УДАЛЕНО: Изображение агента убрано согласно запросу -->
                 <h1>Добро пожаловать в «Тайный агент BURЖУЙ»</h1>
                 <p class="subtitle">Станьте частью команды контроля качества и получайте вознаграждение за проверки.</p>
                 <button id="start-mission-button" class="btn-primary">Начать миссию</button>
@@ -44,7 +45,7 @@
                 <p>Пожалуйста, укажите ваше имя и фамилию.</p>
                 <form id="profile-setup-form" novalidate>
                     <div class="form-group">
-                        <!-- ИСПРАВЛЕНО: Добавлен for="profile-name-input" для связи метки с полем -->
+                        <!-- ИСПРАВЛЕНО: Добавлен for для улучшения доступности -->
                         <label for="profile-name-input">Имя и Фамилия</label>
                         <input type="text" id="profile-name-input" placeholder="Иван Иванов" required>
                     </div>
@@ -66,7 +67,7 @@
                     <li class="menu-list-item menu-btn" data-target="cooperation-screen"><i class="icon fa-solid fa-calendar-check"></i><div><strong>Записаться на проверку</strong><small>Выбрать доступную точку и время</small></div></li>
                     <li class="menu-list-item menu-btn" data-target="history-screen"><i class="icon fa-solid fa-list-check"></i><div><strong>История проверок</strong><small>Посмотреть статусы отчетов</small></div></li>
                     <li class="menu-list-item menu-btn" data-target="instruction-screen"><i class="icon fa-solid fa-book-open"></i><div><strong>Инструкция</strong><small>Правила и требования</small></div></li>
-                    <!-- ИСПРАВЛЕНО: Тег <a> теперь внутри <li>, а не наоборот -->
+                    <!-- ИСПРАВЛЕНО: Корректная семантическая вложенность ссылки -->
                     <li class="menu-list-item"><a href="https://t.me/gdyhrhf" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; width: 100%;"><i class="icon fa-solid fa-headset"></i><div><strong>Техническая поддержка</strong><small>Связаться в Telegram</small></div></a></li>
                     <li id="admin-menu-btn" class="menu-list-item menu-btn" data-target="admin-hub-screen" style="display: none;"><i class="icon fa-solid fa-user-shield"></i><div><strong>Центр Управления</strong><small>Перейти в панель администратора</small></div></li>
                 </ul>
@@ -74,7 +75,7 @@
             </div>
         </div>
 
-        <!-- ЭКРАНЫ С НОВОЙ СТРУКТУРОЙ ХЕДЕРА -->
+        <!-- ЭКРАНЫ АДМИНИСТРАТОРА (структура сохранена) -->
         <div id="admin-hub-screen" class="screen with-header">
             <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Центр Управления</h2><div class="header-placeholder"></div></header>
             <div class="scrollable-content"><div id="admin-stats-container"></div><ul class="menu-list"><li class="menu-list-item menu-btn" data-target="admin-schedule-screen"><i class="icon fa-solid fa-calendar-days"></i><div><strong>Управление графиком</strong><small>Создать и удалить проверки</small></div></li><li class="menu-list-item menu-btn" data-target="admin-reports-screen"><i class="icon fa-solid fa-file-signature"></i><div><strong>Просмотр отчетов</strong><small>Проверить и утвердить отчеты</small></div></li><li class="menu-list-item menu-btn" data-target="admin-users-screen"><i class="icon fa-solid fa-users"></i><div><strong>Управление пользователями</strong><small>Просмотр и смена ролей</small></div></li></ul></div>
@@ -156,8 +157,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-    <script src="app.js"></script>
+    <!-- ИСПРАВЛЕНО: Добавлен слэш для корректного пути от корня сайта -->
+    <script src="/app.js"></script>
 </body>
 </html>
-
-
