@@ -1,16 +1,16 @@
 /* ======================================== */
-/* CSS ПЕРЕМЕННЫЕ (НОВАЯ ТЕМНАЯ ТЕМА)      */
+/* CSS ПЕРЕМЕННЫЕ (ФИНАЛЬНАЯ ТЕМНАЯ ТЕМА)   */
 /* ======================================== */
 :root {
-    --bg-color: #121212; /* Основной фон стал темным */
-    --surface-color: #1E1E1E; /* Фон карточек и элементов */
+    --bg-color: #121212;
+    --surface-color: #1E1E1E;
     --surface-color-hover: #2c2c2c;
-    --border-color: #333333; /* Цвет границ */
+    --border-color: #333333;
     --primary-color: #e53935;
     --primary-color-hover: #c62828;
     --primary-glow: rgba(229, 57, 53, 0.2);
-    --text-primary: #E0E0E0; /* Основной цвет текста стал светлым */
-    --text-secondary: #A0A0A0; /* Второстепенный текст */
+    --text-primary: #E0E0E0;
+    --text-secondary: #A0A0A0;
     --text-on-primary: #ffffff;
     --status-rejected: #e53935;
     --status-approved: #4caf50;
@@ -24,8 +24,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :focus { outline: none; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text-primary); position: relative; overflow: hidden; }
-/* Используем 100dvh для лучшей адаптации на мобильных */
-#app-container { max-width: 480px; margin: 0 auto; position: relative; width: 100vw; height: 100dvh; overflow: hidden; background-color: var(--bg-color); }
+#app-container { max-width: 480px; margin: 0 auto; position: relative; width: 100vw; height: 100vh; overflow: hidden; background-color: var(--bg-color); }
 
 /* ======================================== */
 /* СТРУКТУРА ЭКРАНОВ И ПРОКРУТКА            */
@@ -46,7 +45,7 @@ header {
     padding-top: calc(10px + env(safe-area-inset-top));
     text-align: center;
     border-bottom: 1px solid var(--border-color);
-    background-color: rgba(24, 24, 24, 0.85); /* Фон хедера стал темным и полупрозрачным */
+    background-color: rgba(24, 24, 24, 0.85);
     backdrop-filter: blur(10px);
     flex-shrink: 0;
     z-index: 10;
@@ -221,7 +220,7 @@ button#logout-btn:hover { background-color: var(--surface-color-hover); color: v
     border: 1px solid var(--border-color);
 }
 .delete-user-btn {
-    background-color: rgba(229, 57, 53, 0.2); /* Красный, но приглушенный */
+    background-color: rgba(229, 57, 53, 0.2);
     color: var(--status-rejected);
 }
 .delete-user-btn:hover {
@@ -235,8 +234,9 @@ button#logout-btn:hover { background-color: var(--surface-color-hover); color: v
 #welcome-screen { justify-content: center; align-items: center; padding: 20px; animation: fadeIn 0.5s ease-in-out; }
 @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 .agent-welcome-container { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 500px; }
-.agent-image { width: 100%; max-width: 200px; margin-bottom: 30px; filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.5)); }
 .agent-welcome-container h1 { font-size: clamp(1.5rem, 5vw, 2rem); color: var(--text-primary); margin-bottom: 1rem; line-height: 1.3; }
 .agent-welcome-container .subtitle { font-size: clamp(0.9rem, 2.5vw, 1.1rem); color: var(--text-secondary); line-height: 1.6; margin-bottom: 2.5rem; max-width: 400px; }
 #start-mission-button { padding: 16px 30px; font-size: 1.1rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(229, 57, 53, 0.3); transition: all 0.2s ease-out; }
 #start-mission-button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(229, 57, 53, 0.4); }
+
+/* УДАЛЕНО: Стили для .agent-image убраны, так как картинка не используется */
