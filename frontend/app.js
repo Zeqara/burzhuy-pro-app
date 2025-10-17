@@ -1,14 +1,15 @@
 // =================================================================
 // КОНФИГУРАЦИЯ И ИНИЦИАЛИЗАЦИЯ FIREBASE (ФИНАЛЬНАЯ ВЕРСИЯ)
 // =================================================================
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc",
   authDomain: "burzhuy-pro-v2.firebaseapp.com",
   projectId: "burzhuy-pro-v2",
   storageBucket: "burzhuy-pro-v2.firebasestorage.app",
   messagingSenderId: "627105413900",
-  appId: "1:627105413900:web:3e4d8563e50a542f256729",
-  measurementId: "G-YWYR0HFXE4"
+  appId: "1:627105413900:web:3a02e926867ff76e256729",
+  measurementId: "G-VZJQET0HSW"
 };
 
 // Инициализация Firebase
