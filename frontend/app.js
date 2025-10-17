@@ -7,7 +7,8 @@ const firebaseConfig = {
   projectId: "burzhuy-pro-v2",
   storageBucket: "burzhuy-pro-v2.firebasestorage.app",
   messagingSenderId: "627105413900",
-  appId: "1:627105413900:web:3a02e926867ff76e256729"
+  appId: "1:627105413900:web:3e4d8563e50a542f256729",
+  measurementId: "G-YWYR0HFXE4"
 };
 
 // Инициализация Firebase
