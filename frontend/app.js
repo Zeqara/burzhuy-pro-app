@@ -51,7 +51,6 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
     confirmBtn.textContent = (type === 'confirm') ? 'Подтвердить' : 'OK';
     cancelBtn.style.display = (type === 'confirm') ? 'inline-block' : 'none';
 
-    // Пересоздаем кнопки, чтобы очистить старые обработчики
     const newConfirmBtn = confirmBtn.cloneNode(true);
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
     const newCancelBtn = cancelBtn.cloneNode(true);
@@ -145,22 +144,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (digits.length !== 11) return showModal('Ошибка', 'Введите полный номер телефона.');
         if (password.length < 6) return showModal('Ошибка', 'Пароль должен быть не менее 6 символов.');
         
-        // ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ: Убран '+' из email, который не принимал Firebase
         const email = `${digits}${FAKE_EMAIL_DOMAIN}`;
         
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner-small"></div>';
+        
         try {
             await auth.signInWithEmailAndPassword(email, password);
         } catch (error) {
-            if (error.code === 'auth/user-not-found') {
+            // ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ: Логика сделана более гибкой для регистрации
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
                 try {
                     await auth.createUserWithEmailAndPassword(email, password);
                 } catch (creationError) {
+                    console.error("Ошибка СОЗДАНИЯ пользователя:", creationError);
                     showModal('Ошибка регистрации', creationError.message);
                 }
             } else {
-                showModal('Ошибка входа', 'Неверный номер или пароль.');
+                console.error("Ошибка ВХОДА:", error);
+                showModal('Ошибка входа', 'Произошла непредвиденная ошибка.');
             }
         } finally {
             btn.disabled = false;
