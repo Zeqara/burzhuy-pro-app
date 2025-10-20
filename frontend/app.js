@@ -151,13 +151,11 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner-small"></div>';
         
-        // ================== ИЗМЕНЕНИЯ ЗДЕСЬ ==================
-        // Вся логика внутри try/catch/finally была заменена на более надежную.
         try {
             await auth.signInWithEmailAndPassword(email, password);
         } catch (error) {
-            // Проверяем стандартные коды ошибки ИЛИ новую внутреннюю ошибку, которую мы обнаружили.
-            // Эта ошибка `auth/internal-error` теперь тоже правильно обрабатывается как неудачный вход.
+            // ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ, КОТОРОЕ РЕШАЕТ ПРОБЛЕМУ
+            // Мы проверяем не только стандартные ошибки, но и ту, что видели на скриншоте
             const isLoginFailure =
                 error.code === 'auth/user-not-found' ||
                 error.code === 'auth/wrong-password' ||
@@ -165,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 (error.code === 'auth/internal-error' && error.message && error.message.includes('INVALID_LOGIN_CREDENTIALS'));
 
             if (isLoginFailure) {
-                // Пользователь не найден, пытаемся его создать.
+                // Если вход не удался (пользователя нет), пытаемся его создать
                 try {
                     await auth.createUserWithEmailAndPassword(email, password);
                 } catch (creationError) {
@@ -173,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     showModal('Ошибка регистрации', creationError.message);
                 }
             } else {
-                // Это какая-то другая, действительно непредвиденная ошибка.
+                // Если ошибка другая, показываем общее сообщение
                 console.error("Ошибка ВХОДА:", error);
                 showModal('Ошибка входа', 'Произошла непредвиденная ошибка.');
             }
@@ -181,7 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.disabled = false;
             btn.textContent = 'Продолжить';
         }
-        // ================== КОНЕЦ ИЗМЕНЕНИЙ ==================
     });
 
     document.getElementById('profile-setup-form').addEventListener('submit', async (e) => {
