@@ -167,7 +167,7 @@ button#logout-btn:hover { background-color: var(--surface-color-hover); color: v
 #start-mission-button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(229, 57, 53, 0.4); }
 
 /* ============================================================= */
-/* НОВЫЕ СТИЛИ ДЛЯ ИНСТРУКЦИИ ПО ЧЕК-ЛИСТУ (ДОБАВЛЕНО)           */
+/* НОВЫЕ СТИЛИ ДЛЯ ИНСТРУКЦИИ ПО ЧЕК-ЛИСТУ                      */
 /* ============================================================= */
 
 /* --- Стили для экрана просмотра (пользователь) --- */
@@ -213,7 +213,7 @@ button#logout-btn:hover { background-color: var(--surface-color-hover); color: v
     background-color: var(--surface-color);
 }
 .delete-instruction-item-btn {
-    width: auto !important; /* Переопределение базовых стилей кнопок */
+    width: auto !important;
     padding: 10px 15px !important;
     background-color: rgba(229, 57, 53, 0.2) !important;
     color: var(--status-rejected) !important;
