@@ -1,5 +1,5 @@
 // =================================================================
-// КОНФИГУРАЦІЯ І ІНІЦІАЛІЗАЦІЯ FIREBASE (ФІНАЛЬНА ВЕРСІЯ)
+// КОНФИГУРАЦИЯ И ИНИЦИАЛИЗАЦИЯ FIREBASE (ФИНАЛЬНАЯ ВЕРСИЯ)
 // =================================================================
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
@@ -154,8 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await auth.signInWithEmailAndPassword(email, password);
         } catch (error) {
-            // ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ, КОТОРОЕ РЕШАЕТ ПРОБЛЕМУ
-            // Мы проверяем не только стандартные ошибки, но и ту, что видели на скриншоте
             const isLoginFailure =
                 error.code === 'auth/user-not-found' ||
                 error.code === 'auth/wrong-password' ||
@@ -163,7 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 (error.code === 'auth/internal-error' && error.message && error.message.includes('INVALID_LOGIN_CREDENTIALS'));
 
             if (isLoginFailure) {
-                // Если вход не удался (пользователя нет), пытаемся его создать
                 try {
                     await auth.createUserWithEmailAndPassword(email, password);
                 } catch (creationError) {
@@ -171,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     showModal('Ошибка регистрации', creationError.message);
                 }
             } else {
-                // Если ошибка другая, показываем общее сообщение
                 console.error("Ошибка ВХОДА:", error);
                 showModal('Ошибка входа', 'Произошла непредвиденная ошибка.');
             }
@@ -219,6 +215,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 'admin-schedule-screen': loadCitiesForAdmin,
                 'admin-reports-screen': renderAllReports,
                 'admin-users-screen': renderAllUsers,
+                'checklist-instruction-screen': renderChecklistInstruction,
+                'admin-checklist-instruction-screen': loadChecklistInstructionForAdmin,
             };
             loadFunctions[target]?.();
             showScreen(target);
@@ -782,4 +780,169 @@ document.addEventListener('DOMContentLoaded', () => {
             list.innerHTML = '<p>Ошибка загрузки истории.</p>';
         }
     }
+
+    // =================================================================
+    // ФУНКЦИОНАЛ ИНСТРУКЦИИ ПО ЧЕК-ЛИСТУ (НОВЫЙ БЛОК)
+    // =================================================================
+
+    async function renderChecklistInstruction() {
+        const container = document.getElementById('checklist-instruction-content');
+        container.innerHTML = '<div class="spinner"></div>';
+        try {
+            const docRef = db.collection('content').doc('checklistInstruction');
+            const docSnap = await docRef.get();
+
+            if (!docSnap.exists()) {
+                container.innerHTML = '<p class="empty-state">Инструкция еще не заполнена.</p>';
+                return;
+            }
+
+            const data = docSnap.data();
+            let html = '';
+            if (data.title) html += `<h3>${data.title}</h3>`;
+            if (data.description) html += `<p>${data.description}</p><hr>`;
+
+            if (data.items && data.items.length > 0) {
+                data.items.forEach(item => {
+                    html += `
+                        <div class="instruction-item">
+                            <h4>${item.question || 'Вопрос'}</h4>
+                            <p><strong>Пример ответа:</strong><br>${item.answer || 'Нет примера'}</p>
+                            ${item.imageUrl ? `<img src="${item.imageUrl}" alt="Пример фото">` : ''}
+                        </div>
+                    `;
+                });
+            }
+            container.innerHTML = html;
+        } catch (error) {
+            console.error("Ошибка загрузки инструкции чек-листа:", error);
+            container.innerHTML = '<p>Не удалось загрузить инструкцию.</p>';
+        }
+    }
+
+    let instructionItemCounter = 0;
+
+    function createInstructionItemForm(item = {}, index) {
+        const itemHtml = `
+            <div class="instruction-form-item" data-index="${index}">
+                <div class="form-group">
+                    <label>Вопрос</label>
+                    <input type="text" class="ci-item-question" value="${item.question || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label>Пример ответа</label>
+                    <textarea class="ci-item-answer" rows="3" required>${item.answer || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Пример фото</label>
+                    ${item.imageUrl ? `<img src="${item.imageUrl}" style="max-width: 100px; display: block; margin-bottom: 10px;">` : ''}
+                    <input type="file" class="ci-item-photo" accept="image/*">
+                    <input type="hidden" class="ci-item-photo-url" value="${item.imageUrl || ''}">
+                </div>
+                <button type="button" class="btn-secondary delete-instruction-item-btn">Удалить</button>
+            </div>
+        `;
+        return itemHtml;
+    }
+
+    document.getElementById('add-instruction-item-btn').addEventListener('click', () => {
+        const container = document.getElementById('checklist-instruction-items-container');
+        container.insertAdjacentHTML('beforeend', createInstructionItemForm({}, instructionItemCounter));
+        instructionItemCounter++;
+    });
+
+    document.getElementById('checklist-instruction-items-container').addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-instruction-item-btn')) {
+            e.target.closest('.instruction-form-item').remove();
+        }
+    });
+
+    async function loadChecklistInstructionForAdmin() {
+        const form = document.getElementById('checklist-instruction-form');
+        const container = document.getElementById('checklist-instruction-items-container');
+        instructionItemCounter = 0; // Сбрасываем счетчик перед загрузкой
+        container.innerHTML = '<div class="spinner"></div>';
+        try {
+            const docRef = db.collection('content').doc('checklistInstruction');
+            const docSnap = await docRef.get();
+            
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                form.querySelector('#ci-title').value = data.title || '';
+                form.querySelector('#ci-description').value = data.description || '';
+                
+                let itemsHtml = '';
+                if (data.items && data.items.length > 0) {
+                    data.items.forEach((item, index) => {
+                        itemsHtml += createInstructionItemForm(item, index);
+                        instructionItemCounter = Math.max(instructionItemCounter, index + 1);
+                    });
+                }
+                container.innerHTML = itemsHtml;
+            } else {
+                 container.innerHTML = '';
+            }
+        } catch (error) {
+            console.error("Ошибка загрузки инструкции для админа:", error);
+            container.innerHTML = '<p>Ошибка загрузки.</p>';
+        }
+    }
+
+    document.getElementById('checklist-instruction-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner-small"></div>';
+
+        try {
+            const title = document.getElementById('ci-title').value;
+            const description = document.getElementById('ci-description').value;
+            const items = [];
+            const itemForms = document.querySelectorAll('.instruction-form-item');
+            
+            const uploadPromises = [];
+
+            itemForms.forEach((form, index) => {
+                const question = form.querySelector('.ci-item-question').value;
+                const answer = form.querySelector('.ci-item-answer').value;
+                const photoInput = form.querySelector('.ci-item-photo');
+                const currentPhotoUrl = form.querySelector('.ci-item-photo-url').value;
+
+                const itemData = { question, answer, imageUrl: currentPhotoUrl };
+                items.push(itemData);
+
+                if (photoInput.files[0]) {
+                    const file = photoInput.files[0];
+                    const filePath = `instructions/${Date.now()}_${file.name}`;
+                    const storageRef = storage.ref(filePath);
+                    
+                    const uploadTask = storageRef.put(file).then(snapshot => snapshot.ref.getDownloadURL());
+
+                    uploadPromises.push(
+                        uploadTask.then(downloadURL => {
+                            items[index].imageUrl = downloadURL;
+                        })
+                    );
+                }
+            });
+
+            await Promise.all(uploadPromises);
+
+            const docRef = db.collection('content').doc('checklistInstruction');
+            await docRef.set({
+                title,
+                description,
+                items
+            });
+
+            showModal('Успешно', 'Инструкция по чек-листу сохранена.');
+
+        } catch (error) {
+            console.error("Ошибка сохранения инструкции:", error);
+            showModal('Ошибка', 'Не удалось сохранить инструкцию.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Сохранить инструкцию';
+        }
+    });
 });
