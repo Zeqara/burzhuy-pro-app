@@ -70,14 +70,16 @@ header .back-btn i { font-size: 20px; }
 input, textarea, select { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; color: var(--text-primary); font-size: 16px; width: 100%; transition: all 0.3s ease; }
 input:focus, textarea:focus, select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-glow); }
 textarea { min-height: 100px; resize: vertical; }
+hr { border: none; border-top: 1px solid var(--border-color); margin: 20px 0; }
 
 /* ======================================== */
 /* КНОПКИ                                 */
 /* ======================================== */
 .btn-primary, button[type="submit"] { background-color: var(--primary-color); color: var(--text-on-primary); border: none; border-radius: 8px; padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; }
 .btn-primary:hover, button[type="submit"]:hover { background-color: var(--primary-color-hover); }
-.btn-primary:disabled { background-color: #555; color: #999; cursor: not-allowed; }
-.btn-secondary { background: var(--surface-color-hover); border: 1px solid var(--border-color); color: var(--text-primary); }
+.btn-primary:disabled, button[type="submit"]:disabled { background-color: #555; color: #999; cursor: not-allowed; }
+.btn-secondary { background: var(--surface-color-hover); border: 1px solid var(--border-color); color: var(--text-primary); padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; }
+.btn-secondary:hover { background-color: var(--border-color); }
 button#logout-btn { background: none; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 12px; margin-top: 20px; width: 100%; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; }
 button#logout-btn:hover { background-color: var(--surface-color-hover); color: var(--text-primary); }
 
@@ -120,7 +122,7 @@ button#logout-btn:hover { background-color: var(--surface-color-hover); color: v
 .btn-cancel-booking, .btn-edit-report { background: var(--surface-color-hover); color: var(--text-primary); }
 
 /* ======================================== */
-/* СТИЛИ ДЛЯ ИНСТРУКЦИИ                     */
+/* СТИЛИ ДЛЯ ОБЩЕЙ ИНСТРУКЦИИ               */
 /* ======================================== */
 .instruction-text h3 { color: var(--text-primary); margin-top: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px; font-size: 1.2em; }
 .instruction-text p, .instruction-text li { color: var(--text-secondary); line-height: 1.7; margin-bottom: 12px; }
@@ -131,17 +133,8 @@ button#logout-btn:hover { background-color: var(--surface-color-hover); color: v
 /* ======================================== */
 /* УЛУЧШЕННЫЕ СТИЛИ АДМИН-ПАНЕЛИ          */
 /* ======================================== */
-/* Детали отчета */
-#admin-report-detail-screen .report-details .form-group {
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 12px;
-    border: 1px solid var(--border-color);
-}
-#admin-report-detail-screen .report-details .form-group label {
-    margin-bottom: 10px;
-    font-weight: bold;
-}
+#admin-report-detail-screen .report-details .form-group { padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-color); }
+#admin-report-detail-screen .report-details .form-group label { margin-bottom: 10px; font-weight: bold; }
 #admin-detail-photos { display: flex; flex-wrap: wrap; gap: 10px; }
 #admin-detail-photos img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); }
 #admin-detail-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -151,82 +144,16 @@ button#logout-btn:hover { background-color: var(--surface-color-hover); color: v
 #admin-action-reject { background: var(--status-rejected); }
 #admin-action-paid { background: var(--status-paid); }
 
-/* Новые стили для карточек пользователей */
-.user-card {
-    background-color: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-bottom: 12px;
-}
-.user-card-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-.user-card-avatar {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background-color: var(--primary-color);
-    color: var(--text-on-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 20px;
-    flex-shrink: 0;
-}
-.user-card-info strong {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.user-card-info small {
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-.admin-badge {
-    font-size: 10px;
-    font-weight: bold;
-    background-color: var(--status-paid);
-    color: white;
-    padding: 3px 8px;
-    border-radius: 12px;
-}
-.user-card-actions {
-    display: flex;
-    gap: 10px;
-}
-.user-card-actions button {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-.role-toggle-btn {
-    background-color: var(--surface-color-hover);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-}
-.delete-user-btn {
-    background-color: rgba(229, 57, 53, 0.2);
-    color: var(--status-rejected);
-}
-.delete-user-btn:hover {
-    background-color: var(--status-rejected);
-    color: white;
-}
+.user-card { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 15px; margin-bottom: 12px; }
+.user-card-header { display: flex; align-items: center; gap: 15px; }
+.user-card-avatar { width: 45px; height: 45px; border-radius: 50%; background-color: var(--primary-color); color: var(--text-on-primary); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; flex-shrink: 0; }
+.user-card-info strong { font-size: 16px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.user-card-info small { font-size: 14px; color: var(--text-secondary); }
+.user-card-actions { display: flex; gap: 10px; }
+.user-card-actions button { flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+.role-toggle-btn { background-color: var(--surface-color-hover); color: var(--text-primary); border: 1px solid var(--border-color); }
+.delete-user-btn { background-color: rgba(229, 57, 53, 0.2); color: var(--status-rejected); }
+.delete-user-btn:hover { background-color: var(--status-rejected); color: white; }
 
 /* ======================================== */
 /* СТИЛИ ДЛЯ СТАРТОВОГО ЭКРАНА              */
@@ -239,4 +166,81 @@ button#logout-btn:hover { background-color: var(--surface-color-hover); color: v
 #start-mission-button { padding: 16px 30px; font-size: 1.1rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(229, 57, 53, 0.3); transition: all 0.2s ease-out; }
 #start-mission-button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(229, 57, 53, 0.4); }
 
-/* УДАЛЕНО: Стили для .agent-image убраны, так как картинка не используется */
+/* ============================================================= */
+/* НОВЫЕ СТИЛИ ДЛЯ ИНСТРУКЦИИ ПО ЧЕК-ЛИСТУ (ДОБАВЛЕНО)           */
+/* ============================================================= */
+
+/* --- Стили для экрана просмотра (пользователь) --- */
+.instruction-item {
+    margin-bottom: 25px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
+}
+.instruction-item:last-child {
+    border-bottom: none;
+}
+.instruction-item h4 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+.instruction-item p {
+    background: var(--surface-color);
+    padding: 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+    line-height: 1.6;
+    white-space: pre-wrap; /* Сохраняет переносы строк в тексте ответа */
+}
+.instruction-item p strong {
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 8px;
+}
+.instruction-item img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid var(--border-color);
+}
+
+/* --- Стили для экрана редактирования (администратор) --- */
+.instruction-form-item {
+    border: 1px solid var(--border-color);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    background-color: var(--surface-color);
+}
+.delete-instruction-item-btn {
+    width: auto !important; /* Переопределение базовых стилей кнопок */
+    padding: 10px 15px !important;
+    background-color: rgba(229, 57, 53, 0.2) !important;
+    color: var(--status-rejected) !important;
+    border: 1px solid var(--status-rejected) !important;
+    font-weight: 600;
+}
+.delete-instruction-item-btn:hover {
+    background-color: var(--status-rejected) !important;
+    color: white !important;
+}
+
+/* Улучшение внешнего вида кнопки загрузки файла */
+input[type="file"] {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+}
+input[type="file"]::file-selector-button {
+    background: var(--surface-color-hover);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 15px;
+}
+input[type="file"]::file-selector-button:hover {
+    background-color: var(--border-color);
+}
