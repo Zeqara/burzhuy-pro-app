@@ -135,7 +135,7 @@
                 <div class="header-placeholder"></div>
             </header>
             <div class="scrollable-content">
-                <form id="checklist-instruction-form">
+                <form id="checklist-instruction-form" novalidate>
                     <div class="form-group">
                         <label for="ci-title">Заголовок</label>
                         <input type="text" id="ci-title" placeholder="Как правильно заполнять чек-лист">
@@ -147,7 +147,7 @@
                     <hr>
                     <h4>Пункты инструкции:</h4>
                     <div id="checklist-instruction-items-container">
-                        <!-- Сюда JS будет загружать и добавлять поля для редактирования -->
+                        <!-- Сюда JavaScript будет загружать и добавлять поля для редактирования -->
                     </div>
                     <button type="button" id="add-instruction-item-btn" class="btn-secondary" style="width: auto; margin-bottom: 20px;">+ Добавить пункт</button>
                     <button type="submit" class="btn-primary">Сохранить инструкцию</button>
