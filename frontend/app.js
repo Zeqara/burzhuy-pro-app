@@ -792,7 +792,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const docRef = db.collection('content').doc('checklistInstruction');
             const docSnap = await docRef.get();
 
-            if (!docSnap.exists()) {
+            if (!docSnap.exists) {
                 container.innerHTML = '<p class="empty-state">Инструкция еще не заполнена.</p>';
                 return;
             }
@@ -860,13 +860,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadChecklistInstructionForAdmin() {
         const form = document.getElementById('checklist-instruction-form');
         const container = document.getElementById('checklist-instruction-items-container');
-        instructionItemCounter = 0; // Сбрасываем счетчик перед загрузкой
+        instructionItemCounter = 0;
         container.innerHTML = '<div class="spinner"></div>';
         try {
             const docRef = db.collection('content').doc('checklistInstruction');
             const docSnap = await docRef.get();
             
-            if (docSnap.exists()) {
+            if (docSnap.exists) {
                 const data = docSnap.data();
                 form.querySelector('#ci-title').value = data.title || '';
                 form.querySelector('#ci-description').value = data.description || '';
