@@ -605,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ...doc.data()
             }));
             tasks.sort((a, b) => a.checkDate.toDate() - b.checkDate.toDate());
-            container.innerHTML = '<h3>Активные задания:</h3><ul class="menu-list">' + tasks.map(report => {
+            container.innerHTML = '<h3>Активные проверки</h3><ul class="menu-list">' + tasks.map(report => {
                 const checkDate = report.checkDate.toDate();
                 const canFill = checkDate.getTime() <= new Date().setHours(0, 0, 0, 0);
                 return `<li class="menu-list-item"><div><strong>${formatLocationNameForUser(report.locationName)}</strong><small>${checkDate.toLocaleDateString('ru-RU')}</small><div class="task-actions"><button class="btn-fill-checklist" data-id="${report.id}" ${canFill ? '' : 'disabled'}>Заполнить</button><button class="btn-cancel-booking" data-id="${report.id}">Отменить</button></div></div></li>`;
