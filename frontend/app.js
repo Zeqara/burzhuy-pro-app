@@ -884,7 +884,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error("Ошибка загрузки инструкции для админа:", error);
-            container.innerHTML = '<p>Ошибка загрузки.</p>';
+            container.innerHTML = '<p>Роллан Черт хули смотришь.</p>';
         }
     }
 
