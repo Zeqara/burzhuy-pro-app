@@ -596,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const snapshot = await db.collection('reports').where('userId', '==', userId).where('status', '==', 'booked').get();
             if (snapshot.empty) {
-                container.innerHTML = '<div class="empty-state"><p>У вас нет активных заданий.</p></div>';
+                container.innerHTML = '<div class="empty-state"><p>У вас нет активных проверок.</p></div>';
                 return;
             }
             let tasks = [];
