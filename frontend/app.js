@@ -26,7 +26,6 @@ let appState = {
 
 // Глобальные переменные для отслеживания состояний
 let currentReportId = null;
-
 const FAKE_EMAIL_DOMAIN = '@burzhuy-pro.app';
 
 // =================================================================
@@ -52,7 +51,6 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
     confirmBtn.textContent = (type === 'confirm') ? 'Подтвердить' : 'OK';
     cancelBtn.style.display = (type === 'confirm') ? 'inline-block' : 'none';
 
-    // Пересоздаем кнопки, чтобы удалить старые обработчики событий
     const newConfirmBtn = confirmBtn.cloneNode(true);
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
     const newCancelBtn = cancelBtn.cloneNode(true);
@@ -68,14 +66,13 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
 
 function formatLocationNameForUser(name) {
     if (!name) return '';
-    return name.replace(/^Б\d+\s/, ''); // Убирает код точки (например, "Б52 ") из начала
+    return name.replace(/^Б\d+\s/, '');
 }
 
 // =================================================================
 // ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Форматирование номера телефона при вводе
     const phoneInput = document.getElementById('phone-input');
     if (phoneInput) {
         const formatPhoneNumber = (value) => {
@@ -96,13 +93,11 @@ document.addEventListener('DOMContentLoaded', () => {
         phoneInput.value = '+7';
     }
 
-    // Переход со стартового экрана к авторизации
     const startMissionButton = document.getElementById('start-mission-button');
     if (startMissionButton) {
         startMissionButton.addEventListener('click', () => showScreen('auth-screen'));
     }
     
-    // Главный обработчик состояния авторизации пользователя
     auth.onAuthStateChanged(user => {
         document.getElementById('loader').classList.remove('active');
         if (appState.unsubscribeUserListener) {
@@ -138,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Форма входа/регистрации
     document.getElementById('login-register-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('login-register-btn');
@@ -156,15 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await auth.signInWithEmailAndPassword(email, password);
         } catch (error) {
-            // Проверяем, является ли ошибка ошибкой "неверный логин/пароль" или "пользователь не найден"
-            const isLoginFailure =
-                error.code === 'auth/user-not-found' ||
-                error.code === 'auth/wrong-password' ||
-                error.code === 'auth/invalid-credential' ||
-                (error.code === 'auth/internal-error' && error.message && error.message.includes('INVALID_LOGIN_CREDENTIALS'));
-
+            const isLoginFailure = error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential';
             if (isLoginFailure) {
-                // Если войти не удалось, пробуем создать нового пользователя
                 try {
                     await auth.createUserWithEmailAndPassword(email, password);
                 } catch (creationError) {
@@ -181,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Форма завершения регистрации (ввод имени)
     document.getElementById('profile-setup-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = appState.user;
@@ -204,10 +190,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Кнопка выхода
     document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
 
-    // Навигация по экранам
     document.querySelectorAll('.menu-btn, .back-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -357,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let html = reportsSnap.docs.map(doc => {
                 const r = doc.data();
                 const user = usersMap.get(r.userId);
-                const statusMap = { pending: 'на проверке', approved: 'принят', rejected: 'отклонен', paid: 'оплачен', booked: 'забронирован' };
+                const statusMap = { pending: 'на проверке', approved: 'принят', rejected: 'отклонен', paid: 'оплачен', booked: 'забронирован', cancelled: 'отменен' };
                 return `<li class="menu-list-item report-item" data-id="${doc.id}">
                     <div class="status-indicator ${r.status}"></div>
                     <div style="flex-grow: 1;"><strong>${r.locationName}</strong><small>${user?.fullName || 'Агент'} - ${statusMap[r.status] || r.status}</small></div>
@@ -412,8 +396,15 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('admin-detail-status').innerHTML = `<span class="status-indicator ${report.status}"></span> ${report.status}`;
 
             const rejectionEl = document.getElementById('admin-detail-rejection-comment-container');
-            rejectionEl.style.display = (report.status === 'rejected' && report.rejectionComment) ? 'block' : 'none';
-            if (report.rejectionComment) rejectionEl.innerHTML = `<p><strong>Причина:</strong> ${report.rejectionComment}</p>`;
+            if (report.status === 'rejected' && report.rejectionComment) {
+                rejectionEl.style.display = 'block';
+                rejectionEl.innerHTML = `<p><strong>Причина отклонения:</strong> ${report.rejectionComment}</p>`;
+            } else if (report.status === 'cancelled' && report.cancellationReason) {
+                rejectionEl.style.display = 'block';
+                rejectionEl.innerHTML = `<p><strong>Причина отмены агентом:</strong> ${report.cancellationReason}</p>`;
+            } else {
+                rejectionEl.style.display = 'none';
+            }
 
             for (let i = 1; i <= 12; i++) {
                 document.getElementById(`admin-detail-q${i}`).textContent = report.answers?.[`q${i}`] || '—';
@@ -432,7 +423,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('admin-action-reject').addEventListener('click', () => {
         const modal = document.getElementById('rejection-modal-container');
         const confirmBtn = document.getElementById('rejection-modal-confirm-btn');
-        const cancelBtn = document.getElementById('rejection-modal-cancel-btn');
         const commentInput = document.getElementById('rejection-comment-input');
         commentInput.value = '';
         modal.classList.remove('modal-hidden');
@@ -447,10 +437,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         const newConfirmBtn = confirmBtn.cloneNode(true);
         confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-        const newCancelBtn = cancelBtn.cloneNode(true);
-        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
         newConfirmBtn.addEventListener('click', confirmHandler, { once: true });
-        newCancelBtn.addEventListener('click', () => modal.classList.add('modal-hidden'), { once: true });
+        
+        document.getElementById('rejection-modal-cancel-btn').onclick = () => modal.classList.add('modal-hidden');
     });
 
     async function updateReportStatus(status, comment = null) {
@@ -462,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await reportRef.update(updateData);
             if (status === 'approved') {
                 const reportData = (await reportRef.get()).data();
-                if (reportData.userId && reportData.status !== 'approved') { // Prevent multiple increments
+                if (reportData.userId && reportData.status !== 'approved') {
                     await db.collection('users').doc(reportData.userId).update({ completedChecks: firebase.firestore.FieldValue.increment(1) });
                 }
             }
@@ -545,7 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.addEventListener('click', () => confirmAndBookSchedule(card.dataset.id));
             });
         } catch (error) {
-            console.error("ОШИБКА FIRESTORE: Убедитесь, что вы создали КОМБИНИРОВАННЫЙ ИНДЕКС для коллекции 'schedules' по полям 'isBooked' и 'date'.", error);
+            console.error("ОШИБКА FIRESTORE: Убедитесь, что вы создали КОМБИНИРОВАННЫЙ ИНДЕКС для коллекции 'schedules'.", error);
             list.innerHTML = '<p>Не удалось загрузить данные.</p>';
         }
     }
@@ -568,15 +557,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const dateStr = scheduleData.date.toDate().toLocaleDateString('ru-RU');
             const timeStr = `${scheduleData.startTime} - ${scheduleData.endTime}`;
             
-            const confirmationText = `
-                <b>Адрес:</b> ${formatLocationNameForUser(scheduleData.locationName)}<br>
-                <b>Дата:</b> ${dateStr}<br>
-                <b>Время:</b> ${timeStr}
-            `;
+            const confirmationText = `<b>Адрес:</b> ${formatLocationNameForUser(scheduleData.locationName)}<br><b>Дата:</b> ${dateStr}<br><b>Время:</b> ${timeStr}`;
 
             showModal('Подтвердить запись?', confirmationText, 'confirm', async (confirmed) => {
                 if (!confirmed) return;
-
                 const reportRef = db.collection('reports').doc();
                 try {
                     await db.runTransaction(async t => {
@@ -596,7 +580,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     });
-
                     await loadUserDashboard(user.uid);
                     showModal('Успешно!', 'Вы записались. Задание появилось на главном экране.', 'alert', () => showScreen('main-menu-screen'));
                 } catch (err) {
@@ -604,7 +587,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderAvailableSchedules();
                 }
             });
-
         } catch (error) {
             showModal('Ошибка', 'Не удалось получить данные о проверке.');
         }
@@ -645,24 +627,61 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function cancelBooking(id) {
-        showModal('Подтверждение', 'Отменить эту проверку?', 'confirm', async confirmed => {
-            if (confirmed) {
-                try {
-                    const user = appState.user;
-                    if (!user) throw new Error("Пользователь не найден");
-                    const reportDoc = await db.collection('reports').doc(id).get();
-                    const scheduleId = reportDoc.data().scheduleId;
-                    const batch = db.batch();
-                    batch.delete(db.collection('reports').doc(id));
-                    if (scheduleId) batch.update(db.collection('schedules').doc(scheduleId), { isBooked: false });
-                    await batch.commit();
-                    showModal('Успешно', 'Запись отменена.');
-                    loadUserDashboard(user.uid);
-                } catch (e) {
-                    showModal('Ошибка', 'Не удалось отменить запись.');
-                }
+        const modal = document.getElementById('cancellation-modal-container');
+        const confirmBtn = document.getElementById('cancellation-modal-confirm-btn');
+        const cancelBtn = document.getElementById('cancellation-modal-cancel-btn');
+        const commentInput = document.getElementById('cancellation-comment-input');
+        commentInput.value = '';
+        modal.classList.remove('modal-hidden');
+    
+        const confirmHandler = async () => {
+            const reason = commentInput.value.trim();
+            if (!reason) {
+                alert('Пожалуйста, укажите причину отмены.');
+                return;
             }
-        });
+    
+            modal.classList.add('modal-hidden');
+    
+            try {
+                const user = appState.user;
+                if (!user) throw new Error("Пользователь не найден");
+    
+                const reportRef = db.collection('reports').doc(id);
+                const reportDoc = await reportRef.get();
+                if (!reportDoc.exists) throw new Error("Отчет не найден.");
+    
+                const scheduleId = reportDoc.data().scheduleId;
+    
+                const batch = db.batch();
+    
+                batch.update(reportRef, {
+                    status: 'cancelled',
+                    cancellationReason: reason,
+                    cancelledAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+    
+                if (scheduleId) {
+                    batch.update(db.collection('schedules').doc(scheduleId), {
+                        isBooked: false
+                    });
+                }
+    
+                await batch.commit();
+                showModal('Успешно', 'Запись отменена.');
+                loadUserDashboard(user.uid);
+            } catch (e) {
+                showModal('Ошибка', 'Не удалось отменить запись. ' + e.message);
+            }
+        };
+    
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+    
+        newConfirmBtn.addEventListener('click', confirmHandler, { once: true });
+        newCancelBtn.addEventListener('click', () => modal.classList.add('modal-hidden'), { once: true });
     }
 
     async function openChecklist(id) {
@@ -720,17 +739,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const files = document.getElementById('checklist-photos').files;
             const reportRef = db.collection('reports').doc(currentReportId);
             const originalReportDoc = await reportRef.get();
-            const isEditing = originalReportDoc.exists && originalReportDoc.data().answers;
             let photoUrls = originalReportDoc.data().photoUrls || [];
 
             if (files.length > 0) {
-                photoUrls = []; // Перезаписываем фото, если добавлены новые
+                photoUrls = [];
                 for (const file of files) {
                     const filePath = `reports/${currentReportId}/${Date.now()}_${file.name}`;
                     const fileSnapshot = await storage.ref(filePath).put(file);
                     photoUrls.push(await fileSnapshot.ref.getDownloadURL());
                 }
-            } else if (photoUrls.length === 0) { // Требуем фото только если их еще нет
+            } else if (photoUrls.length === 0) {
                 throw new Error("Пожалуйста, прикрепите фото.");
             }
 
@@ -742,8 +760,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 rejectionComment: firebase.firestore.FieldValue.delete()
             });
 
-            const modalTitle = isEditing ? 'Отчет исправлен!' : 'Отправлен на проверку!';
-            showModal(modalTitle, 'Спасибо! 😊 Мы свяжемся с вами после проверки отчёта. Если он не будет принят — потребуется его редактирование. Когда статус заказа изменится на «Принят», наш менеджер свяжется с вами 📞.', 'alert', () => {
+            const isEditing = originalReportDoc.exists && originalReportDoc.data().answers;
+            showModal(isEditing ? 'Отчет исправлен!' : 'Отправлен на проверку!', 'Спасибо! Мы свяжемся с вами после проверки отчета.', 'alert', () => {
                 showScreen('main-menu-screen');
                 loadUserDashboard(user.uid);
             });
@@ -838,14 +856,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createInstructionItemForm(item = {}, index) {
         return `<div class="instruction-form-item" data-index="${index}">
-                <div class="form-group">
-                    <label>Вопрос</label>
-                    <input type="text" class="ci-item-question" value="${item.question || ''}" required>
-                </div>
-                <div class="form-group">
-                    <label>Пример ответа</label>
-                    <textarea class="ci-item-answer" rows="3" required>${item.answer || ''}</textarea>
-                </div>
+                <div class="form-group"><label>Вопрос</label><input type="text" class="ci-item-question" value="${item.question || ''}" required></div>
+                <div class="form-group"><label>Пример ответа</label><textarea class="ci-item-answer" rows="3" required>${item.answer || ''}</textarea></div>
                 <div class="form-group">
                     <label>Пример фото</label>
                     ${item.imageUrl ? `<img src="${item.imageUrl}" style="max-width: 100px; display: block; margin-bottom: 10px;">` : ''}
@@ -858,8 +870,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('add-instruction-item-btn').addEventListener('click', () => {
         const container = document.getElementById('checklist-instruction-items-container');
-        container.insertAdjacentHTML('beforeend', createInstructionItemForm({}, instructionItemCounter));
-        instructionItemCounter++;
+        container.insertAdjacentHTML('beforeend', createInstructionItemForm({}, instructionItemCounter++));
     });
 
     document.getElementById('checklist-instruction-items-container').addEventListener('click', (e) => {
