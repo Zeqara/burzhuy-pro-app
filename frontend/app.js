@@ -1,7 +1,6 @@
 // =================================================================
-// КОНФИГУРАЦИЯ И ИНИЦИАЛИЗАЦИЯ FIREBASE (ФИНАЛЬНАЯ ВЕРСИЯ)
+// КОНФИГУРАЦИЯ И ИНИЦИАЛИЗАЦИЯ FIREBASE
 // =================================================================
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc",
   authDomain: "burzhuy-pro-v2.firebaseapp.com",
@@ -25,9 +24,9 @@ let appState = {
     unsubscribeUserListener: null
 };
 
-// Общие переменные
+// Глобальные переменные для отслеживания состояний
 let currentReportId = null;
-let selectedScheduleForBooking = null;
+
 const FAKE_EMAIL_DOMAIN = '@burzhuy-pro.app';
 
 // =================================================================
@@ -53,6 +52,7 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
     confirmBtn.textContent = (type === 'confirm') ? 'Подтвердить' : 'OK';
     cancelBtn.style.display = (type === 'confirm') ? 'inline-block' : 'none';
 
+    // Пересоздаем кнопки, чтобы удалить старые обработчики событий
     const newConfirmBtn = confirmBtn.cloneNode(true);
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
     const newCancelBtn = cancelBtn.cloneNode(true);
@@ -68,15 +68,15 @@ function showModal(title, text, type = 'alert', onConfirm = () => {}) {
 
 function formatLocationNameForUser(name) {
     if (!name) return '';
-    return name.replace(/^Б\d+\s/, '');
+    return name.replace(/^Б\d+\s/, ''); // Убирает код точки (например, "Б52 ") из начала
 }
 
 // =================================================================
 // ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
+    // Форматирование номера телефона при вводе
     const phoneInput = document.getElementById('phone-input');
-
     if (phoneInput) {
         const formatPhoneNumber = (value) => {
             let digits = value.replace(/\D/g, '');
@@ -96,13 +96,13 @@ document.addEventListener('DOMContentLoaded', () => {
         phoneInput.value = '+7';
     }
 
+    // Переход со стартового экрана к авторизации
     const startMissionButton = document.getElementById('start-mission-button');
     if (startMissionButton) {
-        startMissionButton.addEventListener('click', () => {
-            showScreen('auth-screen');
-        });
+        startMissionButton.addEventListener('click', () => showScreen('auth-screen'));
     }
     
+    // Главный обработчик состояния авторизации пользователя
     auth.onAuthStateChanged(user => {
         document.getElementById('loader').classList.remove('active');
         if (appState.unsubscribeUserListener) {
@@ -138,10 +138,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Форма входа/регистрации
     document.getElementById('login-register-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('login-register-btn');
-        const digits = phoneInput.value.replace(/\D/g, '');
+        const phoneInputValue = document.getElementById('phone-input').value;
+        const digits = phoneInputValue.replace(/\D/g, '');
         const password = document.getElementById('password-input').value;
         if (digits.length !== 11) return showModal('Ошибка', 'Введите полный номер телефона.');
         if (password.length < 6) return showModal('Ошибка', 'Пароль должен быть не менее 6 символов.');
@@ -154,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await auth.signInWithEmailAndPassword(email, password);
         } catch (error) {
+            // Проверяем, является ли ошибка ошибкой "неверный логин/пароль" или "пользователь не найден"
             const isLoginFailure =
                 error.code === 'auth/user-not-found' ||
                 error.code === 'auth/wrong-password' ||
@@ -161,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 (error.code === 'auth/internal-error' && error.message && error.message.includes('INVALID_LOGIN_CREDENTIALS'));
 
             if (isLoginFailure) {
+                // Если войти не удалось, пробуем создать нового пользователя
                 try {
                     await auth.createUserWithEmailAndPassword(email, password);
                 } catch (creationError) {
@@ -177,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Форма завершения регистрации (ввод имени)
     document.getElementById('profile-setup-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = appState.user;
@@ -199,10 +204,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('logout-btn').addEventListener('click', () => {
-        auth.signOut();
-    });
+    // Кнопка выхода
+    document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
 
+    // Навигация по экранам
     document.querySelectorAll('.menu-btn, .back-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -228,6 +233,9 @@ document.addEventListener('DOMContentLoaded', () => {
         showScreen('admin-view-schedule-screen');
     });
 
+    // =================================================================
+    // ФУНКЦИИ АДМИНИСТРАТОРА
+    // =================================================================
     async function loadAdminStats() {
         const container = document.getElementById('admin-stats-container');
         container.innerHTML = '<div class="spinner"></div>';
@@ -236,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const users = await db.collection('users').get();
             container.innerHTML = `<div class="stat-card"><h3>${reports.size}</h3><p>На проверке</p></div><div class="stat-card"><h3>${users.size}</h3><p>Пользователей</p></div>`;
         } catch (e) {
-            container.innerHTML = '<p>Ошибка</p>';
+            container.innerHTML = '<p>Ошибка загрузки статистики.</p>';
         }
     }
 
@@ -270,14 +278,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const city = form.querySelector('#schedule-city-select').value;
         const locationName = form.querySelector('#schedule-location-select').value;
         const date = form.querySelector('#schedule-date-input').value;
+        const startTime = form.querySelector('#schedule-start-time').value;
+        const endTime = form.querySelector('#schedule-end-time').value;
         const isUrgent = form.querySelector('#schedule-urgent-checkbox').checked;
-        if (!city || !locationName || !date) return showModal('Ошибка', 'Заполните все поля.');
+
+        if (!city || !locationName || !date || !startTime || !endTime) {
+            return showModal('Ошибка', 'Заполните все поля, включая время.');
+        }
+        if (startTime >= endTime) {
+            return showModal('Ошибка', 'Время начала должно быть раньше окончания.');
+        }
+
         const localDate = new Date(date);
         const dateForFirestore = new Date(localDate.getTime() + (localDate.getTimezoneOffset() * 60000));
+
         await db.collection('schedules').add({
             city,
             locationName,
             date: dateForFirestore,
+            startTime,
+            endTime,
             isUrgent,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             isBooked: false
@@ -290,35 +310,29 @@ document.addEventListener('DOMContentLoaded', () => {
     async function renderSchedules() {
         const list = document.getElementById('schedule-list');
         list.innerHTML = '<div class="spinner"></div>';
-        const snapshot = await db.collection('schedules').orderBy('date', 'desc').get();
-        if (snapshot.empty) {
-            list.innerHTML = '<p class="empty-state">Запланированных проверок нет.</p>';
-            return;
+        try {
+            const snapshot = await db.collection('schedules').orderBy('date', 'desc').get();
+            if (snapshot.empty) {
+                list.innerHTML = '<p class="empty-state">Запланированных проверок нет.</p>';
+                return;
+            }
+            let html = '<ul class="menu-list">';
+            snapshot.forEach(doc => {
+                const s = doc.data();
+                html += `<li class="menu-list-item"><div><strong>${s.locationName} (${s.city})</strong><small>Дата: ${s.date.toDate().toLocaleDateString('ru-RU')} ${s.isUrgent ? '🔥' : ''}</small></div><button class="delete-btn" data-id="${doc.id}">&times;</button></li>`;
+            });
+            html += '</ul>';
+            list.innerHTML = html;
+            list.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', (e) => deleteSchedule(e.target.dataset.id)));
+        } catch (error) {
+            list.innerHTML = '<p>Ошибка загрузки графика.</p>';
         }
-        let html = '<ul class="menu-list">';
-        snapshot.forEach(doc => {
-            const s = doc.data();
-            html += `<li class="menu-list-item"><div><strong>${s.locationName} (${s.city})</strong><small>Дата: ${s.date.toDate().toLocaleDateString('ru-RU')} ${s.isUrgent ? '🔥' : ''}</small></div><button class="delete-btn" data-id="${doc.id}">&times;</button></li>`;
-        });
-        list.innerHTML = html + '</ul>';
-        list.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', (e) => deleteSchedule(e.target.dataset.id)));
     }
 
     function deleteSchedule(id) {
-        showModal('Подтверждение', 'Удалить эту проверку?', 'confirm', c => {
-            if (c) db.collection('schedules').doc(id).delete().then(renderSchedules)
-        });
-    }
-
-    function deleteReport(reportId) {
-        showModal('Подтверждение', 'Удалить этот отчет безвозвратно?', 'confirm', confirmed => {
+        showModal('Подтверждение', 'Удалить эту проверку?', 'confirm', confirmed => {
             if (confirmed) {
-                db.collection('reports').doc(reportId).delete()
-                    .then(() => {
-                        showModal('Успешно', 'Отчет удален.');
-                        renderAllReports();
-                    })
-                    .catch(() => showModal('Ошибка', 'Не удалось удалить отчет.'));
+                db.collection('schedules').doc(id).delete().then(renderSchedules).catch(err => showModal('Ошибка', 'Не удалось удалить проверку.'));
             }
         });
     }
@@ -343,13 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let html = reportsSnap.docs.map(doc => {
                 const r = doc.data();
                 const user = usersMap.get(r.userId);
-                const statusMap = {
-                    pending: 'на проверке',
-                    approved: 'принят',
-                    rejected: 'отклонен',
-                    paid: 'оплачен',
-                    booked: 'забронирован'
-                };
+                const statusMap = { pending: 'на проверке', approved: 'принят', rejected: 'отклонен', paid: 'оплачен', booked: 'забронирован' };
                 return `<li class="menu-list-item report-item" data-id="${doc.id}">
                     <div class="status-indicator ${r.status}"></div>
                     <div style="flex-grow: 1;"><strong>${r.locationName}</strong><small>${user?.fullName || 'Агент'} - ${statusMap[r.status] || r.status}</small></div>
@@ -358,8 +366,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }).join('');
             list.innerHTML = html;
             list.querySelectorAll('.report-item').forEach(item => item.addEventListener('click', (e) => {
-                if (e.target.classList.contains('delete-report-btn')) return;
-                openAdminReportDetail(item.dataset.id);
+                if (!e.target.classList.contains('delete-report-btn')) {
+                    openAdminReportDetail(item.dataset.id);
+                }
             }));
             list.querySelectorAll('.delete-report-btn').forEach(btn => btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -369,6 +378,19 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(e);
             list.innerHTML = '<p>Ошибка загрузки отчетов.</p>';
         }
+    }
+
+    function deleteReport(reportId) {
+        showModal('Подтверждение', 'Удалить этот отчет безвозвратно?', 'confirm', confirmed => {
+            if (confirmed) {
+                db.collection('reports').doc(reportId).delete()
+                    .then(() => {
+                        showModal('Успешно', 'Отчет удален.');
+                        renderAllReports();
+                    })
+                    .catch(() => showModal('Ошибка', 'Не удалось удалить отчет.'));
+            }
+        });
     }
 
     async function openAdminReportDetail(id) {
@@ -394,12 +416,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (report.rejectionComment) rejectionEl.innerHTML = `<p><strong>Причина:</strong> ${report.rejectionComment}</p>`;
 
             for (let i = 1; i <= 12; i++) {
-                const element = document.getElementById(`admin-detail-q${i}`);
-                if (element) {
-                    element.textContent = report.answers?.[`q${i}`] || '—';
-                }
+                document.getElementById(`admin-detail-q${i}`).textContent = report.answers?.[`q${i}`] || '—';
             }
-
             document.getElementById('admin-detail-photos').innerHTML = report.photoUrls?.map(url => `<a href="${url}" target="_blank"><img src="${url}" alt="фото-отчет"></a>`).join('') || '<p>Фото нет.</p>';
         } catch (err) {
             showModal('Ошибка', 'Не удалось загрузить отчет.');
@@ -418,6 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const commentInput = document.getElementById('rejection-comment-input');
         commentInput.value = '';
         modal.classList.remove('modal-hidden');
+
         const confirmHandler = () => {
             if (commentInput.value.trim()) {
                 updateReportStatus('rejected', commentInput.value.trim());
@@ -430,28 +449,22 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
         const newCancelBtn = cancelBtn.cloneNode(true);
         cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-        newConfirmBtn.addEventListener('click', confirmHandler, {
-            once: true
-        });
-        newCancelBtn.addEventListener('click', () => modal.classList.add('modal-hidden'), {
-            once: true
-        });
+        newConfirmBtn.addEventListener('click', confirmHandler, { once: true });
+        newCancelBtn.addEventListener('click', () => modal.classList.add('modal-hidden'), { once: true });
     });
 
     async function updateReportStatus(status, comment = null) {
         if (!currentReportId) return;
-        const updateData = {
-            status
-        };
+        const updateData = { status };
         if (comment) updateData.rejectionComment = comment;
         try {
             const reportRef = db.collection('reports').doc(currentReportId);
             await reportRef.update(updateData);
             if (status === 'approved') {
-                const userId = (await reportRef.get()).data().userId;
-                if (userId) await db.collection('users').doc(userId).update({
-                    completedChecks: firebase.firestore.FieldValue.increment(1)
-                });
+                const reportData = (await reportRef.get()).data();
+                if (reportData.userId && reportData.status !== 'approved') { // Prevent multiple increments
+                    await db.collection('users').doc(reportData.userId).update({ completedChecks: firebase.firestore.FieldValue.increment(1) });
+                }
             }
             showModal('Успешно', 'Статус обновлен.');
             openAdminReportDetail(currentReportId);
@@ -492,19 +505,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function toggleUserRole(id, role, name) {
         const newRole = role === 'admin' ? 'guest' : 'admin';
-        showModal('Подтверждение', `Сделать ${name} ${newRole === 'admin' ? 'администратором' : 'агентом'}?`, 'confirm', c => {
-            if (c) db.collection('users').doc(id).update({
-                role: newRole
-            }).then(renderAllUsers);
+        showModal('Подтверждение', `Сделать ${name} ${newRole === 'admin' ? 'администратором' : 'агентом'}?`, 'confirm', confirmed => {
+            if (confirmed) db.collection('users').doc(id).update({ role: newRole }).then(renderAllUsers);
         });
     }
 
     function deleteUser(id, name) {
-        showModal('Подтверждение', `Удалить пользователя ${name}? Действие нельзя отменить.`, 'confirm', c => {
-            if (c) db.collection('users').doc(id).delete().then(renderAllUsers);
+        showModal('Подтверждение', `Удалить пользователя ${name}? Действие нельзя отменить.`, 'confirm', confirmed => {
+            if (confirmed) db.collection('users').doc(id).delete().then(renderAllUsers);
         });
     }
 
+    // =================================================================
+    // ФУНКЦИИ АГЕНТА (ПОЛЬЗОВАТЕЛЯ)
+    // =================================================================
     async function renderAvailableSchedules() {
         const list = document.getElementById('schedule-cards-list');
         const noSchedulesView = document.getElementById('no-schedules-view');
@@ -521,74 +535,80 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             list.innerHTML = snapshot.docs.map(doc => {
                 const s = doc.data();
-                return `<li class="menu-list-item" data-id="${doc.id}">${s.isUrgent ? '<div class="urgent-badge">🔥</div>' : ''}<div><strong>${formatLocationNameForUser(s.locationName)}</strong><small>${s.city} - ${s.date.toDate().toLocaleDateString('ru-RU')}</small></div></li>`;
+                const dateStr = s.date.toDate().toLocaleDateString('ru-RU');
+                const timeStr = (s.startTime && s.endTime) ? ` (${s.startTime} - ${s.endTime})` : '';
+                
+                return `<li class="menu-list-item" data-id="${doc.id}">${s.isUrgent ? '<div class="urgent-badge">🔥</div>' : ''}<div><strong>${formatLocationNameForUser(s.locationName)}</strong><small>${s.city} - ${dateStr}${timeStr}</small></div></li>`;
             }).join('');
-            list.querySelectorAll('.menu-list-item').forEach(card => card.addEventListener('click', () => openTimePicker(card.dataset.id)));
+            
+            list.querySelectorAll('.menu-list-item').forEach(card => {
+                card.addEventListener('click', () => confirmAndBookSchedule(card.dataset.id));
+            });
         } catch (error) {
-            console.error("ОШИБКА FIRESTORE: Убедитесь, что вы создали КОМБИНИРОВАННЫЙ ИНДЕКС для коллекции 'schedules' по полям 'isBooked' (по возрастанию) и 'date' (по возрастанию).", error);
+            console.error("ОШИБКА FIRESTORE: Убедитесь, что вы создали КОМБИНИРОВАННЫЙ ИНДЕКС для коллекции 'schedules' по полям 'isBooked' и 'date'.", error);
             list.innerHTML = '<p>Не удалось загрузить данные.</p>';
         }
     }
 
-    async function openTimePicker(id) {
+    async function confirmAndBookSchedule(scheduleId) {
         try {
-            const doc = await db.collection('schedules').doc(id).get();
-            if (!doc.exists || doc.data().isBooked) {
+            const user = appState.user;
+            if (!user) return showModal('Ошибка', 'Нет активного пользователя.');
+
+            const scheduleRef = db.collection('schedules').doc(scheduleId);
+            const scheduleDoc = await scheduleRef.get();
+
+            if (!scheduleDoc.exists || scheduleDoc.data().isBooked) {
                 showModal('Ошибка', 'Эта проверка больше недоступна.');
                 renderAvailableSchedules();
                 return;
             }
-            selectedScheduleForBooking = {
-                id: doc.id,
-                ...doc.data()
-            };
-            document.getElementById('picker-location-title').textContent = formatLocationNameForUser(selectedScheduleForBooking.locationName);
-            document.getElementById('time-picker-form').reset();
-            showScreen('time-picker-screen');
+            
+            const scheduleData = { id: scheduleDoc.id, ...scheduleDoc.data() };
+            const dateStr = scheduleData.date.toDate().toLocaleDateString('ru-RU');
+            const timeStr = `${scheduleData.startTime} - ${scheduleData.endTime}`;
+            
+            const confirmationText = `
+                <b>Адрес:</b> ${formatLocationNameForUser(scheduleData.locationName)}<br>
+                <b>Дата:</b> ${dateStr}<br>
+                <b>Время:</b> ${timeStr}
+            `;
+
+            showModal('Подтвердить запись?', confirmationText, 'confirm', async (confirmed) => {
+                if (!confirmed) return;
+
+                const reportRef = db.collection('reports').doc();
+                try {
+                    await db.runTransaction(async t => {
+                        const freshScheduleDoc = await t.get(scheduleRef);
+                        if (freshScheduleDoc.data().isBooked) throw new Error("Проверка уже забронирована другим агентом.");
+                        
+                        t.update(scheduleRef, { isBooked: true });
+                        t.set(reportRef, {
+                            userId: user.uid,
+                            scheduleId: scheduleData.id,
+                            locationName: scheduleData.locationName,
+                            city: scheduleData.city,
+                            checkDate: scheduleData.date,
+                            startTime: scheduleData.startTime,
+                            endTime: scheduleData.endTime,
+                            status: 'booked',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    });
+
+                    await loadUserDashboard(user.uid);
+                    showModal('Успешно!', 'Вы записались. Задание появилось на главном экране.', 'alert', () => showScreen('main-menu-screen'));
+                } catch (err) {
+                    showModal('Ошибка', err.message);
+                    renderAvailableSchedules();
+                }
+            });
+
         } catch (error) {
             showModal('Ошибка', 'Не удалось получить данные о проверке.');
         }
     }
-
-    document.getElementById('time-picker-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const startTime = document.getElementById('user-start-time').value;
-        const endTime = document.getElementById('user-end-time').value;
-        const user = appState.user;
-        if (!user) return showModal('Ошибка', 'Нет активного пользователя.');
-        if (!startTime || !endTime) return showModal('Ошибка', 'Укажите интервал времени.');
-        if (startTime >= endTime) return showModal('Ошибка', 'Время начала должно быть раньше окончания.');
-        const btn = e.currentTarget.querySelector('button[type="submit"]');
-        btn.disabled = true;
-        const scheduleRef = db.collection('schedules').doc(selectedScheduleForBooking.id);
-        const reportRef = db.collection('reports').doc();
-        try {
-            await db.runTransaction(async t => {
-                if ((await t.get(scheduleRef)).data().isBooked) throw new Error("Проверка уже забронирована.");
-                t.update(scheduleRef, {
-                    isBooked: true
-                });
-                t.set(reportRef, {
-                    userId: user.uid,
-                    scheduleId: selectedScheduleForBooking.id,
-                    locationName: selectedScheduleForBooking.locationName,
-                    city: selectedScheduleForBooking.city,
-                    checkDate: selectedScheduleForBooking.date,
-                    startTime,
-                    endTime,
-                    status: 'booked',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            });
-            await loadUserDashboard(user.uid);
-            showModal('Успешно!', 'Вы записались. Задание на главном экране.', 'alert', () => showScreen('main-menu-screen'));
-        } catch (err) {
-            showModal('Ошибка', err.message);
-        } finally {
-            btn.disabled = false;
-            renderAvailableSchedules();
-        }
-    });
 
     async function loadUserDashboard(userId) {
         const container = document.getElementById('dashboard-info-container');
@@ -599,17 +619,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.innerHTML = '<div class="empty-state"><p>У вас нет активных проверок.</p></div>';
                 return;
             }
-            let tasks = [];
-            snapshot.forEach(doc => tasks.push({
-                id: doc.id,
-                ...doc.data()
-            }));
+            let tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             tasks.sort((a, b) => a.checkDate.toDate() - b.checkDate.toDate());
+
             container.innerHTML = '<h3>Активные проверки</h3><ul class="menu-list">' + tasks.map(report => {
                 const checkDate = report.checkDate.toDate();
-                const canFill = checkDate.getTime() <= new Date().setHours(0, 0, 0, 0);
-                return `<li class="menu-list-item"><div><strong>${formatLocationNameForUser(report.locationName)}</strong><small>${checkDate.toLocaleDateString('ru-RU')}</small><div class="task-actions"><button class="btn-fill-checklist" data-id="${report.id}" ${canFill ? '' : 'disabled'}>Заполнить</button><button class="btn-cancel-booking" data-id="${report.id}">Отменить</button></div></div></li>`;
+                const canFill = checkDate.getTime() <= new Date().setHours(23, 59, 59, 999);
+                return `<li class="menu-list-item">
+                            <div>
+                                <strong>${formatLocationNameForUser(report.locationName)}</strong>
+                                <small>${checkDate.toLocaleDateString('ru-RU')}</small>
+                                <div class="task-actions">
+                                    <button class="btn-fill-checklist" data-id="${report.id}" ${canFill ? '' : 'disabled'}>Заполнить</button>
+                                    <button class="btn-cancel-booking" data-id="${report.id}">Отменить</button>
+                                </div>
+                            </div>
+                        </li>`;
             }).join('') + '</ul>';
+
             container.querySelectorAll('.btn-fill-checklist').forEach(btn => btn.addEventListener('click', e => openChecklist(e.target.dataset.id)));
             container.querySelectorAll('.btn-cancel-booking').forEach(btn => btn.addEventListener('click', e => cancelBooking(e.target.dataset.id)));
         } catch (error) {
@@ -617,9 +644,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function cancelBooking(id) {
-        showModal('Подтверждение', 'Отменить эту проверку?', 'confirm', async c => {
-            if (c) {
+    function cancelBooking(id) {
+        showModal('Подтверждение', 'Отменить эту проверку?', 'confirm', async confirmed => {
+            if (confirmed) {
                 try {
                     const user = appState.user;
                     if (!user) throw new Error("Пользователь не найден");
@@ -627,9 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const scheduleId = reportDoc.data().scheduleId;
                     const batch = db.batch();
                     batch.delete(db.collection('reports').doc(id));
-                    if (scheduleId) batch.update(db.collection('schedules').doc(scheduleId), {
-                        isBooked: false
-                    });
+                    if (scheduleId) batch.update(db.collection('schedules').doc(scheduleId), { isBooked: false });
                     await batch.commit();
                     showModal('Успешно', 'Запись отменена.');
                     loadUserDashboard(user.uid);
@@ -669,9 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (report.answers) {
                 for(let i = 1; i <= 12; i++) {
                     const element = form.querySelector(`#checklist-q${i}`);
-                    if (element) {
-                        element.value = report.answers[`q${i}`] || '';
-                    }
+                    if (element) element.value = report.answers[`q${i}`] || '';
                 }
             }
             showScreen('checklist-screen');
@@ -701,13 +724,13 @@ document.addEventListener('DOMContentLoaded', () => {
             let photoUrls = originalReportDoc.data().photoUrls || [];
 
             if (files.length > 0) {
-                photoUrls = [];
+                photoUrls = []; // Перезаписываем фото, если добавлены новые
                 for (const file of files) {
                     const filePath = `reports/${currentReportId}/${Date.now()}_${file.name}`;
                     const fileSnapshot = await storage.ref(filePath).put(file);
                     photoUrls.push(await fileSnapshot.ref.getDownloadURL());
                 }
-            } else if (!isEditing) {
+            } else if (photoUrls.length === 0) { // Требуем фото только если их еще нет
                 throw new Error("Пожалуйста, прикрепите фото.");
             }
 
@@ -720,8 +743,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const modalTitle = isEditing ? 'Отчет исправлен!' : 'Отправлен на проверку!';
-            const modalText = 'Спасибо! Мы свяжемся с вами по указанному в профиле номеру после проверки отчета.';
-            showModal(modalTitle, modalText, 'alert', () => {
+            showModal(modalTitle, 'Спасибо! Мы свяжемся с вами после проверки отчета.', 'alert', () => {
                 showScreen('main-menu-screen');
                 loadUserDashboard(user.uid);
             });
@@ -747,12 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let html = '<ul class="menu-list">';
             html += snapshot.docs.map(doc => {
                 const r = doc.data();
-                const statusMap = {
-                    pending: 'на проверке',
-                    approved: 'принят',
-                    rejected: 'отклонен',
-                    paid: 'оплачен'
-                };
+                const statusMap = { pending: 'на проверке', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' };
                 const comment = (r.status === 'rejected' && r.rejectionComment) ? `<small style="color:var(--status-rejected); display:block; margin-top:5px;"><b>Причина:</b> ${r.rejectionComment}</small>` : '';
                 const editButton = (r.status === 'rejected') ? `<div class="task-actions"><button class="btn-edit-report" data-id="${doc.id}">Редактировать</button></div>` : '';
 
@@ -782,9 +799,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // ФУНКЦИОНАЛ ИНСТРУКЦИИ ПО ЧЕК-ЛИСТУ (НОВЫЙ БЛОК)
+    // ФУНКЦИОНАЛ ИНСТРУКЦИИ ПО ЧЕК-ЛИСТУ
     // =================================================================
-
     async function renderChecklistInstruction() {
         const container = document.getElementById('checklist-instruction-content');
         container.innerHTML = '<div class="spinner"></div>';
@@ -804,13 +820,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.items && data.items.length > 0) {
                 data.items.forEach(item => {
-                    html += `
-                        <div class="instruction-item">
+                    html += `<div class="instruction-item">
                             <h4>${item.question || 'Вопрос'}</h4>
                             <p><strong>Пример ответа:</strong><br>${item.answer || 'Нет примера'}</p>
                             ${item.imageUrl ? `<img src="${item.imageUrl}" alt="Пример фото">` : ''}
-                        </div>
-                    `;
+                        </div>`;
                 });
             }
             container.innerHTML = html;
@@ -823,8 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let instructionItemCounter = 0;
 
     function createInstructionItemForm(item = {}, index) {
-        const itemHtml = `
-            <div class="instruction-form-item" data-index="${index}">
+        return `<div class="instruction-form-item" data-index="${index}">
                 <div class="form-group">
                     <label>Вопрос</label>
                     <input type="text" class="ci-item-question" value="${item.question || ''}" required>
@@ -840,9 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <input type="hidden" class="ci-item-photo-url" value="${item.imageUrl || ''}">
                 </div>
                 <button type="button" class="btn-secondary delete-instruction-item-btn">Удалить</button>
-            </div>
-        `;
-        return itemHtml;
+            </div>`;
     }
 
     document.getElementById('add-instruction-item-btn').addEventListener('click', () => {
@@ -863,9 +874,7 @@ document.addEventListener('DOMContentLoaded', () => {
         instructionItemCounter = 0;
         container.innerHTML = '<div class="spinner"></div>';
         try {
-            const docRef = db.collection('content').doc('checklistInstruction');
-            const docSnap = await docRef.get();
-            
+            const docSnap = await db.collection('content').doc('checklistInstruction').get();
             if (docSnap.exists) {
                 const data = docSnap.data();
                 form.querySelector('#ci-title').value = data.title || '';
@@ -884,7 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error("Ошибка загрузки инструкции для админа:", error);
-            container.innerHTML = '<p>Опачки ._.</p>';
+            container.innerHTML = '<p>Не удалось загрузить данные для редактирования.</p>';
         }
     }
 
@@ -914,27 +923,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (photoInput.files[0]) {
                     const file = photoInput.files[0];
                     const filePath = `instructions/${Date.now()}_${file.name}`;
-                    const storageRef = storage.ref(filePath);
-                    
-                    const uploadTask = storageRef.put(file).then(snapshot => snapshot.ref.getDownloadURL());
-
-                    uploadPromises.push(
-                        uploadTask.then(downloadURL => {
-                            items[index].imageUrl = downloadURL;
-                        })
-                    );
+                    const uploadTask = storage.ref(filePath).put(file).then(snapshot => snapshot.ref.getDownloadURL());
+                    uploadPromises.push(uploadTask.then(downloadURL => { items[index].imageUrl = downloadURL; }));
                 }
             });
 
             await Promise.all(uploadPromises);
-
-            const docRef = db.collection('content').doc('checklistInstruction');
-            await docRef.set({
-                title,
-                description,
-                items
-            });
-
+            await db.collection('content').doc('checklistInstruction').set({ title, description, items });
             showModal('Успешно', 'Инструкция по чек-листу сохранена.');
 
         } catch (error) {
