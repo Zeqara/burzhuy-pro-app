@@ -62,11 +62,7 @@
                     <li class="menu-list-item menu-btn" data-target="cooperation-screen"><i class="icon fa-solid fa-calendar-check"></i><div><strong>Записаться на проверку</strong><small>Выбрать доступную точку и время</small></div></li>
                     <li class="menu-list-item menu-btn" data-target="history-screen"><i class="icon fa-solid fa-list-check"></i><div><strong>История проверок</strong><small>Посмотреть статусы отчетов</small></div></li>
                     <li class="menu-list-item menu-btn" data-target="instruction-screen"><i class="icon fa-solid fa-book-open"></i><div><strong>Инструкция</strong><small>Правила и требования</small></div></li>
-                    
-                    <!-- ===== НАЧАЛО: НОВАЯ КНОПКА "ИНСТРУКЦИЯ ПО ЧЕК-ЛИСТУ" ===== -->
                     <li class="menu-list-item menu-btn" data-target="checklist-instruction-screen"><i class="icon fa-solid fa-tasks"></i><div><strong>Инструкция по Чек-Листу</strong><small>Примеры ответов и фото</small></div></li>
-                    <!-- ===== КОНЕЦ: НОВАЯ КНОПКА ===== -->
-
                     <li class="menu-list-item"><a href="https://t.me/gdyhrhf" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; width: 100%;"><i class="icon fa-solid fa-headset"></i><div><strong>Техническая поддержка</strong><small>Связаться в Telegram</small></div></a></li>
                     <li id="admin-menu-btn" class="menu-list-item menu-btn" data-target="admin-hub-screen" style="display: none;"><i class="icon fa-solid fa-user-shield"></i><div><strong>Центр Управления</strong><small>Перейти в панель администратора</small></div></li>
                 </ul>
@@ -81,11 +77,7 @@
                 <div id="admin-stats-container"></div>
                 <ul class="menu-list">
                     <li class="menu-list-item menu-btn" data-target="admin-schedule-screen"><i class="icon fa-solid fa-calendar-days"></i><div><strong>Управление графиком</strong><small>Создать и удалить проверки</small></div></li>
-                    
-                    <!-- ===== НАЧАЛО: НОВАЯ КНОПКА В ПАНЕЛИ АДМИНИСТРАТОРА ===== -->
                     <li class="menu-list-item menu-btn" data-target="admin-checklist-instruction-screen"><i class="icon fa-solid fa-edit"></i><div><strong>Ред. инструкцию чек-листа</strong><small>Изменить примеры для агентов</small></div></li>
-                    <!-- ===== КОНЕЦ: НОВАЯ КНОПКА ===== -->
-
                     <li class="menu-list-item menu-btn" data-target="admin-reports-screen"><i class="icon fa-solid fa-file-signature"></i><div><strong>Просмотр отчетов</strong><small>Проверить и утвердить отчеты</small></div></li>
                     <li class="menu-list-item menu-btn" data-target="admin-users-screen"><i class="icon fa-solid fa-users"></i><div><strong>Управление пользователями</strong><small>Просмотр и смена ролей</small></div></li>
                 </ul>
@@ -98,7 +90,15 @@
                 <form id="schedule-form" novalidate>
                     <div class="form-group"><label for="schedule-city-select">1. Город</label><select id="schedule-city-select" required><option value="" disabled selected>-- Выбор --</option></select></div>
                     <div class="form-group"><label for="schedule-location-select">2. Точка</label><select id="schedule-location-select" required disabled><option value="" disabled selected>-- ... --</option></select></div>
-                    <div class="form-group"><label for="schedule-date-input">Дата</label><input type="date" id="schedule-date-input" required></div>
+                    <div class="form-group"><label for="schedule-date-input">3. Дата</label><input type="date" id="schedule-date-input" required></div>
+                    <div class="form-group">
+                        <label for="schedule-start-time">4. Интервал времени</label>
+                        <div class="time-slot-input" style="display: flex; gap: 10px; align-items: center;">
+                            <input type="time" id="schedule-start-time" required>
+                            <span>-</span>
+                            <input type="time" id="schedule-end-time" required>
+                        </div>
+                    </div>
                     <div class="form-group urgent-checkbox"><input type="checkbox" id="schedule-urgent-checkbox"><label for="schedule-urgent-checkbox">🔥 Срочная</label></div>
                     <div class="action-buttons-container"><button type="submit" class="btn-primary">Опубликовать</button><button type="button" id="view-schedule-btn" class="btn-icon">К графику</button></div>
                 </form>
@@ -110,24 +110,38 @@
         
         <div id="admin-report-detail-screen" class="screen with-header">
             <header><button class="back-btn" data-target="admin-reports-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Детали отчета</h2><div class="header-placeholder"></div></header>
-            <div class="scrollable-content"><div class="report-details"><p><strong>Адрес:</strong> <span id="admin-detail-address"></span></p><p><strong>Агент:</strong> <span id="admin-detail-user"></span></p><p><strong>Телефон:</strong> <span id="admin-detail-phone"></span></p><p><strong>Дата:</strong> <span id="admin-detail-date"></span></p><p><strong>Статус:</strong> <span id="admin-detail-status"></span></p><div id="admin-detail-rejection-comment-container" style="display: none;"></div><hr>
-                <h4>Ответы на вопросы:</h4>
-                <div class="form-group"><label>🧹 Чистота и внешний вид (вид с улицы):</label><p id="admin-detail-q1"></p></div>
-                <div class="form-group"><label>✍️ Дополнительные замечания по чистоте и внешнему виду:</label><p id="admin-detail-q2"></p></div>
-                <div class="form-group"><label>👋 Приветствие и поведение сотрудника:</label><p id="admin-detail-q3"></p></div>
-                <div class="form-group"><label>➕ Предложение дополнений:</label><p id="admin-detail-q4"></p></div>
-                <div class="form-group"><label>✍️ Дополнительные замечания по контакту с сотрудником:</label><p id="admin-detail-q5"></p></div>
-                <div class="form-group"><label>📝 Действия сотрудника после принятия заказа:</label><p id="admin-detail-q6"></p></div>
-                <div class="form-group"><label>📦 Выдача заказа:</label><p id="admin-detail-q7"></p></div>
-                <div class="form-group"><label>🕛 Время от момента оплаты до получения заказа:</label><p id="admin-detail-q8"></p></div>
-                <div class="form-group"><label>🌯 Оценка выданного заказа:</label><p id="admin-detail-q9"></p></div>
-                <div class="form-group"><label>🍽️ Итоговая оценка блюда (по шкале 1-5):</label><p id="admin-detail-q10"></p></div>
-                <div class="form-group"><label>✍️ Дополнительные замечания по вкусу и качеству блюда:</label><p id="admin-detail-q11"></p></div>
-                <div class="form-group"><label>✍️ Замечания, жалобы, предложения, общие впечатления:</label><p id="admin-detail-q12"></p></div>
-                <hr><h4>Прикрепленные фото:</h4><div id="admin-detail-photos"></div><hr><h4>Действия:</h4><div id="admin-detail-actions"><button id="admin-action-approve">Принять</button><button id="admin-action-reject">Отклонить</button><button id="admin-action-paid">✓ Оплачено</button></div></div></div>
+            <div class="scrollable-content">
+                <div class="report-details">
+                    <p><strong>Адрес:</strong> <span id="admin-detail-address"></span></p>
+                    <p><strong>Агент:</strong> <span id="admin-detail-user"></span></p>
+                    <p><strong>Телефон:</strong> <span id="admin-detail-phone"></span></p>
+                    <p><strong>Дата:</strong> <span id="admin-detail-date"></span></p>
+                    <p><strong>Статус:</strong> <span id="admin-detail-status"></span></p>
+                    <div id="admin-detail-rejection-comment-container" style="display: none;"></div>
+                    <hr>
+                    <h4>Ответы на вопросы:</h4>
+                    <div class="form-group"><label>🧹 Чистота и внешний вид (вид с улицы):</label><p id="admin-detail-q1"></p></div>
+                    <div class="form-group"><label>✍️ Дополнительные замечания по чистоте и внешнему виду:</label><p id="admin-detail-q2"></p></div>
+                    <div class="form-group"><label>👋 Приветствие и поведение сотрудника:</label><p id="admin-detail-q3"></p></div>
+                    <div class="form-group"><label>➕ Предложение дополнений:</label><p id="admin-detail-q4"></p></div>
+                    <div class="form-group"><label>✍️ Дополнительные замечания по контакту с сотрудником:</label><p id="admin-detail-q5"></p></div>
+                    <div class="form-group"><label>📝 Действия сотрудника после принятия заказа:</label><p id="admin-detail-q6"></p></div>
+                    <div class="form-group"><label>📦 Выдача заказа:</label><p id="admin-detail-q7"></p></div>
+                    <div class="form-group"><label>🕛 Время от момента оплаты до получения заказа:</label><p id="admin-detail-q8"></p></div>
+                    <div class="form-group"><label>🌯 Оценка выданного заказа:</label><p id="admin-detail-q9"></p></div>
+                    <div class="form-group"><label>🍽️ Итоговая оценка блюда (по шкале 1-5):</label><p id="admin-detail-q10"></p></div>
+                    <div class="form-group"><label>✍️ Дополнительные замечания по вкусу и качеству блюда:</label><p id="admin-detail-q11"></p></div>
+                    <div class="form-group"><label>✍️ Замечания, жалобы, предложения, общие впечатления:</label><p id="admin-detail-q12"></p></div>
+                    <hr>
+                    <h4>Прикрепленные фото:</h4>
+                    <div id="admin-detail-photos"></div>
+                    <hr>
+                    <h4>Действия:</h4>
+                    <div id="admin-detail-actions"><button id="admin-action-approve">Принять</button><button id="admin-action-reject">Отклонить</button><button id="admin-action-paid">✓ Оплачено</button></div>
+                </div>
+            </div>
         </div>
         
-        <!-- ===== НАЧАЛО: НОВЫЙ ЭКРАН РЕДАКТИРОВАНИЯ ИНСТРУКЦИИ ДЛЯ АДМИНА ===== -->
         <div id="admin-checklist-instruction-screen" class="screen with-header">
             <header>
                 <button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
@@ -146,20 +160,18 @@
                     </div>
                     <hr>
                     <h4>Пункты инструкции:</h4>
-                    <div id="checklist-instruction-items-container">
-                        <!-- Сюда JavaScript будет загружать и добавлять поля для редактирования -->
-                    </div>
+                    <div id="checklist-instruction-items-container"></div>
                     <button type="button" id="add-instruction-item-btn" class="btn-secondary" style="width: auto; margin-bottom: 20px;">+ Добавить пункт</button>
                     <button type="submit" class="btn-primary">Сохранить инструкцию</button>
                 </form>
             </div>
         </div>
-        <!-- ===== КОНЕЦ: НОВЫЙ ЭКРАН РЕДАКТИРОВАНИЯ ИНСТРУКЦИИ ДЛЯ АДМИНА ===== -->
 
         <div id="admin-users-screen" class="screen with-header"><header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Все пользователи</h2><div class="header-placeholder"></div></header><div class="scrollable-content" id="admin-users-list"></div></div>
         
         <!-- ЭКРАНЫ ПОЛЬЗОВАТЕЛЯ -->
         <div id="cooperation-screen" class="screen with-header"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Доступные проверки</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><ul id="schedule-cards-list" class="menu-list"></ul><div id="no-schedules-view" class="empty-state" style="display: none;"><h3>Нет доступных проверок</h3></div></div></div>
+        
         <div id="time-picker-screen" class="screen with-header"><header><button class="back-btn" data-target="cooperation-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Выберите время</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><h3 id="picker-location-title"></h3><form id="time-picker-form" novalidate><div class="form-group"><label for="user-start-time">Укажите интервал времени</label><div class="time-slot-input"><input type="time" id="user-start-time" required><span>-</span><input type="time" id="user-end-time" required></div></div><button type="submit" class="btn-primary">Подтвердить</button></form></div></div>
         
         <div id="checklist-screen" class="screen with-header">
@@ -188,7 +200,6 @@
 
         <div id="history-screen" class="screen with-header"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>История проверок</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><ul id="history-list" class="menu-list"></ul></div></div>
         
-        <!-- ===== НАЧАЛО: ОБНОВЛЕННЫЙ БЛОК ИНСТРУКЦИИ ===== -->
         <div id="instruction-screen" class="screen with-header">
             <header>
                 <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
@@ -241,10 +252,7 @@
                 <p>Все вопросы можно задать в разделе «Техническая поддержка» — команда оперативно поможет тебе разобраться.</p>
             </div>
         </div>
-        <!-- ===== КОНЕЦ: ОБНОВЛЕННЫЙ БЛОК ИНСТРУКЦИИ ===== -->
-
-
-        <!-- ===== НАЧАЛО: НОВЫЙ ЭКРАН ПРОСМОТРА ИНСТРУКЦИИ ДЛЯ ПОЛЬЗОВАТЕЛЯ ===== -->
+        
         <div id="checklist-instruction-screen" class="screen with-header">
             <header>
                 <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
@@ -255,7 +263,6 @@
                 <!-- Сюда JavaScript будет загружать контент -->
             </div>
         </div>
-        <!-- ===== КОНЕЦ: НОВЫЙ ЭКРАН ПРОСМОТРА ИНСТРУКЦИИ ДЛЯ ПОЛЬЗОВАТЕЛЯ ===== -->
 
     </div>
     
