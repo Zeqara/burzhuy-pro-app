@@ -29,8 +29,15 @@
                 <h2>Вход или регистрация</h2>
                 <p>Введите ваш номер. Мы создадим новый аккаунт или войдем в существующий.</p>
                 <form id="login-register-form" novalidate>
-                    <div class="form-group"><input type="tel" id="phone-input" placeholder="+7 (999) 999-99-99" required></div>
-                    <div class="form-group"><input type="password" id="password-input" placeholder="Пароль (минимум 6 символов)" required></div>
+                    <!-- ИСПРАВЛЕНИЕ: Добавлены <label> для доступности -->
+                    <div class="form-group">
+                        <label for="phone-input">Номер телефона</label>
+                        <input type="tel" id="phone-input" placeholder="+7 (999) 999-99-99" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password-input">Пароль</label>
+                        <input type="password" id="password-input" placeholder="Минимум 6 символов" required>
+                    </div>
                     <button type="submit" id="login-register-btn" class="btn-primary">Продолжить</button>
                 </form>
             </div>
@@ -52,11 +59,11 @@
         <!-- ГЛАВНЫЙ ЭКРАН ПОЛЬЗОВАТЕЛЯ -->
         <div id="main-menu-screen" class="screen">
             <div class="scrollable-content">
-                <div class="dashboard-header">
+                <header class="dashboard-header">
                     <div class="avatar">Б</div>
                     <h2 id="user-name-display">BURЖУЙ</h2>
                     <p>Тайный агент</p>
-                </div>
+                </header>
                 <div id="dashboard-info-container"></div>
                 <ul class="menu-list">
                     <li class="menu-list-item menu-btn" data-target="cooperation-screen"><i class="icon fa-solid fa-calendar-check"></i><div><strong>Записаться на проверку</strong><small>Выбрать доступную точку и время</small></div></li>
@@ -66,13 +73,13 @@
                     <li class="menu-list-item"><a href="https://t.me/gdyhrhf" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; width: 100%;"><i class="icon fa-solid fa-headset"></i><div><strong>Техническая поддержка</strong><small>Связаться в Telegram</small></div></a></li>
                     <li id="admin-menu-btn" class="menu-list-item menu-btn" data-target="admin-hub-screen" style="display: none;"><i class="icon fa-solid fa-user-shield"></i><div><strong>Центр Управления</strong><small>Перейти в панель администратора</small></div></li>
                 </ul>
-                <button id="logout-btn">Выйти из аккаунта</button>
+                <button type="button" id="logout-btn">Выйти из аккаунта</button>
             </div>
         </div>
 
         <!-- ЭКРАНЫ АДМИНИСТРАТОРА -->
         <div id="admin-hub-screen" class="screen with-header">
-            <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Центр Управления</h2><div class="header-placeholder"></div></header>
+            <header><button type="button" class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Центр Управления</h2><div class="header-placeholder"></div></header>
             <div class="scrollable-content">
                 <div id="admin-stats-container"></div>
                 <ul class="menu-list">
@@ -85,7 +92,7 @@
         </div>
         
         <div id="admin-schedule-screen" class="screen with-header">
-            <header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Создать проверку</h2><div class="header-placeholder"></div></header>
+            <header><button type="button" class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Создать проверку</h2><div class="header-placeholder"></div></header>
             <div class="scrollable-content">
                 <form id="schedule-form" novalidate>
                     <div class="form-group"><label for="schedule-city-select">1. Город</label><select id="schedule-city-select" required><option value="" disabled selected>-- Выбор --</option></select></div>
@@ -105,11 +112,11 @@
             </div>
         </div>
 
-        <div id="admin-view-schedule-screen" class="screen with-header"><header><button class="back-btn" data-target="admin-schedule-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Запланированные проверки</h2><div class="header-placeholder"></div></header><div class="scrollable-content" id="schedule-list"></div></div>
-        <div id="admin-reports-screen" class="screen with-header"><header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Все отчеты</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><ul id="admin-reports-list" class="menu-list"></ul></div></div>
+        <div id="admin-view-schedule-screen" class="screen with-header"><header><button type="button" class="back-btn" data-target="admin-schedule-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Запланированные проверки</h2><div class="header-placeholder"></div></header><div class="scrollable-content" id="schedule-list"></div></div>
+        <div id="admin-reports-screen" class="screen with-header"><header><button type="button" class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Все отчеты</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><ul id="admin-reports-list" class="menu-list"></ul></div></div>
         
         <div id="admin-report-detail-screen" class="screen with-header">
-            <header><button class="back-btn" data-target="admin-reports-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Детали отчета</h2><div class="header-placeholder"></div></header>
+            <header><button type="button" class="back-btn" data-target="admin-reports-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Детали отчета</h2><div class="header-placeholder"></div></header>
             <div class="scrollable-content">
                 <div class="report-details">
                     <p><strong>Адрес:</strong> <span id="admin-detail-address"></span></p>
@@ -118,14 +125,14 @@
                     <p><strong>Дата:</strong> <span id="admin-detail-date"></span></p>
                     <p><strong>Статус:</strong> <span id="admin-detail-status"></span></p>
                     <div id="admin-detail-rejection-comment-container" style="display: none;"></div>
-                    <div id="admin-detail-actions"><button id="admin-action-approve">Принять</button><button id="admin-action-reject">Отклонить</button><button id="admin-action-paid">✓ Оплачено</button></div>
+                    <div id="admin-detail-actions"><button type="button" id="admin-action-approve">Принять</button><button type="button" id="admin-action-reject">Отклонить</button><button type="button" id="admin-action-paid">✓ Оплачено</button></div>
                 </div>
             </div>
         </div>
         
         <div id="admin-checklist-instruction-screen" class="screen with-header">
             <header>
-                <button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
+                <button type="button" class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
                 <h2>Ред. инструкцию</h2>
                 <div class="header-placeholder"></div>
             </header>
@@ -137,7 +144,7 @@
                     </div>
                     <div class="form-group">
                         <label for="ci-description">Вступительный текст</label>
-                        <textarea id="ci-description" rows="3"></textarea>
+                        <textarea id="ci-description" rows="3" placeholder="Краткое описание основных правил..."></textarea>
                     </div>
                     <hr>
                     <h4>Пункты инструкции:</h4>
@@ -148,16 +155,16 @@
             </div>
         </div>
 
-        <div id="admin-users-screen" class="screen with-header"><header><button class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Все пользователи</h2><div class="header-placeholder"></div></header><div class="scrollable-content" id="admin-users-list"></div></div>
+        <div id="admin-users-screen" class="screen with-header"><header><button type="button" class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Все пользователи</h2><div class="header-placeholder"></div></header><div class="scrollable-content" id="admin-users-list"></div></div>
         
         <!-- ЭКРАНЫ ПОЛЬЗОВАТЕЛЯ -->
-        <div id="cooperation-screen" class="screen with-header"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Доступные проверки</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><ul id="schedule-cards-list" class="menu-list"></ul><div id="no-schedules-view" class="empty-state" style="display: none;"><h3>Нет доступных проверок</h3></div></div></div>
+        <div id="cooperation-screen" class="screen with-header"><header><button type="button" class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Доступные проверки</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><ul id="schedule-cards-list" class="menu-list"></ul><div id="no-schedules-view" class="empty-state" style="display: none;"><h3>Нет доступных проверок</h3></div></div></div>
         
-        <div id="time-picker-screen" class="screen with-header"><header><button class="back-btn" data-target="cooperation-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Выберите время</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><h3 id="picker-location-title"></h3><form id="time-picker-form" novalidate><div class="form-group"><label for="user-start-time">Укажите интервал времени</label><div class="time-slot-input"><input type="time" id="user-start-time" required><span>-</span><input type="time" id="user-end-time" required></div></div><button type="submit" class="btn-primary">Подтвердить</button></form></div></div>
+        <div id="time-picker-screen" class="screen with-header"><header><button type="button" class="back-btn" data-target="cooperation-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Выберите время</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><h3 id="picker-location-title"></h3><form id="time-picker-form" novalidate><div class="form-group"><label for="user-start-time">Укажите интервал времени</label><div class="time-slot-input"><input type="time" id="user-start-time" required><span>-</span><input type="time" id="user-end-time" required></div></div><button type="submit" class="btn-primary">Подтвердить</button></form></div></div>
         
         <div id="checklist-screen" class="screen with-header">
             <header>
-                <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
+                <button type="button" class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
                 <h2>Чек-лист</h2>
                 <div class="header-placeholder"></div>
             </header>
@@ -186,7 +193,7 @@
                     <div class="form-group"><label>У сотрудниц отсутствуют длинные или ярко окрашенные ногти.</label><div class="radio-group"><label><input type="radio" name="q_nails" value="Да" required> Да</label><label><input type="radio" name="q_nails" value="Нет"> Нет</label><label><input type="radio" name="q_nails" value="Не актуально"> Не актуально</label></div></div>
                     <div class="form-group"><label>Одежда и обувь сотрудников чистые, опрятные.</label><div class="radio-group"><label><input type="radio" name="q_clothes_clean" value="Да" required> Да</label><label><input type="radio" name="q_clothes_clean" value="Нет"> Нет</label></div></div>
                     <div class="form-group">
-                        <label>Фото: внешний вид павильона, фото внутри (несколько ракурсов).</label>
+                        <label for="photos_location">Фото: внешний вид павильона, фото внутри (несколько ракурсов).</label>
                         <input type="file" id="photos_location" multiple accept="image/*" required>
                     </div>
                     <hr>
@@ -205,7 +212,7 @@
                     <div class="form-group"><label for="q_wait_time_actual">Укажите время ожидания выдачи заказа (например: 5 минут)</label><input type="text" id="q_wait_time_actual" required></div>
                     <div class="form-group"><label for="q_napkins_count">Укажите количество салфеток</label><input type="number" id="q_napkins_count" min="0" required></div>
                     <div class="form-group">
-                        <label>Фото: чек.</label>
+                        <label for="photos_receipt">Фото: чек.</label>
                         <input type="file" id="photos_receipt" accept="image/*" required>
                     </div>
                     <hr>
@@ -227,9 +234,12 @@
 
         <template id="dish-evaluation-template">
             <div class="dish-evaluation-block">
-                <button type="button" class="delete-dish-btn">&times;</button>
+                <button type="button" class="delete-dish-btn" aria-label="Удалить блюдо">&times;</button>
                 <h4>Оценка блюда</h4>
-                <div class="form-group"><label for="dish_name">Название блюда:</label><input type="text" class="dish-property" data-property="name" required></div>
+                <div class="form-group">
+                    <label for="dish_name">Название блюда:</label>
+                    <input type="text" id="dish_name" class="dish-property" data-property="name" required>
+                </div>
                 <div class="form-group"><label>Упаковка чистая, не повреждена.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="packaging" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="packaging" value="Нет"> Нет</label></div></div>
                 <div class="form-group"><label>Внешний вид блюда аккуратный и аппетитный.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="appearance" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="appearance" value="Нет"> Нет</label></div></div>
                 <div class="form-group"><label>Индивидуальные пожелания учтены.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="wishes" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="wishes" value="Нет"> Нет</label><label><input type="radio" class="dish-property" data-property="wishes" value="Не актуально"> Не актуально</label></div></div>
@@ -237,17 +247,17 @@
                 <div class="form-group"><label>Вкус сбалансированный, соответствует ожиданиям.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="taste" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="taste" value="Нет"> Нет</label></div></div>
                 <div class="form-group"><label>Отсутствуют посторонние привкусы и запахи.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="smell" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="smell" value="Нет"> Нет</label></div></div>
                 <div class="form-group">
-                    <label>Фото: блюдо в упаковке и без.</label>
-                    <input type="file" class="dish-photos" multiple accept="image/*" required>
+                    <label for="dish_photos">Фото: блюдо в упаковке и без.</label>
+                    <input type="file" id="dish_photos" class="dish-photos" multiple accept="image/*" required>
                 </div>
             </div>
         </template>
 
-        <div id="history-screen" class="screen with-header"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>История проверок</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><ul id="history-list" class="menu-list"></ul></div></div>
+        <div id="history-screen" class="screen with-header"><header><button type="button" class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>История проверок</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><ul id="history-list" class="menu-list"></ul></div></div>
         
         <div id="instruction-screen" class="screen with-header">
             <header>
-                <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
+                <button type="button" class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
                 <h2>Инструкция</h2>
                 <div class="header-placeholder"></div>
             </header>
@@ -295,7 +305,7 @@
         
         <div id="checklist-instruction-screen" class="screen with-header">
             <header>
-                <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
+                <button type="button" class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
                 <h2>Инструкция по Чек-Листу</h2>
                 <div class="header-placeholder"></div>
             </header>
@@ -309,8 +319,8 @@
             <h3 id="modal-title"></h3>
             <p id="modal-text"></p>
             <div id="modal-buttons">
-                <button id="modal-confirm-btn" class="btn-primary">OK</button>
-                <button id="modal-cancel-btn" class="btn-secondary">Отмена</button>
+                <button type="button" id="modal-confirm-btn" class="btn-primary">OK</button>
+                <button type="button" id="modal-cancel-btn" class="btn-secondary">Отмена</button>
             </div>
         </div>
     </div>
@@ -323,8 +333,8 @@
                 <textarea id="rejection-comment-input" rows="4"></textarea>
             </div>
             <div id="modal-buttons">
-                <button id="rejection-modal-confirm-btn" class="btn-primary">Отправить</button>
-                <button id="rejection-modal-cancel-btn" class="btn-secondary">Отмена</button>
+                <button type="button" id="rejection-modal-confirm-btn" class="btn-primary">Отправить</button>
+                <button type="button" id="rejection-modal-cancel-btn" class="btn-secondary">Отмена</button>
             </div>
         </div>
     </div>
@@ -337,8 +347,8 @@
                 <textarea id="cancellation-comment-input" rows="4"></textarea>
             </div>
             <div id="modal-buttons">
-                <button id="cancellation-modal-confirm-btn" class="btn-primary">Отправить</button>
-                <button id="cancellation-modal-cancel-btn" class="btn-secondary">Не отменять</button>
+                <button type="button" id="cancellation-modal-confirm-btn" class="btn-primary">Отправить</button>
+                <button type="button" id="cancellation-modal-cancel-btn" class="btn-secondary">Не отменять</button>
             </div>
         </div>
     </div>
