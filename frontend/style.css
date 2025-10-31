@@ -102,7 +102,7 @@ header {
     border-bottom: 1px solid var(--border-color);
     background-color: rgba(24, 24, 24, 0.85);
     backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px); /* Улучшение: кросс-браузерность */
+    -webkit-backdrop-filter: blur(10px);
     flex-shrink: 0;
     z-index: 10;
 }
@@ -178,7 +178,6 @@ input, textarea, select {
     font-size: 16px; 
     transition: all 0.3s ease; 
 }
-/* УЛУЧШЕНИЕ: Более заметный фокус для доступности */
 input:focus-visible, textarea:focus-visible, select:focus-visible {
     border-color: var(--primary-color); 
     box-shadow: 0 0 0 3px var(--primary-glow); 
@@ -407,9 +406,16 @@ button#logout-btn:hover {
     font-weight: 600; 
     cursor: pointer; 
 }
-.btn-fill-checklist { 
+.btn-fill-checklist, .btn-book-schedule { 
     background: var(--primary-color); 
     color: var(--text-on-primary); 
+    flex-grow: 0 !important;
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    border-radius: 6px;
+}
+.btn-book-schedule {
+    margin-left: 10px;
 }
 .btn-fill-checklist:disabled { 
     background: var(--surface-color-hover); 
@@ -422,47 +428,8 @@ button#logout-btn:hover {
 }
 
 /* ======================================== */
-/* ИНСТРУКЦИИ                              */
-/* ======================================== */
-.instruction-text h3 { 
-    margin-top: 20px; 
-    margin-bottom: 15px; 
-    padding-bottom: 8px; 
-    border-bottom: 1px solid var(--border-color); 
-    color: var(--text-primary); 
-    font-size: 1.2em; 
-}
-.instruction-text p, .instruction-text li { 
-    margin-bottom: 12px; 
-    color: var(--text-secondary); 
-    line-height: 1.7; 
-}
-.instruction-text ol, .instruction-text ul { 
-    padding-left: 25px; 
-}
-.instruction-text strong { 
-    color: var(--text-primary); 
-    font-weight: 600; 
-}
-.instruction-text em { 
-    color: var(--text-secondary); 
-    font-style: italic; 
-    font-size: 0.9em; 
-}
-
-/* ======================================== */
 /* АДМИН-ПАНЕЛЬ                            */
 /* ======================================== */
-#admin-report-detail-screen .report-details .form-group { 
-    margin-bottom: 12px; 
-    padding: 10px; 
-    border: 1px solid var(--border-color); 
-    border-radius: 8px; 
-}
-#admin-report-detail-screen .report-details .form-group label { 
-    margin-bottom: 10px; 
-    font-weight: bold; 
-}
 .photo-gallery { 
     display: flex; 
     flex-wrap: wrap; 
@@ -559,7 +526,6 @@ button#logout-btn:hover {
     flex-grow: 0;
     margin-left: 10px;
 }
-/* ИСПРАВЛЕНИЕ: Добавлены стили для кнопки удаления из графика */
 .delete-btn {
     padding: 5px 10px;
     margin-left: 10px;
@@ -620,61 +586,6 @@ button#logout-btn:hover {
 #start-mission-button:hover { 
     transform: translateY(-2px); 
     box-shadow: 0 6px 20px rgba(229, 57, 53, 0.4); 
-}
-
-/* ======================================== */
-/* ИНСТРУКЦИЯ ПО ЧЕК-ЛИСТУ                  */
-/* ======================================== */
-.instruction-item {
-    margin-bottom: 25px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border-color);
-}
-.instruction-item:last-child {
-    border-bottom: none;
-}
-.instruction-item h4 {
-    margin-bottom: 10px;
-    color: var(--text-primary);
-    font-size: 18px;
-}
-.instruction-item p {
-    margin: 10px 0;
-    padding: 15px;
-    background: var(--surface-color);
-    border-radius: 8px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-}
-.instruction-item p strong {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--text-secondary);
-}
-.instruction-item img {
-    max-width: 100%;
-    margin-top: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-}
-.instruction-form-item {
-    margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    background-color: var(--surface-color);
-}
-.delete-instruction-item-btn {
-    width: auto !important;
-    padding: 10px 15px !important;
-    background-color: rgba(229, 57, 53, 0.2) !important;
-    color: var(--status-rejected) !important;
-    border: 1px solid var(--status-rejected) !important;
-    font-weight: 600;
-}
-.delete-instruction-item-btn:hover {
-    background-color: var(--status-rejected) !important;
-    color: white !important;
 }
 
 /* ======================================== */
@@ -782,4 +693,16 @@ input[type="file"]::file-selector-button:hover {
 }
 .rating-display-container .rating-badge {
     font-size: 18px;
+}
+
+/* ======================================== */
+/* ИСПРАВЛЕНИЕ ДИЗАЙНА ДАШБОРДА             */
+/* ======================================== */
+.dashboard-header h2 {
+    margin-bottom: 4px;
+}
+
+.dashboard-header p {
+    color: var(--text-secondary);
+    font-size: 16px;
 }
