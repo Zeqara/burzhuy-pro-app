@@ -1,6 +1,6 @@
 // =================================================================
-// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v3.4 - ПОЛНЫЙ КОД)
-// Включает: Все функции, все исправления, полную логику отображения.
+// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v5.0 - АБСОЛЮТНО ПОЛНЫЙ КОД)
+// Включает: Все функции, все исправления, без сокращений.
 // =================================================================
 
 // =================================================================
@@ -637,32 +637,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error("Ошибка загрузки доступных проверок:", error);
-            listContainer.innerHTML = '<p>Не удалось загрузить проверки. Попробуйте позже.</p>';
+            listContainer.innerHTML = '<div class="empty-state"><p>Не удалось загрузить проверки. Попробуйте обновить страницу.</p></div>';
         }
     }
 
     async function confirmAndBookSchedule(scheduleId) {
         showModal('Подтверждение', 'Вы уверены, что хотите записаться на эту проверку?', 'confirm', async (confirmed) => {
             if (!confirmed) return;
-
             const user = appState.user;
             if (!user) return showModal('Ошибка', 'Ваша сессия истекла, пожалуйста, войдите заново.');
-
             document.getElementById('loader').classList.add('active');
-            
             try {
                 const scheduleRef = db.collection('schedules').doc(scheduleId);
                 await db.runTransaction(async (transaction) => {
                     const scheduleDoc = await transaction.get(scheduleRef);
                     if (!scheduleDoc.exists) throw new Error("Эта проверка больше не доступна.");
                     if (scheduleDoc.data().isBooked) throw new Error("Другой агент уже записался на эту проверку.");
-
                     transaction.update(scheduleRef, { isBooked: true });
-
                     const newReportRef = db.collection('reports').doc();
                     transaction.set(newReportRef, {
-                        userId: user.uid,
-                        scheduleId: scheduleId,
+                        userId: user.uid, scheduleId,
                         locationName: scheduleDoc.data().locationName,
                         city: scheduleDoc.data().city,
                         checkDate: scheduleDoc.data().date,
@@ -670,11 +664,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 });
-
                 showModal('Успешно!', 'Вы записаны на проверку. Задание появилось на вашем главном экране.', 'alert', () => {
                     showScreen('main-menu-screen');
                 });
-
             } catch (error) {
                 showModal('Ошибка', error.message);
                 renderAvailableSchedules();
@@ -687,7 +679,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadUserDashboard(userId) {
         const container = document.getElementById('dashboard-info-container');
         container.innerHTML = '<div class="spinner"></div>';
-        
         try {
             const snapshot = await db.collection('reports')
                 .where('userId', '==', userId)
@@ -696,7 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .get();
 
             if (snapshot.empty) {
-                container.innerHTML = '<p class="empty-state">У вас нет активных заданий. Вы можете записаться на новую проверку.</p>';
+                container.innerHTML = '<div class="empty-state"><p>У вас нет активных заданий. Вы можете записаться на новую проверку.</p></div>';
                 return;
             }
             
@@ -719,16 +710,14 @@ document.addEventListener('DOMContentLoaded', () => {
             html += '</ul>';
             container.innerHTML = html;
             
-            container.querySelectorAll('.btn-fill-checklist').forEach(btn => {
-                btn.addEventListener('click', e => openChecklist(e.target.dataset.id));
-            });
-            container.querySelectorAll('.btn-cancel-booking').forEach(btn => {
-                btn.addEventListener('click', e => cancelBooking(e.target.dataset.id));
-            });
-
+            container.querySelectorAll('.btn-fill-checklist').forEach(btn => btn.addEventListener('click', e => openChecklist(e.target.dataset.id)));
+            container.querySelectorAll('.btn-cancel-booking').forEach(btn => btn.addEventListener('click', e => cancelBooking(e.target.dataset.id)));
         } catch (error) {
-            console.error("Ошибка загрузки дашборда:", error);
-            container.innerHTML = '<p>Не удалось загрузить ваши задания.</p>';
+            console.error("ОШИБКА ЗАГРУЗКИ ДАШБОРДА:", error);
+            container.innerHTML = `<div class="empty-state">
+                <p style="color: var(--status-rejected);">Не удалось загрузить ваши задания.</p>
+                <small>Это может быть связано с отсутствием необходимого индекса в базе данных Firebase. Проверьте консоль разработчика (F12) для получения подробной ссылки на его создание.</small>
+            </div>`;
         }
     }
 
@@ -737,19 +726,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const confirmBtn = document.getElementById('cancellation-modal-confirm-btn');
         const cancelBtn = document.getElementById('cancellation-modal-cancel-btn');
         const commentInput = document.getElementById('cancellation-comment-input');
-
         commentInput.value = '';
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Отправить';
         modal.classList.remove('modal-hidden');
 
         confirmBtn.onclick = async () => {
             const reason = commentInput.value.trim();
             if (!reason) return alert('Пожалуйста, укажите причину отмены.');
-
             confirmBtn.disabled = true;
             confirmBtn.innerHTML = '<div class="spinner-small"></div>';
-
             try {
                 const user = appState.user;
                 if (!user) throw new Error("Пользователь не найден");
@@ -768,19 +752,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (scheduleId) {
-                    batch.update(db.collection('schedules').doc(scheduleId), {
-                        isBooked: false
-                    });
+                    batch.update(db.collection('schedules').doc(scheduleId), { isBooked: false });
                 }
 
                 await batch.commit();
-                modal.classList.add('modal-hidden');
                 showModal('Успешно', 'Запись отменена.');
                 loadUserDashboard(user.uid);
             } catch (e) {
-                modal.classList.add('modal-hidden');
                 showModal('Ошибка', 'Не удалось отменить запись. ' + e.message);
             } finally {
+                modal.classList.add('modal-hidden');
                 confirmBtn.disabled = false;
                 confirmBtn.textContent = 'Отправить';
             }
@@ -902,6 +883,11 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerHTML = '<div class="spinner-small"></div>';
 
         try {
+            const reportRef = db.collection('reports').doc(currentReportId);
+            const reportDoc = await reportRef.get();
+            const existingData = reportDoc.data();
+            const existingPhotoUrls = existingData.photoUrls || { location: [], receipt: [], dishes: [] };
+
             const form = e.currentTarget;
             const answers = {};
             const photoUploads = {};
@@ -946,7 +932,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const rating = totalQuestions > 0 ? Math.round((yesAnswers / totalQuestions) * 100) : 0;
             
-            const photoUrls = { location: [], receipt: [], dishes: [] };
+            const photoUrls = { 
+                location: [...existingPhotoUrls.location], 
+                receipt: [...existingPhotoUrls.receipt], 
+                dishes: [...existingPhotoUrls.dishes] 
+            };
             const uploadPromises = [];
             for (const category in photoUploads) {
                 for (const file of photoUploads[category]) {
@@ -957,7 +947,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (!photoUrls.dishes[dishIndex]) photoUrls.dishes[dishIndex] = [];
                             photoUrls.dishes[dishIndex].push(url);
                         } else {
-                            photoUrls[category].push(url);
+                            photoUrls[category] = [url]; // Перезаписываем фото для локации и чека
                         }
                     });
                     uploadPromises.push(uploadTask);
@@ -966,27 +956,21 @@ document.addEventListener('DOMContentLoaded', () => {
             await Promise.all(uploadPromises);
 
             const updateData = {
-                answers,
-                rating,
+                answers, rating, photoUrls,
                 status: 'pending',
                 submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 rejectionComment: firebase.firestore.FieldValue.delete()
             };
-            
-            if (Object.values(photoUploads).some(arr => arr.length > 0)) {
-                updateData.photoUrls = photoUrls;
-            }
 
-            await db.collection('reports').doc(currentReportId).update(updateData);
+            await reportRef.update(updateData);
             
             showModal('Отправлен на проверку!', 'Спасибо! Мы свяжемся с вами после проверки отчета.', 'alert', () => {
                 showScreen('main-menu-screen');
-                loadUserDashboard(user.uid);
             });
 
         } catch (err) {
             console.error("Ошибка при отправке отчета:", err);
-            showModal('Ошибка', err.message || 'Не удалось отправить отчет. Проверьте все поля и попробуйте снова.');
+            showModal('Ошибка', err.message || 'Не удалось отправить отчет.');
         } finally {
             btn.disabled = false;
             btn.textContent = 'Отправить отчет';
@@ -1037,28 +1021,124 @@ document.addEventListener('DOMContentLoaded', () => {
     // ФУНКЦИОНАЛ ИНСТРУКЦИИ ПО ЧЕК-ЛИСТУ
     // =================================================================
     async function renderChecklistInstruction() {
-        // ... (код без изменений)
+        const container = document.getElementById('checklist-instruction-content');
+        container.innerHTML = '<div class="spinner"></div>';
+        try {
+            const docRef = db.collection('content').doc('checklistInstruction');
+            const docSnap = await docRef.get();
+            if (!docSnap.exists) {
+                container.innerHTML = '<p class="empty-state">Инструкция еще не заполнена.</p>';
+                return;
+            }
+            const data = docSnap.data();
+            let html = '';
+            if (data.title) html += `<h3>${data.title}</h3>`;
+            if (data.description) html += `<p>${data.description}</p><hr>`;
+            if (data.items && data.items.length > 0) {
+                data.items.forEach(item => {
+                    html += `<div class="instruction-item">
+                            <h4>${item.question || 'Вопрос'}</h4>
+                            <p><strong>Пример ответа:</strong><br>${item.answer || 'Нет примера'}</p>
+                            ${item.imageUrl ? `<img src="${item.imageUrl}" alt="Пример фото">` : ''}
+                        </div>`;
+                });
+            }
+            container.innerHTML = html;
+        } catch (error) {
+            console.error("Ошибка загрузки инструкции чек-листа:", error);
+            container.innerHTML = '<p>Не удалось загрузить инструкцию.</p>';
+        }
     }
 
     let instructionItemCounter = 0;
 
     function createInstructionItemForm(item = {}, index) {
-        // ... (код без изменений)
+        return `<div class="instruction-form-item" data-index="${index}">
+                <div class="form-group"><label>Вопрос</label><input type="text" class="ci-item-question" value="${item.question || ''}" required></div>
+                <div class="form-group"><label>Пример ответа</label><textarea class="ci-item-answer" rows="3" required>${item.answer || ''}</textarea></div>
+                <div class="form-group">
+                    <label>Пример фото</label>
+                    ${item.imageUrl ? `<img src="${item.imageUrl}" style="max-width: 100px; display: block; margin-bottom: 10px;">` : ''}
+                    <input type="file" class="ci-item-photo" accept="image/*">
+                    <input type="hidden" class="ci-item-photo-url" value="${item.imageUrl || ''}">
+                </div>
+                <button type="button" class="btn-secondary delete-instruction-item-btn">Удалить</button>
+            </div>`;
     }
 
     document.getElementById('add-instruction-item-btn').addEventListener('click', () => {
-        // ... (код без изменений)
+        const container = document.getElementById('checklist-instruction-items-container');
+        container.insertAdjacentHTML('beforeend', createInstructionItemForm({}, instructionItemCounter++));
     });
 
     document.getElementById('checklist-instruction-items-container').addEventListener('click', (e) => {
-        // ... (код без изменений)
+        if (e.target.classList.contains('delete-instruction-item-btn')) {
+            e.target.closest('.instruction-form-item').remove();
+        }
     });
 
     async function loadChecklistInstructionForAdmin() {
-        // ... (код без изменений)
+        const form = document.getElementById('checklist-instruction-form');
+        const container = document.getElementById('checklist-instruction-items-container');
+        instructionItemCounter = 0;
+        container.innerHTML = '<div class="spinner"></div>';
+        try {
+            const docSnap = await db.collection('content').doc('checklistInstruction').get();
+            if (docSnap.exists) {
+                const data = docSnap.data();
+                form.querySelector('#ci-title').value = data.title || '';
+                form.querySelector('#ci-description').value = data.description || '';
+                let itemsHtml = '';
+                if (data.items && data.items.length > 0) {
+                    data.items.forEach((item, index) => {
+                        itemsHtml += createInstructionItemForm(item, index);
+                        instructionItemCounter = Math.max(instructionItemCounter, index + 1);
+                    });
+                }
+                container.innerHTML = itemsHtml;
+            } else {
+                 container.innerHTML = '';
+            }
+        } catch (error) {
+            console.error("Ошибка загрузки инструкции для админа:", error);
+            container.innerHTML = '<p>Не удалось загрузить данные для редактирования.</p>';
+        }
     }
 
     document.getElementById('checklist-instruction-form').addEventListener('submit', async (e) => {
-        // ... (код без изменений)
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner-small"></div>';
+        try {
+            const title = document.getElementById('ci-title').value;
+            const description = document.getElementById('ci-description').value;
+            const items = [];
+            const itemForms = document.querySelectorAll('.instruction-form-item');
+            const uploadPromises = [];
+            itemForms.forEach((form, index) => {
+                const question = form.querySelector('.ci-item-question').value;
+                const answer = form.querySelector('.ci-item-answer').value;
+                const photoInput = form.querySelector('.ci-item-photo');
+                const currentPhotoUrl = form.querySelector('.ci-item-photo-url').value;
+                const itemData = { question, answer, imageUrl: currentPhotoUrl };
+                items.push(itemData);
+                if (photoInput.files[0]) {
+                    const file = photoInput.files[0];
+                    const filePath = `instructions/${Date.now()}_${file.name}`;
+                    const uploadTask = storage.ref(filePath).put(file).then(snapshot => snapshot.ref.getDownloadURL());
+                    uploadPromises.push(uploadTask.then(downloadURL => { items[index].imageUrl = downloadURL; }));
+                }
+            });
+            await Promise.all(uploadPromises);
+            await db.collection('content').doc('checklistInstruction').set({ title, description, items });
+            showModal('Успешно', 'Инструкция по чек-листу сохранена.');
+        } catch (error) {
+            console.error("Ошибка сохранения инструкции:", error);
+            showModal('Ошибка', 'Не удалось сохранить инструкцию.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Сохранить инструкцию';
+        }
     });
 });
