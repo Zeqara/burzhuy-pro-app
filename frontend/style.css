@@ -16,7 +16,7 @@
     --status-approved: #4caf50;
     --status-pending: #fb8c00;
     --status-paid: #2196f3;
-    --status-cancelled: #8a8a8d; /* Цвет для отмененных */
+    --status-cancelled: #8a8a8d;
 }
 
 /* ======================================== */
@@ -368,7 +368,6 @@ button#logout-btn:hover {
     cursor: pointer; 
     font-weight: 600; 
 }
-
 .status-indicator { 
     width: 10px; 
     height: 10px; 
@@ -382,7 +381,6 @@ button#logout-btn:hover {
 .status-indicator.paid { background-color: var(--status-paid); }
 .status-indicator.cancelled { background-color: var(--status-cancelled); }
 .status-indicator.booked { background-color: var(--text-secondary); }
-
 .empty-state { 
     text-align: center; 
     padding: 40px 20px; 
@@ -419,7 +417,7 @@ button#logout-btn:hover {
 }
 
 /* ======================================== */
-/* СТИЛИ ДЛЯ ОБЩЕЙ ИНСТРУКЦИИ               */
+/* ИНСТРУКЦИИ                              */
 /* ======================================== */
 .instruction-text h3 { 
     color: var(--text-primary); 
@@ -448,7 +446,7 @@ button#logout-btn:hover {
 }
 
 /* ======================================== */
-/* УЛУЧШЕННЫЕ СТИЛИ АДМИН-ПАНЕЛИ          */
+/* АДМИН-ПАНЕЛЬ                            */
 /* ======================================== */
 #admin-report-detail-screen .report-details .form-group { 
     padding: 10px; 
@@ -460,12 +458,12 @@ button#logout-btn:hover {
     margin-bottom: 10px; 
     font-weight: bold; 
 }
-#admin-detail-photos { 
+.photo-gallery, #admin-detail-photos { 
     display: flex; 
     flex-wrap: wrap; 
     gap: 10px; 
 }
-#admin-detail-photos img { 
+.photo-gallery img, #admin-detail-photos img { 
     width: 100px; 
     height: 100px; 
     object-fit: cover; 
@@ -476,6 +474,7 @@ button#logout-btn:hover {
     display: flex; 
     gap: 10px; 
     flex-wrap: wrap; 
+    margin-top: 20px;
 }
 #admin-detail-actions button { 
     flex-grow: 1; 
@@ -493,7 +492,6 @@ button#logout-btn:hover {
 #admin-action-approve { background: var(--status-approved); }
 #admin-action-reject { background: var(--status-rejected); }
 #admin-action-paid { background: var(--status-paid); }
-
 .user-card { 
     background-color: var(--surface-color); 
     border: 1px solid var(--border-color); 
@@ -522,18 +520,6 @@ button#logout-btn:hover {
     font-size: 20px; 
     flex-shrink: 0; 
 }
-.user-card-info strong { 
-    font-size: 16px; 
-    font-weight: 600; 
-    color: var(--text-primary); 
-    display: flex; 
-    align-items: center; 
-    gap: 8px; 
-}
-.user-card-info small { 
-    font-size: 14px; 
-    color: var(--text-secondary); 
-}
 .user-card-actions { 
     display: flex; 
     gap: 10px; 
@@ -556,6 +542,7 @@ button#logout-btn:hover {
 .delete-user-btn, .delete-report-btn { 
     background-color: rgba(229, 57, 53, 0.2); 
     color: var(--status-rejected); 
+    border: none;
 }
 .delete-user-btn:hover, .delete-report-btn:hover { 
     background-color: var(--status-rejected); 
@@ -569,7 +556,7 @@ button#logout-btn:hover {
 }
 
 /* ======================================== */
-/* СТИЛИ ДЛЯ СТАРТОВОГО ЭКРАНА              */
+/* СТАРТОВЫЙ ЭКРАН                         */
 /* ======================================== */
 #welcome-screen { 
     justify-content: center; 
@@ -613,9 +600,9 @@ button#logout-btn:hover {
     box-shadow: 0 6px 20px rgba(229, 57, 53, 0.4); 
 }
 
-/* ============================================================= */
-/* СТИЛИ ДЛЯ ИНСТРУКЦИИ ПО ЧЕК-ЛИСТУ                      */
-/* ============================================================= */
+/* ======================================== */
+/* ИНСТРУКЦИЯ ПО ЧЕК-ЛИСТУ                  */
+/* ======================================== */
 .instruction-item {
     margin-bottom: 25px;
     border-bottom: 1px solid var(--border-color);
@@ -632,4 +619,137 @@ button#logout-btn:hover {
 .instruction-item p {
     background: var(--surface-color);
     padding: 15px;
-    border-radius:
+    border-radius: 8px;
+    margin: 10px 0;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+.instruction-item p strong {
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 8px;
+}
+.instruction-item img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid var(--border-color);
+}
+.instruction-form-item {
+    border: 1px solid var(--border-color);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    background-color: var(--surface-color);
+}
+.delete-instruction-item-btn {
+    width: auto !important;
+    padding: 10px 15px !important;
+    background-color: rgba(229, 57, 53, 0.2) !important;
+    color: var(--status-rejected) !important;
+    border: 1px solid var(--status-rejected) !important;
+    font-weight: 600;
+}
+.delete-instruction-item-btn:hover {
+    background-color: var(--status-rejected) !important;
+    color: white !important;
+}
+
+/* ======================================== */
+/* СТИЛИ ДЛЯ НОВОГО ЧЕК-ЛИСТА               */
+/* ======================================== */
+#checklist-form h3 {
+    margin-top: 25px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+#checklist-form h3:first-of-type {
+    margin-top: 5px;
+}
+.radio-group {
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+.radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+    font-size: 16px;
+}
+input[type="radio"] {
+    width: auto;
+    transform: scale(1.2); 
+}
+input[type="file"] {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+}
+input[type="file"]::file-selector-button {
+    background: var(--surface-color-hover);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 15px;
+}
+input[type="file"]::file-selector-button:hover {
+    background-color: var(--border-color);
+}
+.dish-evaluation-block {
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    position: relative;
+    background-color: var(--surface-color);
+}
+.delete-dish-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 5px;
+}
+.delete-dish-btn:hover {
+    color: var(--text-primary);
+}
+
+/* ======================================== */
+/* СТИЛИ ДЛЯ РЕЙТИНГА                       */
+/* ======================================== */
+.rating-badge {
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 14px;
+    vertical-align: middle;
+}
+.rating-badge.green {
+    color: var(--status-approved);
+    background: rgba(76, 175, 80, 0.2);
+}
+.rating-badge.yellow {
+    color: var(--status-pending);
+    background: rgba(251, 140, 0, 0.2);
+}
+.rating-badge.red {
+    color: var(--status-rejected);
+    background: rgba(229, 57, 53, 0.2);
+}
+.rating-display-container {
+    margin: 15px 0;
+    font-size: 18px;
+    font-weight: 500;
+}
