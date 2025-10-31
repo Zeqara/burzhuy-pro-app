@@ -1,6 +1,6 @@
 // =================================================================
 // ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v3.0)
-// Включает: новый чек-лист, раздельную загрузку фото, автоматический рейтинг, улучшенную логику отмены
+// Включает: новый чек-лист, раздельную загрузку фото, автоматический рейтинг, улучшенную логику отмены, исправленную загрузку городов
 // =================================================================
 
 // =================================================================
@@ -229,24 +229,45 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadCitiesForAdmin() {
         const citySelect = document.getElementById('schedule-city-select');
         const locationSelect = document.getElementById('schedule-location-select');
+        citySelect.innerHTML = '<option value="" disabled selected>-- Загрузка городов... --</option>';
+        locationSelect.innerHTML = '<option value="" disabled selected>-- Сначала выберите город --</option>';
         locationSelect.disabled = true;
         try {
-            const snapshot = await db.collection('locations').get();
-            const cities = {};
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                if (!cities[data.city]) cities[data.city] = [];
-                cities[data.city].push(data.name);
+            const citiesSnapshot = await db.collection('cities').orderBy('name').get();
+            citySelect.innerHTML = '<option value="" disabled selected>-- Выберите город --</option>';
+            if (citiesSnapshot.empty) {
+                citySelect.innerHTML = '<option value="" disabled selected>-- Городов не найдено --</option>';
+                return;
+            }
+            citiesSnapshot.forEach(doc => {
+                const cityName = doc.data().name;
+                citySelect.innerHTML += `<option value="${cityName}">${cityName}</option>`;
             });
-            citySelect.innerHTML = '<option value="" disabled selected>-- Выбор --</option>';
-            Object.keys(cities).sort().forEach(city => citySelect.innerHTML += `<option value="${city}">${city}</option>`);
-            citySelect.onchange = () => {
-                locationSelect.innerHTML = '<option value="" disabled selected>-- ... --</option>';
-                cities[citySelect.value]?.sort().forEach(loc => locationSelect.innerHTML += `<option value="${loc}">${loc}</option>`);
-                locationSelect.disabled = false;
+            citySelect.onchange = async () => {
+                const selectedCity = citySelect.value;
+                if (!selectedCity) return;
+                locationSelect.innerHTML = '<option value="" disabled selected>-- Загрузка точек... --</option>';
+                locationSelect.disabled = true;
+                try {
+                    const locationsSnapshot = await db.collection('locations').where('city', '==', selectedCity).orderBy('name').get();
+                    locationSelect.innerHTML = '<option value="" disabled selected>-- Выберите точку --</option>';
+                    if (locationsSnapshot.empty) {
+                        locationSelect.innerHTML = '<option value="" disabled selected>-- Точек не найдено --</option>';
+                        return;
+                    }
+                    locationsSnapshot.forEach(doc => {
+                        const locationName = doc.data().name;
+                        locationSelect.innerHTML += `<option value="${locationName}">${locationName}</option>`;
+                    });
+                    locationSelect.disabled = false;
+                } catch (error) {
+                    console.error("Ошибка загрузки точек:", error);
+                    showModal("Ошибка", "Не удалось загрузить список точек для этого города.");
+                }
             };
-        } catch (e) {
-            showModal("Ошибка", "Не удалось загрузить города.");
+        } catch (error) {
+            console.error("Ошибка загрузки городов:", error);
+            showModal("Ошибка", "Не удалось загрузить список городов. Проверьте коллекцию 'cities'.");
         }
     }
 
@@ -267,8 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return showModal('Ошибка', 'Время начала должно быть раньше окончания.');
         }
 
-        const localDate = new Date(date);
-        const dateForFirestore = new Date(localDate.getTime() + (localDate.getTimezoneOffset() * 60000));
+        const dateForFirestore = new Date(date);
 
         await db.collection('schedules').add({
             city,
@@ -462,12 +482,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (answers.dishes && answers.dishes.length > 0) {
                 answers.dishes.forEach((dish, index) => {
                     reportHtml += `<div class="dish-evaluation-block"><h4>Блюдо: <strong>${dish.name || 'Без названия'}</strong></h4>`;
-                    reportHtml += renderQuestion('Упаковка чистая, не повреждена.', `dish_packaging_${index}`);
-                    reportHtml += renderQuestion('Внешний вид аккуратный и аппетитный.', `dish_appearance_${index}`);
-                    reportHtml += renderQuestion('Индивидуальные пожелания учтены.', `dish_wishes_${index}`);
-                    reportHtml += renderQuestion('Температура соответствует норме.', `dish_temp_${index}`);
-                    reportHtml += renderQuestion('Вкус сбалансированный.', `dish_taste_${index}`);
-                    reportHtml += renderQuestion('Посторонние привкусы и запахи отсутствуют.', `dish_smell_${index}`);
+                    reportHtml += renderQuestion('Упаковка чистая, не повреждена.', `packaging_${index}`);
+                    reportHtml += renderQuestion('Внешний вид аккуратный и аппетитный.', `appearance_${index}`);
+                    reportHtml += renderQuestion('Индивидуальные пожелания учтены.', `wishes_${index}`);
+                    reportHtml += renderQuestion('Температура соответствует норме.', `temp_${index}`);
+                    reportHtml += renderQuestion('Вкус сбалансированный.', `taste_${index}`);
+                    reportHtml += renderQuestion('Посторонние привкусы и запахи отсутствуют.', `smell_${index}`);
                     reportHtml += renderPhotos(photoUrls.dishes[index], 'Фото блюда:');
                     reportHtml += '</div>';
                 });
@@ -575,15 +595,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // ФУНКЦИИ АГЕНТА (ПОЛЬЗОВАТЕЛЯ)
     // =================================================================
     async function renderAvailableSchedules() {
-        // ... (Без изменений)
+        // ... (Код без изменений)
     }
 
     async function confirmAndBookSchedule(scheduleId) {
-        // ... (Без изменений)
+        // ... (Код без изменений)
     }
 
     async function loadUserDashboard(userId) {
-        // ... (Без изменений)
+        // ... (Код без изменений)
     }
 
     function cancelBooking(id) {
@@ -681,6 +701,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             showModal('Ошибка', 'Не удалось загрузить чек-лист.');
         }
+    }
+
+    async function openChecklistForEdit(id) {
+        // Эта функция требует сложной логики для заполнения динамических полей, 
+        // пока она будет просто открывать пустой чек-лист для исправления.
+        openChecklist(id);
     }
 
     document.getElementById('checklist-form').addEventListener('submit', async (e) => {
@@ -808,9 +834,7 @@ document.addEventListener('DOMContentLoaded', () => {
             list.querySelectorAll('.btn-edit-report').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    // Здесь нужна логика для редактирования НОВОГО формата отчета. 
-                    // Это сложная задача, пока оставим просто переход на экран.
-                    openChecklist(e.target.dataset.id); 
+                    openChecklistForEdit(e.target.dataset.id); 
                 });
             });
         } catch (error) {
