@@ -118,25 +118,6 @@
                     <p><strong>Дата:</strong> <span id="admin-detail-date"></span></p>
                     <p><strong>Статус:</strong> <span id="admin-detail-status"></span></p>
                     <div id="admin-detail-rejection-comment-container" style="display: none;"></div>
-                    <hr>
-                    <h4>Ответы на вопросы:</h4>
-                    <div class="form-group"><label>🧹 Чистота и внешний вид (вид с улицы):</label><p id="admin-detail-q1"></p></div>
-                    <div class="form-group"><label>✍️ Дополнительные замечания по чистоте и внешнему виду:</label><p id="admin-detail-q2"></p></div>
-                    <div class="form-group"><label>👋 Приветствие и поведение сотрудника:</label><p id="admin-detail-q3"></p></div>
-                    <div class="form-group"><label>➕ Предложение дополнений:</label><p id="admin-detail-q4"></p></div>
-                    <div class="form-group"><label>✍️ Дополнительные замечания по контакту с сотрудником:</label><p id="admin-detail-q5"></p></div>
-                    <div class="form-group"><label>📝 Действия сотрудника после принятия заказа:</label><p id="admin-detail-q6"></p></div>
-                    <div class="form-group"><label>📦 Выдача заказа:</label><p id="admin-detail-q7"></p></div>
-                    <div class="form-group"><label>🕛 Время от момента оплаты до получения заказа:</label><p id="admin-detail-q8"></p></div>
-                    <div class="form-group"><label>🌯 Оценка выданного заказа:</label><p id="admin-detail-q9"></p></div>
-                    <div class="form-group"><label>🍽️ Итоговая оценка блюда (по шкале 1-5):</label><p id="admin-detail-q10"></p></div>
-                    <div class="form-group"><label>✍️ Дополнительные замечания по вкусу и качеству блюда:</label><p id="admin-detail-q11"></p></div>
-                    <div class="form-group"><label>✍️ Замечания, жалобы, предложения, общие впечатления:</label><p id="admin-detail-q12"></p></div>
-                    <hr>
-                    <h4>Прикрепленные фото:</h4>
-                    <div id="admin-detail-photos"></div>
-                    <hr>
-                    <h4>Действия:</h4>
                     <div id="admin-detail-actions"><button id="admin-action-approve">Принять</button><button id="admin-action-reject">Отклонить</button><button id="admin-action-paid">✓ Оплачено</button></div>
                 </div>
             </div>
@@ -175,28 +156,92 @@
         <div id="time-picker-screen" class="screen with-header"><header><button class="back-btn" data-target="cooperation-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Выберите время</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><h3 id="picker-location-title"></h3><form id="time-picker-form" novalidate><div class="form-group"><label for="user-start-time">Укажите интервал времени</label><div class="time-slot-input"><input type="time" id="user-start-time" required><span>-</span><input type="time" id="user-end-time" required></div></div><button type="submit" class="btn-primary">Подтвердить</button></form></div></div>
         
         <div id="checklist-screen" class="screen with-header">
-            <header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Чек-лист</h2><div class="header-placeholder"></div></header>
+            <header>
+                <button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
+                <h2>Чек-лист</h2>
+                <div class="header-placeholder"></div>
+            </header>
             <div class="scrollable-content">
                 <form id="checklist-form" novalidate>
                     <p><strong>Адрес:</strong> <span id="checklist-address"></span></p>
                     <p><strong>Дата:</strong> <span id="checklist-date"></span></p>
-                    <div class="form-group"><label for="checklist-q1">🧹 Чистота и внешний вид (вид с улицы):</label><textarea id="checklist-q1" required></textarea></div>
-                    <div class="form-group"><label for="checklist-q2">✍️ Дополнительные замечания по чистоте и внешнему виду:</label><textarea id="checklist-q2"></textarea></div>
-                    <div class="form-group"><label for="checklist-q3">👋  Приветствие и поведение сотрудника:</label><textarea id="checklist-q3" required></textarea></div>
-                    <div class="form-group"><label for="checklist-q4">➕ Предложение дополнений:</label><textarea id="checklist-q4" required></textarea></div>
-                    <div class="form-group"><label for="checklist-q5">✍️  Дополнительные замечания по контакту с сотрудником:</label><textarea id="checklist-q5"></textarea></div>
-                    <div class="form-group"><label for="checklist-q6">📝 Действия сотрудника после принятия заказа:</label><textarea id="checklist-q6" required></textarea></div>
-                    <div class="form-group"><label for="checklist-q7">📦  Выдача заказа:</label><textarea id="checklist-q7" required></textarea></div>
-                    <div class="form-group"><label for="checklist-q8">🕛 Время от момента оплаты до получения заказа:</label><input type="text" id="checklist-q8" placeholder="Например: 5 минут" required></div>
-                    <div class="form-group"><label for="checklist-q9">🌯  Оценка выданного заказа:</label><textarea id="checklist-q9" required></textarea></div>
-                    <div class="form-group"><label for="checklist-q10">🍽️ Итоговая оценка блюда (по шкале 1-5):</label><input type="number" id="checklist-q10" min="1" max="5" required></div>
-                    <div class="form-group"><label for="checklist-q11">✍️ Дополнительные замечания по вкусу и качеству блюда:</label><textarea id="checklist-q11"></textarea></div>
-                    <div class="form-group"><label for="checklist-q12">✍️ Замечания, жалобы, предложения, общие впечатления:</label><textarea id="checklist-q12"></textarea></div>
-                    <div class="form-group"><label for="checklist-photos">Фото (обязательно)</label><input type="file" id="checklist-photos" multiple accept="image/*"></div>
-                    <button type="submit" class="btn-primary">Отправить</button>
+                    <hr>
+
+                    <h3>Чистота и внешний вид павильона</h3>
+                    <div class="form-group"><label>Территория у павильона чистая — без мусора, окурков и посторонних предметов.</label><div class="radio-group"><label><input type="radio" name="q_territory" value="Да" required> Да</label><label><input type="radio" name="q_territory" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Стены и вывеска чистые, без повреждений и следов загрязнений.</label><div class="radio-group"><label><input type="radio" name="q_walls" value="Да" required> Да</label><label><input type="radio" name="q_walls" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Стекла прозрачные, без разводов, пятен и отпечатков.</label><div class="radio-group"><label><input type="radio" name="q_windows" value="Да" required> Да</label><label><input type="radio" name="q_windows" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Меню и рекламные материалы, чистые, без повреждений и потертостей.</label><div class="radio-group"><label><input type="radio" name="q_menu_ads" value="Да" required> Да</label><label><input type="radio" name="q_menu_ads" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Контейнеры для мусора чистые, не переполнены.</label><div class="radio-group"><label><input type="radio" name="q_trash_bins" value="Да" required> Да</label><label><input type="radio" name="q_trash_bins" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Подоконники чистые, без пыли и мусора.</label><div class="radio-group"><label><input type="radio" name="q_windowsills" value="Да" required> Да</label><label><input type="radio" name="q_windowsills" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Зона приготовления аккуратная и чистая, продукция не хранится в пакетах.</label><div class="radio-group"><label><input type="radio" name="q_cook_zone" value="Да" required> Да</label><label><input type="radio" name="q_cook_zone" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Холодильник с напитками чистый, заполнен, посторонние предметы отсутствуют.</label><div class="radio-group"><label><input type="radio" name="q_fridge" value="Да" required> Да</label><label><input type="radio" name="q_fridge" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>В зоне видимости посетителя отсутствуют загрязнения и беспорядок.</label><div class="radio-group"><label><input type="radio" name="q_guest_zone" value="Да" required> Да</label><label><input type="radio" name="q_guest_zone" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Светодиоды и вывеска исправны, работают по всему периметру павильона.</label><div class="radio-group"><label><input type="radio" name="q_lights" value="Да" required> Да</label><label><input type="radio" name="q_lights" value="Нет"> Нет</label><label><input type="radio" name="q_lights" value="Не актуально"> Не актуально</label></div></div>
+                    <hr>
+
+                    <h3>Внешний вид сотрудников</h3>
+                    <div class="form-group"><label>Сотрудники одеты в фирменную форму (фартук, головной убор, черная футболка/кофта).</label><div class="radio-group"><label><input type="radio" name="q_uniform" value="Да" required> Да</label><label><input type="radio" name="q_uniform" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Волосы аккуратно убраны под головной убор.</label><div class="radio-group"><label><input type="radio" name="q_hair" value="Да" required> Да</label><label><input type="radio" name="q_hair" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>У сотрудниц отсутствуют длинные или ярко окрашенные ногти.</label><div class="radio-group"><label><input type="radio" name="q_nails" value="Да" required> Да</label><label><input type="radio" name="q_nails" value="Нет"> Нет</label><label><input type="radio" name="q_nails" value="Не актуально"> Не актуально</label></div></div>
+                    <div class="form-group"><label>Одежда и обувь сотрудников чистые, опрятные.</label><div class="radio-group"><label><input type="radio" name="q_clothes_clean" value="Да" required> Да</label><label><input type="radio" name="q_clothes_clean" value="Нет"> Нет</label></div></div>
+                    <div class="form-group">
+                        <label>Фото: внешний вид павильона, фото внутри (несколько ракурсов).</label>
+                        <input type="file" id="photos_location" multiple accept="image/*" required>
+                    </div>
+                    <hr>
+
+                    <h3>Приём и выдача заказа</h3>
+                    <div class="form-group"><label>Сотрудник поприветствовал и первым установил контакт.</label><div class="radio-group"><label><input type="radio" name="q_greeting" value="Да" required> Да</label><label><input type="radio" name="q_greeting" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Сотрудник общается вежливо, доброжелательно и в позитивном тоне.</label><div class="radio-group"><label><input type="radio" name="q_polite" value="Да" required> Да</label><label><input type="radio" name="q_polite" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Сотрудник проявил готовность помочь с выбором и ответил на вопросы по блюдам.</label><div class="radio-group"><label><input type="radio" name="q_help" value="Да" required> Да</label><label><input type="radio" name="q_help" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Было предложено дополнение к основному блюду (соусы, сыр и т. д.).</label><div class="radio-group"><label><input type="radio" name="q_addons" value="Да" required> Да</label><label><input type="radio" name="q_addons" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Сотрудник сделал предложение по дополнительным позициям (напиток, фри и т. п.).</label><div class="radio-group"><label><input type="radio" name="q_upsell" value="Да" required> Да</label><label><input type="radio" name="q_upsell" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Заказ был продублирован сотрудником, названа итоговая сумма.</label><div class="radio-group"><label><input type="radio" name="q_repeat_order" value="Да" required> Да</label><label><input type="radio" name="q_repeat_order" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Был выдан номер заказа.</label><div class="radio-group"><label><input type="radio" name="q_order_number" value="Да" required> Да</label><label><input type="radio" name="q_order_number" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Сотрудник озвучил ориентировочное время ожидания.</label><div class="radio-group"><label><input type="radio" name="q_wait_time_announced" value="Да" required> Да</label><label><input type="radio" name="q_wait_time_announced" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Заказ выдан полностью, в соответствии с чеком.</label><div class="radio-group"><label><input type="radio" name="q_order_complete" value="Да" required> Да</label><label><input type="radio" name="q_order_complete" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label>Был выдан кассовый чек.</label><div class="radio-group"><label><input type="radio" name="q_receipt_given" value="Да" required> Да</label><label><input type="radio" name="q_receipt_given" value="Нет"> Нет</label></div></div>
+                    <div class="form-group"><label for="q_wait_time_actual">Укажите время ожидания выдачи заказа (например: 5 минут)</label><input type="text" id="q_wait_time_actual" required></div>
+                    <div class="form-group"><label for="q_napkins_count">Укажите количество салфеток</label><input type="number" id="q_napkins_count" min="0" required></div>
+                    <div class="form-group">
+                        <label>Фото: чек.</label>
+                        <input type="file" id="photos_receipt" accept="image/*" required>
+                    </div>
+                    <hr>
+
+                    <h3>Качество блюд</h3>
+                    <div id="dish-evaluation-container"></div>
+                    <button type="button" id="add-dish-btn" class="btn-secondary" style="margin-bottom: 20px;">+ Добавить блюдо для оценки</button>
+                    <hr>
+
+                    <h3>Общие впечатления</h3>
+                    <div class="form-group"><label for="q_final_taste_remarks">Дополнительные замечания по вкусу и качеству блюда:</label><textarea id="q_final_taste_remarks"></textarea></div>
+                    <div class="form-group"><label for="q_final_general_remarks">Замечания, жалобы, предложения по улучшению, общие впечатления от посещения:</label><textarea id="q_final_general_remarks"></textarea></div>
+                    <hr>
+                    
+                    <button type="submit" class="btn-primary">Отправить отчет</button>
                 </form>
             </div>
         </div>
+
+        <template id="dish-evaluation-template">
+            <div class="dish-evaluation-block">
+                <button type="button" class="delete-dish-btn">&times;</button>
+                <h4>Оценка блюда</h4>
+                <div class="form-group"><label for="dish_name">Название блюда:</label><input type="text" class="dish-property" data-property="name" required></div>
+                <div class="form-group"><label>Упаковка чистая, не повреждена.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="packaging" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="packaging" value="Нет"> Нет</label></div></div>
+                <div class="form-group"><label>Внешний вид блюда аккуратный и аппетитный.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="appearance" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="appearance" value="Нет"> Нет</label></div></div>
+                <div class="form-group"><label>Индивидуальные пожелания учтены.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="wishes" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="wishes" value="Нет"> Нет</label><label><input type="radio" class="dish-property" data-property="wishes" value="Не актуально"> Не актуально</label></div></div>
+                <div class="form-group"><label>Температура блюда соответствует норме.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="temp" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="temp" value="Нет"> Нет</label></div></div>
+                <div class="form-group"><label>Вкус сбалансированный, соответствует ожиданиям.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="taste" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="taste" value="Нет"> Нет</label></div></div>
+                <div class="form-group"><label>Отсутствуют посторонние привкусы и запахи.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="smell" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="smell" value="Нет"> Нет</label></div></div>
+                <div class="form-group">
+                    <label>Фото: блюдо в упаковке и без.</label>
+                    <input type="file" class="dish-photos" multiple accept="image/*" required>
+                </div>
+            </div>
+        </template>
 
         <div id="history-screen" class="screen with-header"><header><button class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>История проверок</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><ul id="history-list" class="menu-list"></ul></div></div>
         
@@ -210,7 +255,6 @@
                 <h3>🎯 Проект «Тайный агент BURЖУЙ»</h3>
                 <p>Добро пожаловать в проект «Тайный агент BURЖУЙ»! 🎉 Спасибо, что решил(а) помочь нам стать лучше — а себе обеспечить вкусный обед за наш счёт. 🍔☕️</p>
                 <p>Твоя миссия — объективно оценить качество нашей работы и поделиться честным мнением. Каждый твой отчет помогает нам исправлять ошибки и становиться лучше для тысяч гостей.</p>
-                
                 <h3>🔍 Как проходит проверка: от миссии до вознаграждения</h3>
                 <p>Это твой путь к успеху. Следуй шагам, и все пройдет идеально.</p>
                 <ol>
@@ -221,7 +265,6 @@
                     <li><strong>Заполни чек-лист после проверки.</strong><br>Сделай это в течение <strong>двух часов</strong> после визита. Не забудь прикрепить все необходимые фотографии.<br><em>⏳ Проверка отчёта занимает до 12 часов (отчёты обрабатываются только в будние дни).</em></li>
                     <li><strong>Получи компенсацию.</strong><br>После принятия отчёта менеджером 💸 деньги возвращаются тебе на карту.<br><em>⚠️ Компенсация возможна только при корректной и полной сдаче всех материалов.</em></li>
                 </ol>
-
                 <h3>🔥 Срочные проверки</h3>
                 <p>Иногда ты можешь увидеть в списке миссий проверки, отмеченные значком огня (🔥). Это <strong>срочные проверки</strong>!</p>
                 <ul>
@@ -230,7 +273,6 @@
                     <li><strong>Награда:</strong> За успешное и оперативное выполнение срочной проверки может быть предусмотрен дополнительный бонус.</li>
                 </ul>
                 <p>Берясь за такую миссию, ты очень помогаешь команде оперативно решить важный вопрос.</p>
-
                 <h3>📸 Необходимые фотографии</h3>
                 <p>При проверке сделай следующие фото:</p>
                 <ul>
@@ -239,7 +281,6 @@
                     <li>📍 Фото <strong>готовых блюд</strong> (аппетитное, при хорошем освещении).</li>
                 </ul>
                 <p>Не удаляй фотографии до того, как отчёт будет принят менеджером.</p>
-
                 <h3>✅ Основные правила</h3>
                 <ul>
                     <li><strong>Будь незаметен:</strong> Веди себя естественно — не раскрывай, что ты тайный агент.</li>
@@ -247,7 +288,6 @@
                     <li><strong>Качественные фото:</strong> Делай чёткие фото без вспышки и звука камеры.</li>
                     <li><strong>Будь на связи:</strong> Если не можешь провести проверку — заранее предупреди через раздел «Техническая поддержка», чтобы можно было перенести задание.</li>
                 </ul>
-
                 <h3>💬 Вопросы</h3>
                 <p>Все вопросы можно задать в разделе «Техническая поддержка» — команда оперативно поможет тебе разобраться.</p>
             </div>
