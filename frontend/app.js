@@ -1,6 +1,6 @@
 // =================================================================
-// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v3.0)
-// Включает: новый чек-лист, раздельную загрузку фото, автоматический рейтинг, улучшенную логику отмены, исправленную загрузку городов
+// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v3.1 - ИСПРАВЛЕНАЯ И УЛУЧШЕННАЯ)
+// Включает: исправление логики редактирования отчетов и подсчета проверок
 // =================================================================
 
 // =================================================================
@@ -534,13 +534,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (comment) updateData.rejectionComment = comment;
         try {
             const reportRef = db.collection('reports').doc(currentReportId);
-            await reportRef.update(updateData);
+            
+            // =================================================================
+            // ИСПРАВЛЕНИЕ: Предотвращаем повторное начисление
+            // =================================================================
             if (status === 'approved') {
-                const reportData = (await reportRef.get()).data();
-                if (reportData.userId && reportData.status !== 'approved') {
+                const reportDoc = await reportRef.get();
+                const reportData = reportDoc.data();
+                if (reportData && reportData.userId && reportData.status !== 'approved') {
                     await db.collection('users').doc(reportData.userId).update({ completedChecks: firebase.firestore.FieldValue.increment(1) });
                 }
             }
+            
+            await reportRef.update(updateData);
             showModal('Успешно', 'Статус обновлен.');
             openAdminReportDetail(currentReportId);
         } catch (err) {
@@ -662,51 +668,115 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelBtn.onclick = () => modal.classList.add('modal-hidden');
     }
 
+    async function prepareChecklistForm(report) {
+        document.getElementById('checklist-address').textContent = formatLocationNameForUser(report.locationName);
+        document.getElementById('checklist-date').textContent = report.checkDate.toDate().toLocaleDateString('ru-RU');
+        
+        const form = document.getElementById('checklist-form');
+        form.reset();
+        
+        const dishContainer = document.getElementById('dish-evaluation-container');
+        dishContainer.innerHTML = '';
+
+        const addDishBtn = document.getElementById('add-dish-btn');
+        const dishTemplate = document.getElementById('dish-evaluation-template');
+
+        addDishBtn.onclick = () => {
+            const dishClone = dishTemplate.content.cloneNode(true);
+            const dishCount = dishContainer.children.length;
+            dishClone.querySelectorAll('input[type="radio"]').forEach(radio => {
+                const property = radio.dataset.property;
+                radio.name = `${property}_${dishCount}`;
+            });
+            dishContainer.appendChild(dishClone);
+        };
+        
+        dishContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-dish-btn')) {
+                e.target.closest('.dish-evaluation-block').remove();
+            }
+        });
+
+        return { form, dishContainer, addDishBtn };
+    }
+
     async function openChecklist(id) {
         try {
             const doc = await db.collection('reports').doc(id).get();
             if (!doc.exists) return showModal('Ошибка', 'Задание не найдено.');
             currentReportId = id;
             const report = doc.data();
-            document.getElementById('checklist-address').textContent = formatLocationNameForUser(report.locationName);
-            document.getElementById('checklist-date').textContent = report.checkDate.toDate().toLocaleDateString('ru-RU');
-            
-            const form = document.getElementById('checklist-form');
-            form.reset();
 
-            const dishContainer = document.getElementById('dish-evaluation-container');
-            dishContainer.innerHTML = '';
-
-            const addDishBtn = document.getElementById('add-dish-btn');
-            const dishTemplate = document.getElementById('dish-evaluation-template');
-
-            addDishBtn.onclick = () => {
-                const dishClone = dishTemplate.content.cloneNode(true);
-                const dishCount = dishContainer.children.length;
-                dishClone.querySelectorAll('input[type="radio"]').forEach(radio => {
-                    radio.name = `${radio.dataset.property}_${dishCount}`;
-                });
-                dishContainer.appendChild(dishClone);
-            };
-            
-            addDishBtn.click();
-
-            dishContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('delete-dish-btn')) {
-                    e.target.closest('.dish-evaluation-block').remove();
-                }
-            });
+            const { addDishBtn } = await prepareChecklistForm(report);
+            addDishBtn.click(); // Добавляем один блок для блюда по умолчанию
 
             showScreen('checklist-screen');
         } catch (error) {
             showModal('Ошибка', 'Не удалось загрузить чек-лист.');
         }
     }
-
+    
+    // =================================================================
+    // ИСПРАВЛЕНИЕ: Полностью переписанная функция для редактирования
+    // =================================================================
     async function openChecklistForEdit(id) {
-        // Эта функция требует сложной логики для заполнения динамических полей, 
-        // пока она будет просто открывать пустой чек-лист для исправления.
-        openChecklist(id);
+        try {
+            const doc = await db.collection('reports').doc(id).get();
+            if (!doc.exists) return showModal('Ошибка', 'Задание для редактирования не найдено.');
+            
+            currentReportId = id;
+            const report = doc.data();
+            const answers = report.answers || {};
+
+            const { form, dishContainer, addDishBtn } = await prepareChecklistForm(report);
+
+            // Заполняем основные поля
+            for (const key in answers) {
+                if (key === 'dishes') continue; // Блюда обработаем отдельно
+                const value = answers[key];
+                const input = form.querySelector(`[name="${key}"]`);
+                if (input) {
+                    if (input.type === 'radio') {
+                        const radioToSelect = form.querySelector(`input[name="${key}"][value="${value}"]`);
+                        if (radioToSelect) radioToSelect.checked = true;
+                    } else {
+                        input.value = value;
+                    }
+                }
+            }
+            
+            // Динамически создаем и заполняем блоки с блюдами
+            (answers.dishes || []).forEach((dishData, index) => {
+                addDishBtn.click(); // Создаем новый пустой блок
+                const newDishBlock = dishContainer.lastElementChild;
+                if (newDishBlock) {
+                    for (const property in dishData) {
+                        const value = dishData[property];
+                        const propInput = newDishBlock.querySelector(`[data-property="${property}"]`);
+                        if (propInput) {
+                            if (propInput.type === 'radio') {
+                                // Радио-кнопки в блюдах имеют уникальные имена (напр. packaging_0, packaging_1)
+                                const radioName = `${property}_${index}`;
+                                const radioToSelect = newDishBlock.querySelector(`input[name="${radioName}"][value="${value}"]`);
+                                if (radioToSelect) radioToSelect.checked = true;
+                            } else {
+                                propInput.value = value;
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Если в сохраненном отчете не было блюд, добавим один пустой блок
+            if (!answers.dishes || answers.dishes.length === 0) {
+                 addDishBtn.click();
+            }
+
+            showScreen('checklist-screen');
+        } catch (error) {
+            console.error("Ошибка при открытии чек-листа для редактирования:", error);
+            showModal('Ошибка', 'Не удалось загрузить данные для редактирования.');
+        }
     }
 
     document.getElementById('checklist-form').addEventListener('submit', async (e) => {
@@ -725,7 +795,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             form.querySelectorAll('input[type="radio"]:checked, input[type="text"], input[type="number"], textarea').forEach(input => {
                 const name = input.name || input.id;
-                if (name) answers[name] = input.value;
+                if (name && !name.startsWith('packaging_') && !name.startsWith('appearance_') && !name.startsWith('wishes_') && !name.startsWith('temp_') && !name.startsWith('taste_') && !name.startsWith('smell_') ) {
+                     answers[name] = input.value;
+                }
             });
 
             const dishes = [];
@@ -736,11 +808,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         dishData[prop.dataset.property] = prop.value;
                     }
                 });
-                dishes.push(dishData);
-                
-                const dishPhotosInput = dishBlock.querySelector('.dish-photos');
-                if (dishPhotosInput && dishPhotosInput.files.length > 0) {
-                    photoUploads[`dish_${index}`] = Array.from(dishPhotosInput.files);
+                if (dishData.name) { // Добавляем блюдо только если у него есть название
+                    dishes.push(dishData);
+                    const dishPhotosInput = dishBlock.querySelector('.dish-photos');
+                    if (dishPhotosInput && dishPhotosInput.files.length > 0) {
+                        photoUploads[`dish_${index}`] = Array.from(dishPhotosInput.files);
+                    }
                 }
             });
             answers.dishes = dishes;
@@ -779,14 +852,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             await Promise.all(uploadPromises);
 
-            await db.collection('reports').doc(currentReportId).update({
+            const updateData = {
                 answers,
-                photoUrls,
                 rating,
                 status: 'pending',
                 submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 rejectionComment: firebase.firestore.FieldValue.delete()
-            });
+            };
+            
+            // Если были загружены новые фото, обновляем поле photoUrls
+            if (Object.values(photoUploads).some(arr => arr.length > 0)) {
+                updateData.photoUrls = photoUrls;
+            }
+
+            await db.collection('reports').doc(currentReportId).update(updateData);
             
             showModal('Отправлен на проверку!', 'Спасибо! Мы свяжемся с вами после проверки отчета.', 'alert', () => {
                 showScreen('main-menu-screen');
