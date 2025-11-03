@@ -26,7 +26,7 @@
     box-sizing: border-box; 
     margin: 0; 
     padding: 0; 
-    -webkit-tap-highlight-color: transparent; /* Убирает серое выделение при тапе на мобильных */
+    -webkit-tap-highlight-color: transparent;
 }
 :focus { 
     outline: none; 
@@ -425,6 +425,90 @@ button#logout-btn:hover {
 .btn-cancel-booking, .btn-edit-report { 
     background: var(--surface-color-hover); 
     color: var(--text-primary); 
+}
+
+/* ======================================== */
+/* ИНСТРУКЦИИ                              */
+/* ======================================== */
+.instruction-text h3 { 
+    margin-top: 20px; 
+    margin-bottom: 15px; 
+    padding-bottom: 8px; 
+    border-bottom: 1px solid var(--border-color); 
+    color: var(--text-primary); 
+    font-size: 1.2em; 
+}
+.instruction-text p, .instruction-text li { 
+    margin-bottom: 12px; 
+    color: var(--text-secondary); 
+    line-height: 1.7; 
+}
+.instruction-text ol, .instruction-text ul { 
+    padding-left: 25px; 
+}
+.instruction-text strong { 
+    color: var(--text-primary); 
+    font-weight: 600; 
+}
+.instruction-text em { 
+    color: var(--text-secondary); 
+    font-style: italic; 
+    font-size: 0.9em; 
+}
+
+/* ======================================== */
+/* ИНСТРУКЦИЯ ПО ЧЕК-ЛИСТУ (ИСПРАВЛЕНО)     */
+/* ======================================== */
+.instruction-item {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+.instruction-item:last-child {
+    border-bottom: none;
+}
+.instruction-item h4 {
+    margin-bottom: 10px;
+    color: var(--text-primary);
+    font-size: 18px;
+}
+.instruction-item p {
+    margin: 10px 0;
+    padding: 15px;
+    background: var(--surface-color);
+    border-radius: 8px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+.instruction-item p strong {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+}
+.instruction-item img {
+    max-width: 100%;
+    margin-top: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+.instruction-form-item {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background-color: var(--surface-color);
+}
+.delete-instruction-item-btn {
+    width: auto !important;
+    padding: 10px 15px !important;
+    background-color: rgba(229, 57, 53, 0.2) !important;
+    color: var(--status-rejected) !important;
+    border: 1px solid var(--status-rejected) !important;
+    font-weight: 600;
+}
+.delete-instruction-item-btn:hover {
+    background-color: var(--status-rejected) !important;
+    color: white !important;
 }
 
 /* ======================================== */
