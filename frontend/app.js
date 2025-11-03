@@ -1,6 +1,6 @@
 // =================================================================
-// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v5.0 - АБСОЛЮТНО ПОЛНЫЙ КОД)
-// Включает: Все функции, все исправления, без сокращений.
+// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v7.0 - АБСОЛЮТНО ПОЛНЫЙ КОД)
+// Включает: ВСЕ функции, ВСЕ исправления, без сокращений.
 // =================================================================
 
 // =================================================================
@@ -664,9 +664,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 });
-                showModal('Успешно!', 'Вы записаны на проверку. Задание появилось на вашем главном экране.', 'alert', () => {
-                    showScreen('main-menu-screen');
-                });
+                
+                await loadUserDashboard(user.uid);
+                showScreen('main-menu-screen');
+                showModal('Успешно!', 'Вы записаны на проверку. Задание появилось на вашем главном экране.');
+
             } catch (error) {
                 showModal('Ошибка', error.message);
                 renderAvailableSchedules();
@@ -687,7 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .get();
 
             if (snapshot.empty) {
-                container.innerHTML = '<div class="empty-state"><p>У вас нет активных проверок.Вы можете записаться на новую проверку.</p></div>';
+                container.innerHTML = '<div class="empty-state"><p>У вас нет активных заданий. Вы можете записаться на новую проверку.</p></div>';
                 return;
             }
             
@@ -789,6 +791,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 const property = radio.dataset.property;
                 radio.name = `${property}_${dishCount}`;
             });
+            // Уникальные ID для label
+            const nameLabel = dishClone.querySelector('label[for="dish_name_template"]');
+            const nameInput = dishClone.querySelector('#dish_name_template');
+            if(nameLabel && nameInput) {
+                const newId = `dish_name_${dishCount}`;
+                nameInput.id = newId;
+                nameLabel.setAttribute('for', newId);
+            }
+
+            const photoLabel = dishClone.querySelector('label[for="dish_photos_template"]');
+            const photoInput = dishClone.querySelector('#dish_photos_template');
+            if(photoLabel && photoInput) {
+                const newId = `dish_photos_${dishCount}`;
+                photoInput.id = newId;
+                photoLabel.setAttribute('for', newId);
+            }
+
             dishContainer.appendChild(dishClone);
         };
         
@@ -891,28 +910,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const form = e.currentTarget;
             const answers = {};
             const photoUploads = {};
-
-            form.querySelectorAll('input[type="radio"]:checked, input[type="text"], input[type="number"], textarea').forEach(input => {
+            
+            form.querySelectorAll('input:not([type="file"]), textarea').forEach(input => {
+                if(input.type === 'radio' && !input.checked) return;
+                if(input.closest('.dish-evaluation-block')) return;
                 const name = input.name || input.id;
-                if (name && !name.startsWith('packaging_') && !name.startsWith('appearance_') && !name.startsWith('wishes_') && !name.startsWith('temp_') && !name.startsWith('taste_') && !name.startsWith('smell_') ) {
-                     answers[name] = input.value;
-                }
+                if(name) answers[name] = input.value;
             });
 
             const dishes = [];
             form.querySelectorAll('.dish-evaluation-block').forEach((dishBlock, index) => {
                 const dishData = {};
-                dishBlock.querySelectorAll('.dish-property').forEach(prop => {
-                    if ((prop.type === 'radio' && prop.checked) || prop.type === 'text') {
-                        dishData[prop.dataset.property] = prop.value;
-                    }
+                const nameInput = dishBlock.querySelector('[data-property="name"]');
+                if(!nameInput || !nameInput.value.trim()) return;
+
+                dishData.name = nameInput.value.trim();
+                dishBlock.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+                    dishData[radio.dataset.property] = radio.value;
                 });
-                if (dishData.name) {
-                    dishes.push(dishData);
-                    const dishPhotosInput = dishBlock.querySelector('.dish-photos');
-                    if (dishPhotosInput && dishPhotosInput.files.length > 0) {
-                        photoUploads[`dish_${index}`] = Array.from(dishPhotosInput.files);
-                    }
+                dishes.push(dishData);
+                
+                const dishPhotosInput = dishBlock.querySelector('.dish-photos');
+                if (dishPhotosInput && dishPhotosInput.files.length > 0) {
+                    photoUploads[`dish_${index}`] = Array.from(dishPhotosInput.files);
                 }
             });
             answers.dishes = dishes;
@@ -932,24 +952,22 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const rating = totalQuestions > 0 ? Math.round((yesAnswers / totalQuestions) * 100) : 0;
             
-            const photoUrls = { 
-                location: [...existingPhotoUrls.location], 
-                receipt: [...existingPhotoUrls.receipt], 
-                dishes: [...existingPhotoUrls.dishes] 
-            };
+            const photoUrls = JSON.parse(JSON.stringify(existingPhotoUrls));
             const uploadPromises = [];
             for (const category in photoUploads) {
                 for (const file of photoUploads[category]) {
                     const filePath = `reports/${currentReportId}/${category}/${Date.now()}_${file.name}`;
-                    const uploadTask = storage.ref(filePath).put(file).then(snapshot => snapshot.ref.getDownloadURL()).then(url => {
-                        if (category.startsWith('dish_')) {
-                            const dishIndex = parseInt(category.split('_')[1], 10);
-                            if (!photoUrls.dishes[dishIndex]) photoUrls.dishes[dishIndex] = [];
-                            photoUrls.dishes[dishIndex].push(url);
-                        } else {
-                            photoUrls[category] = [url]; // Перезаписываем фото для локации и чека
-                        }
-                    });
+                    const uploadTask = storage.ref(filePath).put(file)
+                        .then(snapshot => snapshot.ref.getDownloadURL())
+                        .then(url => {
+                            if (category.startsWith('dish_')) {
+                                const dishIndex = parseInt(category.split('_')[1], 10);
+                                if (!photoUrls.dishes[dishIndex]) photoUrls.dishes[dishIndex] = [];
+                                photoUrls.dishes[dishIndex].push(url);
+                            } else {
+                                photoUrls[category] = [url];
+                            }
+                        });
                     uploadPromises.push(uploadTask);
                 }
             }
@@ -966,11 +984,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             showModal('Отправлен на проверку!', 'Спасибо! Мы свяжемся с вами после проверки отчета.', 'alert', () => {
                 showScreen('main-menu-screen');
+                loadUserDashboard(user.uid);
             });
 
         } catch (err) {
             console.error("Ошибка при отправке отчета:", err);
-            showModal('Ошибка', err.message || 'Не удалось отправить отчет.');
+            showModal('Ошибка', err.message || 'Не удалось отправить отчет. Проверьте все поля и попробуйте снова.');
         } finally {
             btn.disabled = false;
             btn.textContent = 'Отправить отчет';
