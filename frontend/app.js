@@ -689,7 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .get();
 
             if (snapshot.empty) {
-                container.innerHTML = '<div class="empty-state"><p>У вас нет активных заданий. Вы можете записаться на новую проверку.</p></div>';
+                container.innerHTML = '<div class="empty-state"><p>У вас нет активных проверок. Вы можете записаться на новую проверку.</p></div>';
                 return;
             }
             
