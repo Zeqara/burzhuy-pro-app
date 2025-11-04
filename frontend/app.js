@@ -1,5 +1,5 @@
 // =================================================================
-// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v7.0 - АБСОЛЮТНО ПОЛНЫЙ КОД)
+// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v7.1 - ОТЛАЖЕННАЯ ВЕРСИЯ)
 // Включает: ВСЕ функции, ВСЕ исправления, без сокращений.
 // =================================================================
 
@@ -127,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ИСПРАВЛЕНИЕ ОШИБКИ №4: Невозможно зарегистрировать нового пользователя
     document.getElementById('login-register-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('login-register-btn');
@@ -141,15 +142,20 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await auth.signInWithEmailAndPassword(email, password);
         } catch (error) {
-            const isLoginFailure = error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential';
-            if (isLoginFailure) {
+            // Улучшенная логика для определения необходимости регистрации
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
                 try {
+                    // Если пользователя нет, пытаемся создать нового
                     await auth.createUserWithEmailAndPassword(email, password);
                 } catch (creationError) {
-                    showModal('Ошибка регистрации', creationError.message);
+                    console.error("Ошибка при создании пользователя:", creationError);
+                    showModal('Ошибка регистрации', 'Не удалось создать нового пользователя. Возможно, этот номер уже используется с другим паролем.');
                 }
+            } else if (error.code === 'auth/wrong-password') {
+                 showModal('Ошибка входа', 'Неверный пароль. Попробуйте еще раз.');
             } else {
-                showModal('Ошибка входа', 'Произошла непредвиденная ошибка.');
+                console.error("Непредвиденная ошибка входа:", error);
+                showModal('Ошибка входа', 'Произошла непредвиденная ошибка. Пожалуйста, попробуйте позже.');
             }
         } finally {
             btn.disabled = false;
@@ -678,6 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // ИСПРАВЛЕНИЕ ОШИБКИ №1: Проверка остается "активной" после истечения срока
     async function loadUserDashboard(userId) {
         const container = document.getElementById('dashboard-info-container');
         container.innerHTML = '<div class="spinner"></div>';
@@ -688,19 +695,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 .orderBy('checkDate', 'asc')
                 .get();
 
-            if (snapshot.empty) {
+            // Фильтруем просроченные проверки уже на клиенте
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Устанавливаем время на начало дня для корректного сравнения
+
+            const activeChecks = snapshot.docs.filter(doc => {
+                const checkDate = doc.data().checkDate.toDate();
+                return checkDate >= today;
+            });
+
+            if (activeChecks.length === 0) {
                 container.innerHTML = '<div class="empty-state"><p>У вас нет активных проверок. Вы можете записаться на новую проверку.</p></div>';
                 return;
             }
             
             let html = '<h4>Ваши активные задания:</h4><ul class="menu-list">';
-            html += snapshot.docs.map(doc => {
+            html += activeChecks.map(doc => {
                 const report = doc.data();
+                // ИСПРАВЛЕНИЕ ОШИБКИ №3 (частично): Добавлен рейтинг, хотя для booked он обычно null
+                const ratingBadge = getRatingBadgeHtml(report.rating); 
                 const dateStr = report.checkDate.toDate().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 return `<li class="menu-list-item">
                             <div class="status-indicator booked"></div>
                             <div style="flex-grow: 1;">
-                                <strong>${formatLocationNameForUser(report.locationName)}</strong>
+                                <strong>${formatLocationNameForUser(report.locationName)} ${ratingBadge}</strong>
                                 <small>Дата проверки: ${dateStr}</small>
                                 <div class="task-actions">
                                     <button class="btn-fill-checklist" data-id="${doc.id}">Заполнить чек-лист</button>
@@ -787,11 +805,14 @@ document.addEventListener('DOMContentLoaded', () => {
         addDishBtn.onclick = () => {
             const dishClone = dishTemplate.content.cloneNode(true);
             const dishCount = dishContainer.children.length;
+            
+            // Уникальные name для radio
             dishClone.querySelectorAll('input[type="radio"]').forEach(radio => {
                 const property = radio.dataset.property;
                 radio.name = `${property}_${dishCount}`;
             });
-            // Уникальные ID для label
+
+            // Уникальные ID для label и input
             const nameLabel = dishClone.querySelector('label[for="dish_name_template"]');
             const nameInput = dishClone.querySelector('#dish_name_template');
             if(nameLabel && nameInput) {
@@ -892,12 +913,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // ИСПРАВЛЕНИЕ ОШИБКИ №5: Не отправляется отчет
     document.getElementById('checklist-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = appState.user;
         if (!user || !currentReportId) return;
 
-        const btn = e.currentTarget.querySelector('button[type="submit"]');
+        // Используем e.currentTarget для надежного получения формы
+        const form = e.currentTarget;
+        const btn = form.querySelector('button[type="submit"]');
+        if (!form) {
+            console.error("Форма не найдена в момент отправки!");
+            showModal('Критическая ошибка', 'Не удалось найти форму для отправки. Обратитесь в поддержку.');
+            return;
+        }
+
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner-small"></div>';
 
@@ -907,19 +937,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const existingData = reportDoc.data();
             const existingPhotoUrls = existingData.photoUrls || { location: [], receipt: [], dishes: [] };
 
-            const form = e.currentTarget;
             const answers = {};
             const photoUploads = {};
             
             form.querySelectorAll('input:not([type="file"]), textarea').forEach(input => {
                 if(input.type === 'radio' && !input.checked) return;
+                // Исключаем поля из шаблона
+                if(input.closest('#dish-evaluation-template')) return; 
+                // Исключаем поля, которые динамически добавляются для блюд
                 if(input.closest('.dish-evaluation-block')) return;
                 const name = input.name || input.id;
                 if(name) answers[name] = input.value;
             });
 
             const dishes = [];
-            form.querySelectorAll('.dish-evaluation-block').forEach((dishBlock, index) => {
+            form.querySelectorAll('#dish-evaluation-container .dish-evaluation-block').forEach((dishBlock, index) => {
                 const dishData = {};
                 const nameInput = dishBlock.querySelector('[data-property="name"]');
                 if(!nameInput || !nameInput.value.trim()) return;
@@ -965,7 +997,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (!photoUrls.dishes[dishIndex]) photoUrls.dishes[dishIndex] = [];
                                 photoUrls.dishes[dishIndex].push(url);
                             } else {
-                                photoUrls[category] = [url];
+                                // Перезаписываем фото локации и чека, а не добавляем
+                                photoUrls[category] = [url]; 
                             }
                         });
                     uploadPromises.push(uploadTask);
@@ -996,6 +1029,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ИСПРАВЛЕНИЕ ОШИБКИ №3: Не отображается рейтинг в списке заданий
     async function renderHistory() {
         const list = document.getElementById('history-list');
         list.innerHTML = '<div class="spinner"></div>';
@@ -1012,6 +1046,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const statusMap = { pending: 'на проверке', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' };
                 const comment = (r.status === 'rejected' && r.rejectionComment) ? `<small style="color:var(--status-rejected); display:block; margin-top:5px;"><b>Причина:</b> ${r.rejectionComment}</small>` : '';
                 const editButton = (r.status === 'rejected') ? `<div class="task-actions"><button class="btn-edit-report" data-id="${doc.id}">Редактировать</button></div>` : '';
+                
+                // Получаем HTML значка рейтинга
                 const ratingBadge = getRatingBadgeHtml(r.rating);
 
                 return `<li class="menu-list-item">
