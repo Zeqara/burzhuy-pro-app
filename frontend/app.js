@@ -1,5 +1,5 @@
 // =================================================================
-// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v7.2 - ИСПРАВЛЕНИЕ АВТОРИЗАЦИИ И ОТПРАВКИ ОТЧЕТА)
+// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v7.3 - ИСПРАВЛЕНИЕ ОТОБРАЖЕНИЯ ОТВЕТОВ И РЕГИСТРАЦИИ)
 // Включает: ВСЕ функции, ВСЕ исправления, без сокращений.
 // =================================================================
 
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =================================================================
-    // ИСПРАВЛЕНИЕ №1: Не работает авторизация
+    // ИСПРАВЛЕНИЕ №2: Не работает регистрация
     // =================================================================
     document.getElementById('login-register-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -144,23 +144,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await auth.signInWithEmailAndPassword(email, password);
-            // Успешный вход, onAuthStateChanged обработает остальное
         } catch (error) {
-            // Более детальная обработка ошибок
+            console.log("Ошибка входа:", error.code); // Логирование для отладки
             if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-                // Если пользователь не найден, пытаемся его создать
                 try {
                     await auth.createUserWithEmailAndPassword(email, password);
-                    // Успешное создание, onAuthStateChanged перенаправит на создание профиля
                 } catch (creationError) {
                     console.error("Ошибка при создании пользователя:", creationError);
-                    showModal('Ошибка регистрации', 'Не удалось создать аккаунт. Возможно, пароль слишком слабый или произошла другая ошибка.');
+                    let message = 'Не удалось создать аккаунт. Попробуйте позже.';
+                    if (creationError.code === 'auth/weak-password') {
+                        message = 'Пароль слишком слабый. Используйте не менее 6 символов.';
+                    }
+                    showModal('Ошибка регистрации', message);
                 }
             } else if (error.code === 'auth/wrong-password') {
-                // Если пароль неверный
                 showModal('Ошибка входа', 'Неверный пароль. Пожалуйста, попробуйте еще раз.');
             } else {
-                // Все остальные ошибки
                 console.error("Непредвиденная ошибка входа:", error);
                 showModal('Ошибка входа', 'Произошла непредвиденная ошибка. Пожалуйста, попробуйте позже.');
             }
@@ -398,6 +397,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // =================================================================
+    // ИСПРАВЛЕНИЕ №1: Не отображаются ответы по блюдам
+    // =================================================================
     async function openAdminReportDetail(id) {
         currentReportId = id;
         showScreen('admin-report-detail-screen');
@@ -441,63 +443,68 @@ document.addEventListener('DOMContentLoaded', () => {
             const answers = report.answers || {};
             const photoUrls = report.photoUrls || {};
             
-            const renderQuestion = (label, answerKey) => {
-                const answer = answers[answerKey] || '—';
+            // Хелпер для рендеринга простого ответа Да/Нет
+            const renderAnswer = (answer) => {
+                const answerText = answer || '—';
                 const color = answer === 'Нет' ? 'style="color: var(--status-rejected);"' : (answer === 'Да' ? 'style="color: var(--status-approved);"' : '');
-                return `<div class="form-group"><label>${label}</label><p><strong ${color}>${answer}</strong></p></div>`;
+                return `<p><strong ${color}>${answerText}</strong></p>`;
             };
             
+            const renderQuestionWithAnswer = (label, answer) => {
+                return `<div class="form-group"><label>${label}</label>${renderAnswer(answer)}</div>`;
+            };
+
             const renderPhotos = (urls, title) => {
                 if (!urls || urls.length === 0) return '';
                 return `<h4>${title}</h4><div class="photo-gallery">` + urls.map(url => `<a href="${url}" target="_blank"><img src="${url}" alt="фото-отчет"></a>`).join('') + `</div>`;
             };
 
             reportHtml += '<h3>Чистота и внешний вид павильона</h3>';
-            reportHtml += renderQuestion('Территория у павильона чистая', 'q_territory');
-            reportHtml += renderQuestion('Стены и вывеска чистые', 'q_walls');
-            reportHtml += renderQuestion('Стекла прозрачные', 'q_windows');
-            reportHtml += renderQuestion('Меню и рекламные материалы чистые', 'q_menu_ads');
-            reportHtml += renderQuestion('Контейнеры для мусора чистые', 'q_trash_bins');
-            reportHtml += renderQuestion('Подоконники чистые', 'q_windowsills');
-            reportHtml += renderQuestion('Зона приготовления аккуратная', 'q_cook_zone');
-            reportHtml += renderQuestion('Холодильник с напитками чистый', 'q_fridge');
-            reportHtml += renderQuestion('В зоне видимости нет беспорядка', 'q_guest_zone');
-            reportHtml += renderQuestion('Светодиоды и вывеска исправны', 'q_lights');
+            reportHtml += renderQuestionWithAnswer('Территория у павильона чистая', answers.q_territory);
+            reportHtml += renderQuestionWithAnswer('Стены и вывеска чистые', answers.q_walls);
+            reportHtml += renderQuestionWithAnswer('Стекла прозрачные', answers.q_windows);
+            reportHtml += renderQuestionWithAnswer('Меню и рекламные материалы чистые', answers.q_menu_ads);
+            reportHtml += renderQuestionWithAnswer('Контейнеры для мусора чистые', answers.q_trash_bins);
+            reportHtml += renderQuestionWithAnswer('Подоконники чистые', answers.q_windowsills);
+            reportHtml += renderQuestionWithAnswer('Зона приготовления аккуратная', answers.q_cook_zone);
+            reportHtml += renderQuestionWithAnswer('Холодильник с напитками чистый', answers.q_fridge);
+            reportHtml += renderQuestionWithAnswer('В зоне видимости нет беспорядка', answers.q_guest_zone);
+            reportHtml += renderQuestionWithAnswer('Светодиоды и вывеска исправны', answers.q_lights);
             
             reportHtml += '<h3>Внешний вид сотрудников</h3>';
-            reportHtml += renderQuestion('Сотрудники в фирменной форме', 'q_uniform');
-            reportHtml += renderQuestion('Волосы убраны под головной убор', 'q_hair');
-            reportHtml += renderQuestion('Ногти соответствуют нормам', 'q_nails');
-            reportHtml += renderQuestion('Одежда и обувь чистые', 'q_clothes_clean');
+            reportHtml += renderQuestionWithAnswer('Сотрудники в фирменной форме', answers.q_uniform);
+            reportHtml += renderQuestionWithAnswer('Волосы убраны под головной убор', answers.q_hair);
+            reportHtml += renderQuestionWithAnswer('Ногти соответствуют нормам', answers.q_nails);
+            reportHtml += renderQuestionWithAnswer('Одежда и обувь чистые', answers.q_clothes_clean);
             reportHtml += renderPhotos(photoUrls.location, 'Фото павильона:');
             
             reportHtml += '<h3>Приём и выдача заказа</h3>';
-            reportHtml += renderQuestion('Сотрудник поприветствовал', 'q_greeting');
-            reportHtml += renderQuestion('Общение вежливое и доброжелательное', 'q_polite');
-            reportHtml += renderQuestion('Готовность помочь с выбором', 'q_help');
-            reportHtml += renderQuestion('Предложено дополнение к блюду', 'q_addons');
-            reportHtml += renderQuestion('Предложены доп. позиции', 'q_upsell');
-            reportHtml += renderQuestion('Заказ продублирован, сумма названа', 'q_repeat_order');
-            reportHtml += renderQuestion('Выдан номер заказа', 'q_order_number');
-            reportHtml += renderQuestion('Озвучено время ожидания', 'q_wait_time_announced');
-            reportHtml += renderQuestion('Заказ выдан полностью', 'q_order_complete');
-            reportHtml += renderQuestion('Выдан кассовый чек', 'q_receipt_given');
-            reportHtml += renderQuestion('Фактическое время ожидания:', 'q_wait_time_actual');
-            reportHtml += renderQuestion('Количество салфеток:', 'q_napkins_count');
+            reportHtml += renderQuestionWithAnswer('Сотрудник поприветствовал', answers.q_greeting);
+            reportHtml += renderQuestionWithAnswer('Общение вежливое и доброжелательное', answers.q_polite);
+            reportHtml += renderQuestionWithAnswer('Готовность помочь с выбором', answers.q_help);
+            reportHtml += renderQuestionWithAnswer('Предложено дополнение к блюду', answers.q_addons);
+            reportHtml += renderQuestionWithAnswer('Предложены доп. позиции', answers.q_upsell);
+            reportHtml += renderQuestionWithAnswer('Заказ продублирован, сумма названа', answers.q_repeat_order);
+            reportHtml += renderQuestionWithAnswer('Выдан номер заказа', answers.q_order_number);
+            reportHtml += renderQuestionWithAnswer('Озвучено время ожидания', answers.q_wait_time_announced);
+            reportHtml += renderQuestionWithAnswer('Заказ выдан полностью', answers.q_order_complete);
+            reportHtml += renderQuestionWithAnswer('Выдан кассовый чек', answers.q_receipt_given);
+            reportHtml += renderQuestionWithAnswer('Фактическое время ожидания:', answers.q_wait_time_actual);
+            reportHtml += renderQuestionWithAnswer('Количество салфеток:', answers.q_napkins_count);
             reportHtml += renderPhotos(photoUrls.receipt, 'Фото чека:');
 
             reportHtml += '<h3>Качество блюд</h3>';
             if (answers.dishes && answers.dishes.length > 0) {
                 answers.dishes.forEach((dish, index) => {
                     reportHtml += `<div class="dish-evaluation-block"><h4>Блюдо: <strong>${dish.name || 'Без названия'}</strong></h4>`;
-                    reportHtml += renderQuestion('Упаковка чистая, не повреждена.', `packaging_${index}`);
-                    reportHtml += renderQuestion('Внешний вид аккуратный и аппетитный.', `appearance_${index}`);
-                    reportHtml += renderQuestion('Индивидуальные пожелания учтены.', `wishes_${index}`);
-                    reportHtml += renderQuestion('Температура соответствует норме.', `temp_${index}`);
-                    reportHtml += renderQuestion('Вкус сбалансированный.', `taste_${index}`);
-                    reportHtml += renderQuestion('Посторонние привкусы и запахи отсутствуют.', `smell_${index}`);
+                    // Прямое извлечение ответов из объекта dish
+                    reportHtml += renderQuestionWithAnswer('Упаковка чистая, не повреждена.', dish.packaging);
+                    reportHtml += renderQuestionWithAnswer('Внешний вид аккуратный и аппетитный.', dish.appearance);
+                    reportHtml += renderQuestionWithAnswer('Индивидуальные пожелания учтены.', dish.wishes);
+                    reportHtml += renderQuestionWithAnswer('Температура соответствует норме.', dish.temp);
+                    reportHtml += renderQuestionWithAnswer('Вкус сбалансированный.', dish.taste);
+                    reportHtml += renderQuestionWithAnswer('Посторонние привкусы и запахи отсутствуют.', dish.smell);
                     
-                    // Корректировка для чтения фото из объекта
                     const dishPhotos = (photoUrls.dishes && photoUrls.dishes[index]) ? photoUrls.dishes[index] : [];
                     reportHtml += renderPhotos(dishPhotos, 'Фото блюда:');
                     reportHtml += '</div>';
@@ -919,9 +926,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // =================================================================
-    // ИСПРАВЛЕНИЕ №2: Не отправляется отчет
-    // =================================================================
     document.getElementById('checklist-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = appState.user;
@@ -937,7 +941,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const reportDoc = await reportRef.get();
             const existingData = reportDoc.data();
             
-            // Инициализируем photoUrls с dishes как ОБЪЕКТ
             const existingPhotoUrls = existingData.photoUrls || { location: [], receipt: [], dishes: {} };
 
             const answers = {};
@@ -993,8 +996,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         .then(snapshot => snapshot.ref.getDownloadURL())
                         .then(url => {
                             if (category.startsWith('dish_')) {
-                                const dishIndex = category.split('_')[1]; // Ключ будет "0", "1" и т.д.
-                                // Инициализируем массив для этого ключа, если его нет
+                                const dishIndex = category.split('_')[1];
                                 if (!photoUrls.dishes[dishIndex]) {
                                     photoUrls.dishes[dishIndex] = [];
                                 }
@@ -1071,9 +1073,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // =================================================================
-    // ФУНКЦИОНАЛ ИНСТРУКЦИИ ПО ЧЕК-ЛИСТУ
-    // =================================================================
     async function renderChecklistInstruction() {
         const container = document.getElementById('checklist-instruction-content');
         container.innerHTML = '<div class="spinner"></div>';
