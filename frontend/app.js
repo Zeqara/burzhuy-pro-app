@@ -1,5 +1,5 @@
 // =================================================================
-// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v7.3 - ИСПРАВЛЕНИЕ ОТОБРАЖЕНИЯ ОТВЕТОВ И РЕГИСТРАЦИИ)
+// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v7.4 - ИСПРАВЛЕНИЕ РЕГИСТРАЦИИ И ОШИБОК ВХОДА)
 // Включает: ВСЕ функции, ВСЕ исправления, без сокращений.
 // =================================================================
 
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =================================================================
-    // ИСПРАВЛЕНИЕ №2: Не работает регистрация
+    // ИСПРАВЛЕННЫЙ БЛОК РЕГИСТРАЦИИ И ВХОДА
     // =================================================================
     document.getElementById('login-register-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -136,30 +136,52 @@ document.addEventListener('DOMContentLoaded', () => {
         const phoneInputValue = document.getElementById('phone-input').value;
         const digits = phoneInputValue.replace(/\D/g, '');
         const password = document.getElementById('password-input').value;
+    
         if (digits.length !== 11) return showModal('Ошибка', 'Введите полный номер телефона.');
         if (password.length < 6) return showModal('Ошибка', 'Пароль должен быть не менее 6 символов.');
+    
         const email = `${digits}${FAKE_EMAIL_DOMAIN}`;
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner-small"></div>';
-
+    
         try {
+            // 1. Попытка входа
             await auth.signInWithEmailAndPassword(email, password);
+            // Если успешно, onAuthStateChanged обработает переход на главный экран
+    
         } catch (error) {
-            console.log("Ошибка входа:", error.code); // Логирование для отладки
+            console.log("Ошибка входа:", error.code);
+    
+            // 2. Если вход не удался, проверяем причину.
+            // 'auth/user-not-found' - старый код, 'auth/invalid-credential' - новый, для обоих случаев.
             if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                
+                // 3. Пытаемся создать нового пользователя.
                 try {
                     await auth.createUserWithEmailAndPassword(email, password);
+                    // Если успешно, onAuthStateChanged обработает переход на экран создания профиля.
+    
                 } catch (creationError) {
-                    console.error("Ошибка при создании пользователя:", creationError);
-                    let message = 'Не удалось создать аккаунт. Попробуйте позже.';
-                    if (creationError.code === 'auth/weak-password') {
-                        message = 'Пароль слишком слабый. Используйте не менее 6 символов.';
+                    console.error("Ошибка при создании пользователя:", creationError.code);
+                    
+                    // 4. Анализируем ошибку создания пользователя.
+                    if (creationError.code === 'auth/email-already-in-use') {
+                        // Если пользователь уже существует, значит пароль при входе был неверный.
+                        showModal('Ошибка входа', 'Неверный пароль. Пожалуйста, попробуйте еще раз.');
+                    } else if (creationError.code === 'auth/weak-password') {
+                        // Пароль слишком слабый.
+                        showModal('Ошибка регистрации', 'Пароль слишком слабый. Используйте не менее 6 символов.');
+                    } else {
+                        // Другая ошибка при создании.
+                        showModal('Ошибка регистрации', 'Не удалось создать аккаунт. Попробуйте позже.');
                     }
-                    showModal('Ошибка регистрации', message);
                 }
+    
             } else if (error.code === 'auth/wrong-password') {
+                // Обработка старого кода для неверного пароля (для совместимости).
                 showModal('Ошибка входа', 'Неверный пароль. Пожалуйста, попробуйте еще раз.');
             } else {
+                // Все остальные непредвиденные ошибки (проблемы с сетью и т.д.).
                 console.error("Непредвиденная ошибка входа:", error);
                 showModal('Ошибка входа', 'Произошла непредвиденная ошибка. Пожалуйста, попробуйте позже.');
             }
@@ -396,10 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // =================================================================
-    // ИСПРАВЛЕНИЕ №1: Не отображаются ответы по блюдам
-    // =================================================================
+    
     async function openAdminReportDetail(id) {
         currentReportId = id;
         showScreen('admin-report-detail-screen');
@@ -443,7 +462,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const answers = report.answers || {};
             const photoUrls = report.photoUrls || {};
             
-            // Хелпер для рендеринга простого ответа Да/Нет
             const renderAnswer = (answer) => {
                 const answerText = answer || '—';
                 const color = answer === 'Нет' ? 'style="color: var(--status-rejected);"' : (answer === 'Да' ? 'style="color: var(--status-approved);"' : '');
@@ -497,7 +515,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (answers.dishes && answers.dishes.length > 0) {
                 answers.dishes.forEach((dish, index) => {
                     reportHtml += `<div class="dish-evaluation-block"><h4>Блюдо: <strong>${dish.name || 'Без названия'}</strong></h4>`;
-                    // Прямое извлечение ответов из объекта dish
                     reportHtml += renderQuestionWithAnswer('Упаковка чистая, не повреждена.', dish.packaging);
                     reportHtml += renderQuestionWithAnswer('Внешний вид аккуратный и аппетитный.', dish.appearance);
                     reportHtml += renderQuestionWithAnswer('Индивидуальные пожелания учтены.', dish.wishes);
