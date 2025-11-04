@@ -1,5 +1,5 @@
 // =================================================================
-// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v7.1 - ОТЛАЖЕННАЯ ВЕРСИЯ)
+// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v7.2 - ИСПРАВЛЕНИЕ АВТОРИЗАЦИИ И ОТПРАВКИ ОТЧЕТА)
 // Включает: ВСЕ функции, ВСЕ исправления, без сокращений.
 // =================================================================
 
@@ -127,7 +127,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ИСПРАВЛЕНИЕ ОШИБКИ №4: Невозможно зарегистрировать нового пользователя
+    // =================================================================
+    // ИСПРАВЛЕНИЕ №1: Не работает авторизация
+    // =================================================================
     document.getElementById('login-register-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('login-register-btn');
@@ -139,21 +141,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = `${digits}${FAKE_EMAIL_DOMAIN}`;
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner-small"></div>';
+
         try {
             await auth.signInWithEmailAndPassword(email, password);
+            // Успешный вход, onAuthStateChanged обработает остальное
         } catch (error) {
-            // Улучшенная логика для определения необходимости регистрации
+            // Более детальная обработка ошибок
             if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                // Если пользователь не найден, пытаемся его создать
                 try {
-                    // Если пользователя нет, пытаемся создать нового
                     await auth.createUserWithEmailAndPassword(email, password);
+                    // Успешное создание, onAuthStateChanged перенаправит на создание профиля
                 } catch (creationError) {
                     console.error("Ошибка при создании пользователя:", creationError);
-                    showModal('Ошибка регистрации', 'Не удалось создать нового пользователя. Возможно, этот номер уже используется с другим паролем.');
+                    showModal('Ошибка регистрации', 'Не удалось создать аккаунт. Возможно, пароль слишком слабый или произошла другая ошибка.');
                 }
             } else if (error.code === 'auth/wrong-password') {
-                 showModal('Ошибка входа', 'Неверный пароль. Попробуйте еще раз.');
+                // Если пароль неверный
+                showModal('Ошибка входа', 'Неверный пароль. Пожалуйста, попробуйте еще раз.');
             } else {
+                // Все остальные ошибки
                 console.error("Непредвиденная ошибка входа:", error);
                 showModal('Ошибка входа', 'Произошла непредвиденная ошибка. Пожалуйста, попробуйте позже.');
             }
@@ -162,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.textContent = 'Продолжить';
         }
     });
+
 
     document.getElementById('profile-setup-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -488,7 +496,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     reportHtml += renderQuestion('Температура соответствует норме.', `temp_${index}`);
                     reportHtml += renderQuestion('Вкус сбалансированный.', `taste_${index}`);
                     reportHtml += renderQuestion('Посторонние привкусы и запахи отсутствуют.', `smell_${index}`);
-                    reportHtml += renderPhotos(photoUrls.dishes[index], 'Фото блюда:');
+                    
+                    // Корректировка для чтения фото из объекта
+                    const dishPhotos = (photoUrls.dishes && photoUrls.dishes[index]) ? photoUrls.dishes[index] : [];
+                    reportHtml += renderPhotos(dishPhotos, 'Фото блюда:');
                     reportHtml += '</div>';
                 });
             }
@@ -684,7 +695,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // ИСПРАВЛЕНИЕ ОШИБКИ №1: Проверка остается "активной" после истечения срока
     async function loadUserDashboard(userId) {
         const container = document.getElementById('dashboard-info-container');
         container.innerHTML = '<div class="spinner"></div>';
@@ -695,9 +705,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 .orderBy('checkDate', 'asc')
                 .get();
 
-            // Фильтруем просроченные проверки уже на клиенте
             const today = new Date();
-            today.setHours(0, 0, 0, 0); // Устанавливаем время на начало дня для корректного сравнения
+            today.setHours(0, 0, 0, 0);
 
             const activeChecks = snapshot.docs.filter(doc => {
                 const checkDate = doc.data().checkDate.toDate();
@@ -712,7 +721,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let html = '<h4>Ваши активные задания:</h4><ul class="menu-list">';
             html += activeChecks.map(doc => {
                 const report = doc.data();
-                // ИСПРАВЛЕНИЕ ОШИБКИ №3 (частично): Добавлен рейтинг, хотя для booked он обычно null
                 const ratingBadge = getRatingBadgeHtml(report.rating); 
                 const dateStr = report.checkDate.toDate().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 return `<li class="menu-list-item">
@@ -806,13 +814,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const dishClone = dishTemplate.content.cloneNode(true);
             const dishCount = dishContainer.children.length;
             
-            // Уникальные name для radio
             dishClone.querySelectorAll('input[type="radio"]').forEach(radio => {
                 const property = radio.dataset.property;
                 radio.name = `${property}_${dishCount}`;
             });
 
-            // Уникальные ID для label и input
             const nameLabel = dishClone.querySelector('label[for="dish_name_template"]');
             const nameInput = dishClone.querySelector('#dish_name_template');
             if(nameLabel && nameInput) {
@@ -913,21 +919,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ИСПРАВЛЕНИЕ ОШИБКИ №5: Не отправляется отчет
+    // =================================================================
+    // ИСПРАВЛЕНИЕ №2: Не отправляется отчет
+    // =================================================================
     document.getElementById('checklist-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = appState.user;
         if (!user || !currentReportId) return;
 
-        // Используем e.currentTarget для надежного получения формы
         const form = e.currentTarget;
         const btn = form.querySelector('button[type="submit"]');
-        if (!form) {
-            console.error("Форма не найдена в момент отправки!");
-            showModal('Критическая ошибка', 'Не удалось найти форму для отправки. Обратитесь в поддержку.');
-            return;
-        }
-
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner-small"></div>';
 
@@ -935,16 +936,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const reportRef = db.collection('reports').doc(currentReportId);
             const reportDoc = await reportRef.get();
             const existingData = reportDoc.data();
-            const existingPhotoUrls = existingData.photoUrls || { location: [], receipt: [], dishes: [] };
+            
+            // Инициализируем photoUrls с dishes как ОБЪЕКТ
+            const existingPhotoUrls = existingData.photoUrls || { location: [], receipt: [], dishes: {} };
 
             const answers = {};
             const photoUploads = {};
             
             form.querySelectorAll('input:not([type="file"]), textarea').forEach(input => {
                 if(input.type === 'radio' && !input.checked) return;
-                // Исключаем поля из шаблона
-                if(input.closest('#dish-evaluation-template')) return; 
-                // Исключаем поля, которые динамически добавляются для блюд
                 if(input.closest('.dish-evaluation-block')) return;
                 const name = input.name || input.id;
                 if(name) answers[name] = input.value;
@@ -993,12 +993,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         .then(snapshot => snapshot.ref.getDownloadURL())
                         .then(url => {
                             if (category.startsWith('dish_')) {
-                                const dishIndex = parseInt(category.split('_')[1], 10);
-                                if (!photoUrls.dishes[dishIndex]) photoUrls.dishes[dishIndex] = [];
+                                const dishIndex = category.split('_')[1]; // Ключ будет "0", "1" и т.д.
+                                // Инициализируем массив для этого ключа, если его нет
+                                if (!photoUrls.dishes[dishIndex]) {
+                                    photoUrls.dishes[dishIndex] = [];
+                                }
                                 photoUrls.dishes[dishIndex].push(url);
                             } else {
-                                // Перезаписываем фото локации и чека, а не добавляем
-                                photoUrls[category] = [url]; 
+                                photoUrls[category] = [url];
                             }
                         });
                     uploadPromises.push(uploadTask);
@@ -1029,7 +1031,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ИСПРАВЛЕНИЕ ОШИБКИ №3: Не отображается рейтинг в списке заданий
     async function renderHistory() {
         const list = document.getElementById('history-list');
         list.innerHTML = '<div class="spinner"></div>';
@@ -1046,8 +1047,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const statusMap = { pending: 'на проверке', approved: 'принят', rejected: 'отклонен', paid: 'оплачен' };
                 const comment = (r.status === 'rejected' && r.rejectionComment) ? `<small style="color:var(--status-rejected); display:block; margin-top:5px;"><b>Причина:</b> ${r.rejectionComment}</small>` : '';
                 const editButton = (r.status === 'rejected') ? `<div class="task-actions"><button class="btn-edit-report" data-id="${doc.id}">Редактировать</button></div>` : '';
-                
-                // Получаем HTML значка рейтинга
                 const ratingBadge = getRatingBadgeHtml(r.rating);
 
                 return `<li class="menu-list-item">
