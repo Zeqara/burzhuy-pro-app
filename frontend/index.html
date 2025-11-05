@@ -1,363 +1,44 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Тайный агент BURЖУЙ</title>
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/style.css">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Firebase Auth Test</title>
 </head>
 <body>
-    <div id="app-container">
-        <!-- ЭКРАН ЗАГРУЗКИ (Loader) -->
-        <div id="loader" class="screen active"><div class="spinner"></div></div>
-
-        <!-- СТАРТОВЫЙ ЭКРАН (Welcome Screen) -->
-        <div id="welcome-screen" class="screen">
-            <div class="agent-welcome-container">
-                <h1>Добро пожаловать в «Тайный агент BURЖУЙ»</h1>
-                <p class="subtitle">Станьте частью команды контроля качества и получайте вознаграждение за проверки.</p>
-                <button id="start-mission-button" class="btn-primary">Начать миссию</button>
-            </div>
-        </div>
-        
-        <!-- ЭКРАНЫ АВТОРИЗАЦИИ -->
-        <div id="auth-screen" class="screen">
-            <div class="auth-container">
-                <h2>Вход или регистрация</h2>
-                <p>Введите ваш номер. Мы создадим новый аккаунт или войдем в существующий.</p>
-                <form id="login-register-form" novalidate>
-                    <div class="form-group">
-                        <label for="phone-input">Номер телефона</label>
-                        <input type="tel" id="phone-input" placeholder="+7 (999) 999-99-99" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="password-input">Пароль</label>
-                        <input type="password" id="password-input" placeholder="Минимум 6 символов" required>
-                    </div>
-                    <button type="submit" id="login-register-btn" class="btn-primary">Продолжить</button>
-                </form>
-            </div>
-        </div>
-        <div id="profile-setup-screen" class="screen">
-            <div class="auth-container">
-                <h2>Завершение регистрации</h2>
-                <p>Пожалуйста, укажите ваше имя и фамилию.</p>
-                <form id="profile-setup-form" novalidate>
-                    <div class="form-group">
-                        <label for="profile-name-input">Имя и Фамилия</label>
-                        <input type="text" id="profile-name-input" placeholder="Иван Иванов" required>
-                    </div>
-                    <button type="submit" class="btn-primary">Сохранить и войти</button>
-                </form>
-            </div>
-        </div>
-        
-        <!-- ГЛАВНЫЙ ЭКРАН ПОЛЬЗОВАТЕЛЯ -->
-        <div id="main-menu-screen" class="screen">
-            <div class="scrollable-content">
-                <div class="dashboard-header">
-                    <div class="avatar">?</div>
-                    <h2 id="user-name-display">Загрузка...</h2>
-                    <p>Тайный агент</p>
-                </div>
-                <div id="dashboard-info-container"></div>
-                <ul class="menu-list">
-                    <li class="menu-list-item menu-btn" data-target="cooperation-screen"><i class="icon fa-solid fa-calendar-check"></i><div><strong>Записаться на проверку</strong><small>Выбрать доступную точку и время</small></div></li>
-                    <li class="menu-list-item menu-btn" data-target="history-screen"><i class="icon fa-solid fa-list-check"></i><div><strong>История проверок</strong><small>Посмотреть статусы отчетов</small></div></li>
-                    <li class="menu-list-item menu-btn" data-target="instruction-screen"><i class="icon fa-solid fa-book-open"></i><div><strong>Инструкция</strong><small>Правила и требования</small></div></li>
-                    <li class="menu-list-item menu-btn" data-target="checklist-instruction-screen"><i class="icon fa-solid fa-tasks"></i><div><strong>Инструкция по Чек-Листу</strong><small>Примеры ответов и фото</small></div></li>
-                    <li class="menu-list-item"><a href="https://t.me/gdyhrhf" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; width: 100%;"><i class="icon fa-solid fa-headset"></i><div><strong>Техническая поддержка</strong><small>Связаться в Telegram</small></div></a></li>
-                    <li id="admin-menu-btn" class="menu-list-item menu-btn" data-target="admin-hub-screen" style="display: none;"><i class="icon fa-solid fa-user-shield"></i><div><strong>Центр Управления</strong><small>Перейти в панель администратора</small></div></li>
-                </ul>
-                <button type="button" id="logout-btn">Выйти из аккаунта</button>
-            </div>
-        </div>
-
-        <!-- ЭКРАНЫ АДМИНИСТРАТОРА -->
-        <div id="admin-hub-screen" class="screen with-header">
-            <header><button type="button" class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Центр Управления</h2><div class="header-placeholder"></div></header>
-            <div class="scrollable-content">
-                <div id="admin-stats-container"></div>
-                <ul class="menu-list">
-                    <li class="menu-list-item menu-btn" data-target="admin-schedule-screen"><i class="icon fa-solid fa-calendar-days"></i><div><strong>Управление графиком</strong><small>Создать и удалить проверки</small></div></li>
-                    <li class="menu-list-item menu-btn" data-target="admin-checklist-instruction-screen"><i class="icon fa-solid fa-edit"></i><div><strong>Ред. инструкцию чек-листа</strong><small>Изменить примеры для агентов</small></div></li>
-                    <li class="menu-list-item menu-btn" data-target="admin-reports-screen"><i class="icon fa-solid fa-file-signature"></i><div><strong>Просмотр отчетов</strong><small>Проверить и утвердить отчеты</small></div></li>
-                    <li class="menu-list-item menu-btn" data-target="admin-users-screen"><i class="icon fa-solid fa-users"></i><div><strong>Управление пользователями</strong><small>Просмотр и смена ролей</small></div></li>
-                </ul>
-            </div>
-        </div>
-        
-        <div id="admin-schedule-screen" class="screen with-header">
-            <header><button type="button" class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Создать проверку</h2><div class="header-placeholder"></div></header>
-            <div class="scrollable-content">
-                <form id="schedule-form" novalidate>
-                    <div class="form-group"><label for="schedule-city-select">1. Город</label><select id="schedule-city-select" required><option value="" disabled selected>-- Выбор --</option></select></div>
-                    <div class="form-group"><label for="schedule-location-select">2. Точка</label><select id="schedule-location-select" required disabled><option value="" disabled selected>-- ... --</option></select></div>
-                    <div class="form-group"><label for="schedule-date-input">3. Дата</label><input type="date" id="schedule-date-input" required></div>
-                    <div class="form-group">
-                        <label for="schedule-start-time">4. Интервал времени</label>
-                        <div class="time-slot-input" style="display: flex; gap: 10px; align-items: center;">
-                            <input type="time" id="schedule-start-time" required>
-                            <span>-</span>
-                            <input type="time" id="schedule-end-time" required>
-                        </div>
-                    </div>
-                    <div class="form-group urgent-checkbox"><input type="checkbox" id="schedule-urgent-checkbox"><label for="schedule-urgent-checkbox">🔥 Срочная</label></div>
-                    <div class="action-buttons-container"><button type="submit" class="btn-primary">Опубликовать</button><button type="button" id="view-schedule-btn" class="btn-icon">К графику</button></div>
-                </form>
-            </div>
-        </div>
-
-        <div id="admin-view-schedule-screen" class="screen with-header"><header><button type="button" class="back-btn" data-target="admin-schedule-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Запланированные проверки</h2><div class="header-placeholder"></div></header><div class="scrollable-content" id="schedule-list"></div></div>
-        <div id="admin-reports-screen" class="screen with-header"><header><button type="button" class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Все отчеты</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><ul id="admin-reports-list" class="menu-list"></ul></div></div>
-        
-        <div id="admin-report-detail-screen" class="screen with-header">
-            <header><button type="button" class="back-btn" data-target="admin-reports-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Детали отчета</h2><div class="header-placeholder"></div></header>
-            <div class="scrollable-content">
-                <div class="report-details">
-                    <p><strong>Адрес:</strong> <span id="admin-detail-address"></span></p>
-                    <p><strong>Агент:</strong> <span id="admin-detail-user"></span></p>
-                    <p><strong>Телефон:</strong> <span id="admin-detail-phone"></span></p>
-                    <p><strong>Дата:</strong> <span id="admin-detail-date"></span></p>
-                    <p><strong>Статус:</strong> <span id="admin-detail-status"></span></p>
-                    <div id="admin-detail-rejection-comment-container" style="display: none;"></div>
-                    <div id="admin-detail-actions"><button type="button" id="admin-action-approve">Принять</button><button type="button" id="admin-action-reject">Отклонить</button><button type="button" id="admin-action-paid">✓ Оплачено</button></div>
-                </div>
-            </div>
-        </div>
-        
-        <div id="admin-checklist-instruction-screen" class="screen with-header">
-            <header>
-                <button type="button" class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-                <h2>Ред. инструкцию</h2>
-                <div class="header-placeholder"></div>
-            </header>
-            <div class="scrollable-content">
-                <form id="checklist-instruction-form" novalidate>
-                    <div class="form-group">
-                        <label for="ci-title">Заголовок</label>
-                        <input type="text" id="ci-title" placeholder="Как правильно заполнять чек-лист">
-                    </div>
-                    <div class="form-group">
-                        <label for="ci-description">Вступительный текст</label>
-                        <textarea id="ci-description" rows="3" placeholder="Краткое описание основных правил..."></textarea>
-                    </div>
-                    <hr>
-                    <h4>Пункты инструкции:</h4>
-                    <div id="checklist-instruction-items-container"></div>
-                    <button type="button" id="add-instruction-item-btn" class="btn-secondary" style="width: auto; margin-bottom: 20px;">+ Добавить пункт</button>
-                    <button type="submit" class="btn-primary">Сохранить инструкцию</button>
-                </form>
-            </div>
-        </div>
-
-        <div id="admin-users-screen" class="screen with-header"><header><button type="button" class="back-btn" data-target="admin-hub-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Все пользователи</h2><div class="header-placeholder"></div></header><div class="scrollable-content" id="admin-users-list"></div></div>
-        
-        <!-- ЭКРАНЫ ПОЛЬЗОВАТЕЛЯ -->
-        <div id="cooperation-screen" class="screen with-header"><header><button type="button" class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>Доступные проверки</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><ul id="schedule-cards-list" class="menu-list"></ul><div id="no-schedules-view" class="empty-state" style="display: none;"><h3>Нет доступных проверок</h3><p>Как только появятся новые задания, они отобразятся здесь.</p></div></div></div>
-        
-        <div id="checklist-screen" class="screen with-header">
-            <header>
-                <button type="button" class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-                <h2>Чек-лист</h2>
-                <div class="header-placeholder"></div>
-            </header>
-            <div class="scrollable-content">
-                <form id="checklist-form" novalidate>
-                    <p><strong>Адрес:</strong> <span id="checklist-address"></span></p>
-                    <p><strong>Дата:</strong> <span id="checklist-date"></span></p>
-                    <hr>
-
-                    <h3>Чистота и внешний вид павильона</h3>
-                    <div class="form-group"><label>Территория у павильона чистая — без мусора, окурков и посторонних предметов.</label><div class="radio-group"><label><input type="radio" name="q_territory" value="Да" required> Да</label><label><input type="radio" name="q_territory" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Стены и вывеска чистые, без повреждений и следов загрязнений.</label><div class="radio-group"><label><input type="radio" name="q_walls" value="Да" required> Да</label><label><input type="radio" name="q_walls" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Стекла прозрачные, без разводов, пятен и отпечатков.</label><div class="radio-group"><label><input type="radio" name="q_windows" value="Да" required> Да</label><label><input type="radio" name="q_windows" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Меню и рекламные материалы, чистые, без повреждений и потертостей.</label><div class="radio-group"><label><input type="radio" name="q_menu_ads" value="Да" required> Да</label><label><input type="radio" name="q_menu_ads" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Контейнеры для мусора чистые, не переполнены.</label><div class="radio-group"><label><input type="radio" name="q_trash_bins" value="Да" required> Да</label><label><input type="radio" name="q_trash_bins" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Подоконники чистые, без пыли и мусора.</label><div class="radio-group"><label><input type="radio" name="q_windowsills" value="Да" required> Да</label><label><input type="radio" name="q_windowsills" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Зона приготовления аккуратная и чистая, продукция не хранится в пакетах.</label><div class="radio-group"><label><input type="radio" name="q_cook_zone" value="Да" required> Да</label><label><input type="radio" name="q_cook_zone" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Холодильник с напитками чистый, заполнен, посторонние предметы отсутствуют.</label><div class="radio-group"><label><input type="radio" name="q_fridge" value="Да" required> Да</label><label><input type="radio" name="q_fridge" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>В зоне видимости посетителя отсутствуют загрязнения и беспорядок.</label><div class="radio-group"><label><input type="radio" name="q_guest_zone" value="Да" required> Да</label><label><input type="radio" name="q_guest_zone" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Светодиоды и вывеска исправны, работают по всему периметру павильона.</label><div class="radio-group"><label><input type="radio" name="q_lights" value="Да" required> Да</label><label><input type="radio" name="q_lights" value="Нет"> Нет</label><label><input type="radio" name="q_lights" value="Не актуально"> Не актуально</label></div></div>
-                    <hr>
-
-                    <h3>Внешний вид сотрудников</h3>
-                    <div class="form-group"><label>Сотрудники одеты в фирменную форму (фартук, головной убор, черная футболка/кофта).</label><div class="radio-group"><label><input type="radio" name="q_uniform" value="Да" required> Да</label><label><input type="radio" name="q_uniform" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Волосы аккуратно убраны под головной убор.</label><div class="radio-group"><label><input type="radio" name="q_hair" value="Да" required> Да</label><label><input type="radio" name="q_hair" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>У сотрудниц отсутствуют длинные или ярко окрашенные ногти.</label><div class="radio-group"><label><input type="radio" name="q_nails" value="Да" required> Да</label><label><input type="radio" name="q_nails" value="Нет"> Нет</label><label><input type="radio" name="q_nails" value="Не актуально"> Не актуально</label></div></div>
-                    <div class="form-group"><label>Одежда и обувь сотрудников чистые, опрятные.</label><div class="radio-group"><label><input type="radio" name="q_clothes_clean" value="Да" required> Да</label><label><input type="radio" name="q_clothes_clean" value="Нет"> Нет</label></div></div>
-                    <div class="form-group">
-                        <label for="photos_location">Фото: внешний вид павильона, фото внутри (несколько ракурсов).</label>
-                        <input type="file" id="photos_location" multiple accept="image/*" required>
-                    </div>
-                    <hr>
-
-                    <h3>Приём и выдача заказа</h3>
-                    <div class="form-group"><label>Сотрудник поприветствовал и первым установил контакт.</label><div class="radio-group"><label><input type="radio" name="q_greeting" value="Да" required> Да</label><label><input type="radio" name="q_greeting" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Сотрудник общается вежливо, доброжелательно и в позитивном тоне.</label><div class="radio-group"><label><input type="radio" name="q_polite" value="Да" required> Да</label><label><input type="radio" name="q_polite" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Сотрудник проявил готовность помочь с выбором и ответил на вопросы по блюдам.</label><div class="radio-group"><label><input type="radio" name="q_help" value="Да" required> Да</label><label><input type="radio" name="q_help" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Было предложено дополнение к основному блюду (соусы, сыр и т. д.).</label><div class="radio-group"><label><input type="radio" name="q_addons" value="Да" required> Да</label><label><input type="radio" name="q_addons" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Сотрудник сделал предложение по дополнительным позициям (напиток, фри и т. п.).</label><div class="radio-group"><label><input type="radio" name="q_upsell" value="Да" required> Да</label><label><input type="radio" name="q_upsell" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Заказ был продублирован сотрудником, названа итоговая сумма.</label><div class="radio-group"><label><input type="radio" name="q_repeat_order" value="Да" required> Да</label><label><input type="radio" name="q_repeat_order" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Был выдан номер заказа.</label><div class="radio-group"><label><input type="radio" name="q_order_number" value="Да" required> Да</label><label><input type="radio" name="q_order_number" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Сотрудник озвучил ориентировочное время ожидания.</label><div class="radio-group"><label><input type="radio" name="q_wait_time_announced" value="Да" required> Да</label><label><input type="radio" name="q_wait_time_announced" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Заказ выдан полностью, в соответствии с чеком.</label><div class="radio-group"><label><input type="radio" name="q_order_complete" value="Да" required> Да</label><label><input type="radio" name="q_order_complete" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label>Был выдан кассовый чек.</label><div class="radio-group"><label><input type="radio" name="q_receipt_given" value="Да" required> Да</label><label><input type="radio" name="q_receipt_given" value="Нет"> Нет</label></div></div>
-                    <div class="form-group"><label for="q_wait_time_actual">Укажите время ожидания выдачи заказа (например: 5 минут)</label><input type="text" id="q_wait_time_actual" required></div>
-                    <div class="form-group"><label for="q_napkins_count">Укажите количество салфеток</label><input type="number" id="q_napkins_count" min="0" required></div>
-                    <div class="form-group">
-                        <label for="photos_receipt">Фото: чек.</label>
-                        <input type="file" id="photos_receipt" accept="image/*" required>
-                    </div>
-                    <hr>
-
-                    <h3>Качество блюд</h3>
-                    <div id="dish-evaluation-container"></div>
-                    <button type="button" id="add-dish-btn" class="btn-secondary" style="margin-bottom: 20px;">+ Добавить блюдо для оценки</button>
-                    <hr>
-
-                    <h3>Общие впечатления</h3>
-                    <div class="form-group"><label for="q_final_taste_remarks">Дополнительные замечания по вкусу и качеству блюда:</label><textarea id="q_final_taste_remarks"></textarea></div>
-                    <div class="form-group"><label for="q_final_general_remarks">Замечания, жалобы, предложения по улучшению, общие впечатления от посещения:</label><textarea id="q_final_general_remarks"></textarea></div>
-                    <hr>
-                    
-                    <button type="submit" class="btn-primary">Отправить отчет</button>
-                </form>
-            </div>
-        </div>
-
-        <template id="dish-evaluation-template">
-            <div class="dish-evaluation-block">
-                <button type="button" class="delete-dish-btn" aria-label="Удалить блюдо">&times;</button>
-                <h4>Оценка блюда</h4>
-                <div class="form-group">
-                    <label for="dish_name_template">Название блюда:</label>
-                    <input type="text" id="dish_name_template" class="dish-property" data-property="name" required>
-                </div>
-                <div class="form-group"><label>Упаковка чистая, не повреждена.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="packaging" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="packaging" value="Нет"> Нет</label></div></div>
-                <div class="form-group"><label>Внешний вид блюда аккуратный и аппетитный.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="appearance" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="appearance" value="Нет"> Нет</label></div></div>
-                <div class="form-group"><label>Индивидуальные пожелания учтены.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="wishes" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="wishes" value="Нет"> Нет</label><label><input type="radio" class="dish-property" data-property="wishes" value="Не актуально"> Не актуально</label></div></div>
-                <div class="form-group"><label>Температура блюда соответствует норме.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="temp" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="temp" value="Нет"> Нет</label></div></div>
-                <div class="form-group"><label>Вкус сбалансированный, соответствует ожиданиям.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="taste" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="taste" value="Нет"> Нет</label></div></div>
-                <div class="form-group"><label>Отсутствуют посторонние привкусы и запахи.</label><div class="radio-group"><label><input type="radio" class="dish-property" data-property="smell" value="Да" required> Да</label><label><input type="radio" class="dish-property" data-property="smell" value="Нет"> Нет</label></div></div>
-                <div class="form-group">
-                    <label for="dish_photos_template">Фото: блюдо в упаковке и без.</label>
-                    <input type="file" id="dish_photos_template" class="dish-photos" multiple accept="image/*" required>
-                </div>
-            </div>
-        </template>
-
-        <div id="history-screen" class="screen with-header"><header><button type="button" class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button><h2>История проверок</h2><div class="header-placeholder"></div></header><div class="scrollable-content"><ul id="history-list" class="menu-list"></ul></div></div>
-        
-        <!-- ИСПРАВЛЕНИЕ ОШИБКИ №2: Не работает кнопка "Инструкция" -->
-        <div id="instruction-screen" class="screen with-header">
-            <header>
-                <button type="button" class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-                <h2>Инструкция</h2>
-                <div class="header-placeholder"></div>
-            </header>
-            <div class="scrollable-content">
-                <div class="instruction-text">
-                    <h3>🎯 Проект «Тайный агент BURЖУЙ»</h3>
-                    <p>Добро пожаловать в проект «Тайный агент BURЖУЙ»! 🎉 Спасибо, что решил(а) помочь нам стать лучше — а себе обеспечить вкусный обед за наш счёт. 🍔☕️</p>
-                    <p>Твоя миссия — объективно оценить качество нашей работы и поделиться честным мнением. Каждый твой отчет помогает нам исправлять ошибки и становиться лучше для тысяч гостей.</p>
-                    <h3>🔍 Как проходит проверка: от миссии до вознаграждения</h3>
-                    <p>Это твой путь к успеху. Следуй шагам, и все пройдет идеально.</p>
-                    <ol>
-                    <li><strong>Найди и выбери миссию.</strong><br>Зайди в раздел <strong>«Записаться на проверку»</strong>. Там ты увидишь список доступных адресов и дат. Выбери тот, который тебе удобен, и подтверди свое участие. Обращай внимание на специальные пометки!</li>
-                    <li><strong>Изучи инструкции — это ключ к успеху.</strong><br>Внимательно прочитай <strong>чек-лист</strong> предстоящей проверки. Ты должен точно знать, на что обращать внимание. Для максимальной ясности мы создали отдельный раздел — <strong>«Инструкция по Чек-Листу»</strong>. Там ты найдешь подробные примеры того, что именно нужно писать в каждом пункте и какие фотографии делать. <em>Изучение этого раздела обязательно!</em></li>
-                    <li><strong>Соверши покупку за свой счёт.</strong><br>Веди себя как обычный гость. Не забудь сохранить чек — он потребуется для отчёта.</li>
-                    <li><strong>Проведи проверку согласно чек-листу.</strong><br>Следуй всем пунктам инструкции и не отклоняйся от сценария. Твоя главная задача — оставаться незамеченным.</li>
-                    <li><strong>Заполни чек-лист после проверки.</strong><br>Сделай это в течение <strong>двух часов</strong> после визита. Не забудь прикрепить все необходимые фотографии.<br><em>⏳ Проверка отчёта занимает до 12 часов (отчёты обрабатываются только в будние дни).</em></li>
-                    <li><strong>Получи компенсацию.</strong><br>После принятия отчёта менеджером 💸 деньги возвращаются тебе на карту.<br><em>⚠️ Компенсация возможна только при корректной и полной сдаче всех материалов.</em></li>
-                    </ol>
-                    <h3>🔥 Срочные проверки</h3>
-                    <p>Иногда ты можешь увидеть в списке миссий проверки, отмеченные значком огня (🔥). Это <strong>срочные проверки</strong>!</p>
-                    <ul>
-                    <li><strong>Что это значит?</strong> Это высокоприоритетная задача, которая требует выполнения в кратчайшие сроки.</li>
-                    <li><strong>Особые условия:</strong> Отчет по такой проверке нужно сдать <strong>в течение одного часа</strong> после визита.</li>
-                    <li><strong>Награда:</strong> За успешное и оперативное выполнение срочной проверки может быть предусмотрен дополнительный бонус.</li>
-                    </ul>
-                    <p>Берясь за такую миссию, ты очень помогаешь команде оперативно решить важный вопрос.</p>
-                    <h3>📸 Необходимые фотографии</h3>
-                    <p>При проверке сделай следующие фото:</p>
-                    <ul>
-                    <li>📍 Фото <strong>чека</strong> (четкое, все данные должны читаться);</li>
-                    <li>📍 Фото <strong>торгового павильона</strong> (общий вид с улицы);</li>
-                    <li>📍 Фото <strong>готовых блюд</strong> (аппетитное, при хорошем освещении).</li>
-                    </ul>
-                    <p>Не удаляй фотографии до того, как отчёт будет принят менеджером.</p>
-                    <h3>✅ Основные правила</h3>
-                    <ul>
-                    <li><strong>Будь незаметен:</strong> Веди себя естественно — не раскрывай, что ты тайный агент.</li>
-                    <li><strong>Следуй инструкциям:</strong> Всегда держи в голове пункты чек-листа.</li>
-                    <li><strong>Качественные фото:</strong> Делай чёткие фото без вспышки и звука камеры.</li>
-                    <li><strong>Будь на связи:</strong> Если не можешь провести проверку — заранее предупреди через раздел «Техническая поддержка», чтобы можно было перенести задание.</li>
-                    </ul>
-                    <h3>💬 Вопросы</h3>
-                    <p>Все вопросы можно задать в разделе «Техническая поддержка» — команда оперативно поможет тебе разобраться.</p>
-                </div>
-            </div>
-        </div>
-        
-        <div id="checklist-instruction-screen" class="screen with-header">
-            <header>
-                <button type="button" class="back-btn" data-target="main-menu-screen"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-                <h2>Инструкция по Чек-Листу</h2>
-                <div class="header-placeholder"></div>
-            </header>
-            <div class="scrollable-content" id="checklist-instruction-content"></div>
-        </div>
-    </div>
-    
-    <!-- МОДАЛЬНЫЕ ОКНА -->
-    <div id="modal-container" class="modal-hidden">
-        <div id="modal-content">
-            <h3 id="modal-title"></h3>
-            <p id="modal-text"></p>
-            <div id="modal-buttons">
-                <button type="button" id="modal-confirm-btn" class="btn-primary">OK</button>
-                <button type="button" id="modal-cancel-btn" class="btn-secondary">Отмена</button>
-            </div>
-        </div>
-    </div>
-    <div id="rejection-modal-container" class="modal-hidden">
-        <div id="modal-content">
-            <h3>Причина отклонения</h3>
-            <p>Агент увидит этот комментарий.</p>
-            <div class="form-group">
-                <label for="rejection-comment-input">Комментарий</label>
-                <textarea id="rejection-comment-input" rows="4"></textarea>
-            </div>
-            <div id="modal-buttons">
-                <button type="button" id="rejection-modal-confirm-btn" class="btn-primary">Отправить</button>
-                <button type="button" id="rejection-modal-cancel-btn" class="btn-secondary">Отмена</button>
-            </div>
-        </div>
-    </div>
-    <div id="cancellation-modal-container" class="modal-hidden">
-        <div id="modal-content">
-            <h3>Причина отмены</h3>
-            <p>Пожалуйста, укажите, почему вы отменяете проверку. Это поможет нам планировать график.</p>
-            <div class="form-group">
-                <label for="cancellation-comment-input">Причина</label>
-                <textarea id="cancellation-comment-input" rows="4"></textarea>
-            </div>
-            <div id="modal-buttons">
-                <button type="button" id="cancellation-modal-confirm-btn" class="btn-primary">Отправить</button>
-                <button type="button" id="cancellation-modal-cancel-btn" class="btn-secondary">Не отменять</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- СКРИПТЫ -->
+    <h1>Firebase Creation Test</h1>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-    <script src="/app.js"></script>
+
+    <script>
+        // ВАЖНО: Вставьте сюда конфигурацию вашего ПРОБЛЕМНОГО проекта
+        const firebaseConfig = {
+            apiKey: "AIza...", // Ваш apiKey
+            authDomain: "burzhuy-pro-v2.firebaseapp.com",
+            projectId: "burzhuy-pro-v2",
+            storageBucket: "burzhuy-pro-v2.firebasestorage.app",
+            messagingSenderId: "627105413900",
+            appId: "1:627105413900:web:3a02e926867ff76e256729"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // Генерируем уникальный email каждый раз
+        const randomId = Math.floor(Math.random() * 100000);
+        const email = `testuser${randomId}@burzhuy-pro.app`;
+        const password = "password123";
+
+        console.log(`Attempting to create user: ${email}`);
+
+        // Пытаемся создать пользователя
+        auth.createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                console.log("SUCCESS! User created:", userCredential.user);
+                alert("Успех! Пользователь создан.");
+            })
+            .catch((error) => {
+                console.error("ERROR creating user:", error);
+                alert(`Ошибка! Код: ${error.code}, Сообщение: ${error.message}`);
+            });
+    </script>
 </body>
 </html>
