@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =================================================================
-    // ИСПРАВЛЕННЫЙ БЛОК РЕГИСТРАЦИИ И ВХОДА
+    // ЗАМЕНИТЬ СУЩЕСТВУЮЩИЙ БЛОК НА ЭТОТ
     // =================================================================
     document.getElementById('login-register-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -136,52 +136,49 @@ document.addEventListener('DOMContentLoaded', () => {
         const phoneInputValue = document.getElementById('phone-input').value;
         const digits = phoneInputValue.replace(/\D/g, '');
         const password = document.getElementById('password-input').value;
-    
+
         if (digits.length !== 11) return showModal('Ошибка', 'Введите полный номер телефона.');
         if (password.length < 6) return showModal('Ошибка', 'Пароль должен быть не менее 6 символов.');
-    
+
         const email = `${digits}${FAKE_EMAIL_DOMAIN}`;
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner-small"></div>';
-    
+
         try {
             // 1. Попытка входа
             await auth.signInWithEmailAndPassword(email, password);
-            // Если успешно, onAuthStateChanged обработает переход на главный экран
-    
+
         } catch (error) {
-            console.log("Ошибка входа:", error.code);
-    
-            // 2. Если вход не удался, проверяем причину.
-            // 'auth/user-not-found' - старый код, 'auth/invalid-credential' - новый, для обоих случаев.
-            if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+            console.log("Ошибка входа:", error.code, error.message);
+
+            // ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ:
+            // Создаем более надежную проверку, которая учитывает и код ошибки,
+            // и текст сообщения для совместимости с разными версиями ответа Firebase.
+            const isUserNotFound = error.code === 'auth/user-not-found' || 
+                                error.code === 'auth/invalid-credential' || 
+                                (error.message && error.message.includes('INVALID_LOGIN_CREDENTIALS'));
+
+            if (isUserNotFound) {
                 
                 // 3. Пытаемся создать нового пользователя.
                 try {
                     await auth.createUserWithEmailAndPassword(email, password);
-                    // Если успешно, onAuthStateChanged обработает переход на экран создания профиля.
-    
+
                 } catch (creationError) {
                     console.error("Ошибка при создании пользователя:", creationError.code);
                     
-                    // 4. Анализируем ошибку создания пользователя.
                     if (creationError.code === 'auth/email-already-in-use') {
-                        // Если пользователь уже существует, значит пароль при входе был неверный.
                         showModal('Ошибка входа', 'Неверный пароль. Пожалуйста, попробуйте еще раз.');
                     } else if (creationError.code === 'auth/weak-password') {
-                        // Пароль слишком слабый.
                         showModal('Ошибка регистрации', 'Пароль слишком слабый. Используйте не менее 6 символов.');
                     } else {
-                        // Другая ошибка при создании.
                         showModal('Ошибка регистрации', 'Не удалось создать аккаунт. Попробуйте позже.');
                     }
                 }
-    
+
             } else if (error.code === 'auth/wrong-password') {
-                // Обработка старого кода для неверного пароля (для совместимости).
                 showModal('Ошибка входа', 'Неверный пароль. Пожалуйста, попробуйте еще раз.');
             } else {
-                // Все остальные непредвиденные ошибки (проблемы с сетью и т.д.).
                 console.error("Непредвиденная ошибка входа:", error);
                 showModal('Ошибка входа', 'Произошла непредвиденная ошибка. Пожалуйста, попробуйте позже.');
             }
