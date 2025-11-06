@@ -705,7 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 await loadUserDashboard(user.uid);
                 showScreen('main-menu-screen');
-                showModal('Успешно!', 'Вы записаны на проверку. Задание появилось на вашем главном экране.');
+                showModal('Успешно!', 'Вы записаны на проверку. Проверка появилось на вашем главном экране.');
 
             } catch (error) {
                 showModal('Ошибка', error.message);
@@ -739,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            let html = '<h4>Ваши активные задания:</h4><ul class="menu-list">';
+            let html = '<h4>Ваши активные проверки:</h4><ul class="menu-list">';
             html += activeChecks.map(doc => {
                 const report = doc.data();
                 const ratingBadge = getRatingBadgeHtml(report.rating); 
@@ -764,7 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("ОШИБКА ЗАГРУЗКИ ДАШБОРДА:", error);
             container.innerHTML = `<div class="empty-state">
-                <p style="color: var(--status-rejected);">Не удалось загрузить ваши задания.</p>
+                <p style="color: var(--status-rejected);">Не удалось загрузить ваши проверки.</p>
                 <small>Это может быть связано с отсутствием необходимого индекса в базе данных Firebase. Проверьте консоль разработчика (F12) для получения подробной ссылки на его создание.</small>
             </div>`;
         }
@@ -871,7 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function openChecklist(id) {
         try {
             const doc = await db.collection('reports').doc(id).get();
-            if (!doc.exists) return showModal('Ошибка', 'Задание не найдено.');
+            if (!doc.exists) return showModal('Ошибка', 'Проверка не найдено.');
             currentReportId = id;
             const report = doc.data();
 
@@ -887,7 +887,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function openChecklistForEdit(id) {
         try {
             const doc = await db.collection('reports').doc(id).get();
-            if (!doc.exists) return showModal('Ошибка', 'Задание для редактирования не найдено.');
+            if (!doc.exists) return showModal('Ошибка', 'Проверка для редактирования не найдена.');
             
             currentReportId = id;
             const report = doc.data();
