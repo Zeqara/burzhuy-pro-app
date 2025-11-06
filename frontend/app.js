@@ -1,6 +1,6 @@
 // =================================================================
-// ФИНАЛЬНАЯ ВЕРСЯ СКРИПТА ПРИЛОЖЕНИЯ (v8.0 - БИЗНЕС-ЛОГИКА)
-// Включает: Валидацию отчетов, правила записи и выполнения проверок.
+// ФИНАЛЬНАЯ ВЕРСЯ СКРИПТА ПРИЛОЖЕНИЯ (v9.0 - ТАЙМЕР ОБРАТНОГО ОТСЧЕТА)
+// Включает: ВСЕ функции, ВСЕ исправления, без сокращений.
 // =================================================================
 
 // =================================================================
@@ -23,6 +23,7 @@ const storage = firebase.storage();
 
 let appState = { user: null, userData: null, unsubscribeUserListener: null };
 let currentReportId = null;
+let activeTimers = []; // Для управления активными таймерами
 const FAKE_EMAIL_DOMAIN = '@burzhuy-pro.app';
 
 // =================================================================
@@ -620,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ФУНКЦИИ АГЕНТА (ПОЛЬЗОВАТЕЛЯ)
     // =================================================================
     
-    // ИСПРАВЛЕНИЕ №1: Запись на проверки только со следующего дня
+    // Функция отображения доступных проверок (с возможностью записи в тот же день)
     async function renderAvailableSchedules() {
         const listContainer = document.getElementById('schedule-cards-list');
         const emptyView = document.getElementById('no-schedules-view');
@@ -628,13 +629,12 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyView.style.display = 'none';
         
         try {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(0, 0, 0, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
             const snapshot = await db.collection('schedules')
                 .where('isBooked', '==', false)
-                .where('date', '>=', tomorrow)
+                .where('date', '>=', today)
                 .orderBy('date', 'asc')
                 .get();
 
@@ -671,7 +671,8 @@ document.addEventListener('DOMContentLoaded', () => {
             listContainer.innerHTML = '<div class="empty-state"><p>Не удалось загрузить проверки. Попробуйте обновить страницу.</p></div>';
         }
     }
-
+    
+    // ИЗМЕНЕНО: Функция записи на проверку (сохраняет startTime и endTime для таймера)
     async function confirmAndBookSchedule(scheduleId) {
         showModal('Подтверждение', 'Вы уверены, что хотите записаться на эту проверку?', 'confirm', async (confirmed) => {
             if (!confirmed) return;
@@ -684,13 +685,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     const scheduleDoc = await transaction.get(scheduleRef);
                     if (!scheduleDoc.exists) throw new Error("Эта проверка больше не доступна.");
                     if (scheduleDoc.data().isBooked) throw new Error("Другой агент уже записался на эту проверку.");
+                    
+                    const scheduleData = scheduleDoc.data();
                     transaction.update(scheduleRef, { isBooked: true });
+
                     const newReportRef = db.collection('reports').doc();
+                    
                     transaction.set(newReportRef, {
-                        userId: user.uid, scheduleId,
-                        locationName: scheduleDoc.data().locationName,
-                        city: scheduleDoc.data().city,
-                        checkDate: scheduleDoc.data().date,
+                        userId: user.uid,
+                        scheduleId,
+                        locationName: scheduleData.locationName,
+                        city: scheduleData.city,
+                        checkDate: scheduleData.date,
+                        startTime: scheduleData.startTime,
+                        endTime: scheduleData.endTime,
                         status: 'booked',
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
@@ -709,8 +717,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // ИСПРАВЛЕНИЕ №2: Кнопка "Заполнить" активна только в день проверки
+    // ИЗМЕНЕНО: Главный экран пользователя (с логикой для таймера)
     async function loadUserDashboard(userId) {
+        activeTimers.forEach(timer => clearInterval(timer));
+        activeTimers = [];
+
         const container = document.getElementById('dashboard-info-container');
         container.innerHTML = '<div class="spinner"></div>';
         try {
@@ -726,16 +737,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const activeChecks = snapshot.docs;
-
-            if (activeChecks.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>У вас нет активных проверок. Вы можете записаться на новую проверку.</p></div>';
-                return;
-            }
             
             let html = '<h4>Ваши активные задания:</h4><ul class="menu-list">';
             html += activeChecks.map(doc => {
                 const report = doc.data();
-                const ratingBadge = getRatingBadgeHtml(report.rating); 
                 const dateStr = report.checkDate.toDate().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
                 const today = new Date();
@@ -747,15 +752,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 let actionButtonHtml = '';
                 if (isToday) {
                     actionButtonHtml = `<button class="btn-fill-checklist" data-id="${doc.id}">Заполнить чек-лист</button>`;
+                } else if (checkDate < today) {
+                    actionButtonHtml = `<small class="info-text" style="color: var(--status-rejected);">Проверка просрочена</small>`;
                 } else {
-                    actionButtonHtml = `<small class="info-text">Заполнить можно будет в день проверки</small>`;
+                     actionButtonHtml = `<small class="info-text">Заполнить можно будет в день проверки</small>`;
+                }
+
+                let timerHtml = '';
+                if (report.startTime) {
+                    timerHtml = `<small class="timer-display" id="timer-${doc.id}" 
+                                    data-check-date="${report.checkDate.toDate().toISOString()}" 
+                                    data-start-time="${report.startTime}">
+                                    <div class="spinner-small-timer"></div>
+                                 </small>`;
                 }
 
                 return `<li class="menu-list-item">
                             <div class="status-indicator booked"></div>
                             <div style="flex-grow: 1;">
-                                <strong>${formatLocationNameForUser(report.locationName)} ${ratingBadge}</strong>
+                                <strong>${formatLocationNameForUser(report.locationName)}</strong>
                                 <small>Дата проверки: ${dateStr}</small>
+                                ${timerHtml}
                                 <div class="task-actions">
                                     ${actionButtonHtml}
                                     <button class="btn-cancel-booking" data-id="${doc.id}">Отменить</button>
@@ -766,15 +783,59 @@ document.addEventListener('DOMContentLoaded', () => {
             html += '</ul>';
             container.innerHTML = html;
             
+            startCountdownTimers();
+
             container.querySelectorAll('.btn-fill-checklist').forEach(btn => btn.addEventListener('click', e => openChecklist(e.target.dataset.id)));
             container.querySelectorAll('.btn-cancel-booking').forEach(btn => btn.addEventListener('click', e => cancelBooking(e.target.dataset.id)));
         } catch (error) {
             console.error("ОШИБКА ЗАГРУЗКИ ДАШБОРДА:", error);
-            container.innerHTML = `<div class="empty-state">
-                <p style="color: var(--status-rejected);">Не удалось загрузить ваши задания.</p>
-                <small>Это может быть связано с отсутствием необходимого индекса в базе данных Firebase. Проверьте консоль разработчика (F12) для получения подробной ссылки на его создание.</small>
-            </div>`;
+            container.innerHTML = `<p style="color: red;">Ошибка загрузки заданий.</p>`;
         }
+    }
+    
+    // НОВАЯ ФУНКЦИЯ: Запускает таймеры для всех активных проверок
+    function startCountdownTimers() {
+        const timerElements = document.querySelectorAll('.timer-display');
+        timerElements.forEach(el => {
+            const checkDateISO = el.dataset.checkDate;
+            const startTimeStr = el.dataset.startTime;
+
+            if (!checkDateISO || !startTimeStr) {
+                el.textContent = 'Время не указано';
+                return;
+            }
+
+            const targetDate = new Date(checkDateISO);
+            const [hours, minutes] = startTimeStr.split(':');
+            targetDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+            const timerId = setInterval(() => {
+                const now = new Date().getTime();
+                const distance = targetDate - now;
+
+                if (distance < 0) {
+                    clearInterval(timerId);
+                    el.textContent = "Время проверки наступило!";
+                    el.style.color = 'var(--status-approved)';
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                let result = 'До начала: ';
+                if(days > 0) result += `${days}д `;
+                if(hours > 0 || days > 0) result += `${hours}ч `;
+                result += `${minutes}м ${seconds}с`;
+
+                el.innerHTML = result;
+
+            }, 1000);
+
+            activeTimers.push(timerId);
+        });
     }
 
     function cancelBooking(id) {
@@ -947,7 +1008,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ИСПРАВЛЕНИЕ №3: Валидация отчета перед отправкой
     document.getElementById('checklist-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = appState.user;
@@ -1123,7 +1183,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = docSnap.data();
             let html = '';
             if (data.title) html += `<h3>${data.title}</h3>`;
-            if (data.description) html += `<p>${data.description}</p><hr>`;
+            if (data.description) html += `<p>${data.description.replace(/\n/g, '<br>')}</p><hr>`;
             if (data.items && data.items.length > 0) {
                 data.items.forEach(item => {
                     html += `<div class="instruction-item">
