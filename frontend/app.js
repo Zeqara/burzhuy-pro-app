@@ -1188,7 +1188,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.items.forEach(item => {
                     html += `<div class="instruction-item">
                             <h4>${item.question || 'Вопрос'}</h4>
-                            <p><strong>Пример ответа:</strong><br>${item.answer || 'Нет примера'}</p>
+                            <p><strong>:</strong><br>${item.answer || 'Нет примера'}</p>
                             ${item.imageUrl ? `<img src="${item.imageUrl}" alt="Пример фото">` : ''}
                         </div>`;
                 });
@@ -1205,7 +1205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function createInstructionItemForm(item = {}, index) {
         return `<div class="instruction-form-item" data-index="${index}">
                 <div class="form-group"><label>Вопрос</label><input type="text" class="ci-item-question" value="${item.question || ''}" required></div>
-                <div class="form-group"><label>Пример ответа</label><textarea class="ci-item-answer" rows="3" required>${item.answer || ''}</textarea></div>
+                <div class="form-group"><label></label><textarea class="ci-item-answer" rows="3" required>${item.answer || ''}</textarea></div>
                 <div class="form-group">
                     <label>Пример фото</label>
                     ${item.imageUrl ? `<img src="${item.imageUrl}" style="max-width: 100px; display: block; margin-bottom: 10px;">` : ''}
