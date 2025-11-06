@@ -1,6 +1,6 @@
 // =================================================================
-// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА ПРИЛОЖЕНИЯ (v7.4 - ИСПРАВЛЕНИЕ РЕГИСТРАЦИИ И ОШИБОК ВХОДА)
-// Включает: ВСЕ функции, ВСЕ исправления, без сокращений.
+// ФИНАЛЬНАЯ ВЕРСЯ СКРИПТА ПРИЛОЖЕНИЯ (v8.0 - БИЗНЕС-ЛОГИКА)
+// Включает: Валидацию отчетов, правила записи и выполнения проверок.
 // =================================================================
 
 // =================================================================
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =================================================================
-    // ЗАМЕНИТЬ СУЩЕСТВУЮЩИЙ БЛОК НА ЭТОТ
+    // БЛОК РЕГИСТРАЦИИ И ВХОДА
     // =================================================================
     document.getElementById('login-register-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -145,28 +145,20 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerHTML = '<div class="spinner-small"></div>';
 
         try {
-            // 1. Попытка входа
             await auth.signInWithEmailAndPassword(email, password);
 
         } catch (error) {
             console.log("Ошибка входа:", error.code, error.message);
 
-            // ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ:
-            // Создаем более надежную проверку, которая учитывает и код ошибки,
-            // и текст сообщения для совместимости с разными версиями ответа Firebase.
             const isUserNotFound = error.code === 'auth/user-not-found' || 
                                 error.code === 'auth/invalid-credential' || 
                                 (error.message && error.message.includes('INVALID_LOGIN_CREDENTIALS'));
 
             if (isUserNotFound) {
-                
-                // 3. Пытаемся создать нового пользователя.
                 try {
                     await auth.createUserWithEmailAndPassword(email, password);
-
                 } catch (creationError) {
                     console.error("Ошибка при создании пользователя:", creationError.code);
-                    
                     if (creationError.code === 'auth/email-already-in-use') {
                         showModal('Ошибка входа', 'Неверный пароль. Пожалуйста, попробуйте еще раз.');
                     } else if (creationError.code === 'auth/weak-password') {
@@ -175,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         showModal('Ошибка регистрации', 'Не удалось создать аккаунт. Попробуйте позже.');
                     }
                 }
-
             } else if (error.code === 'auth/wrong-password') {
                 showModal('Ошибка входа', 'Неверный пароль. Пожалуйста, попробуйте еще раз.');
             } else {
@@ -187,7 +178,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.textContent = 'Продолжить';
         }
     });
-
 
     document.getElementById('profile-setup-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -238,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =================================================================
-    // ФУНКЦИИ АДМИНИСТРАТОРА
+    // ФУНКЦИИ АДМИНИСТРАТОРА (без изменений)
     // =================================================================
     async function loadAdminStats() {
         const container = document.getElementById('admin-stats-container');
@@ -629,6 +619,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // ФУНКЦИИ АГЕНТА (ПОЛЬЗОВАТЕЛЯ)
     // =================================================================
+    
+    // ИСПРАВЛЕНИЕ №1: Запись на проверки только со следующего дня
     async function renderAvailableSchedules() {
         const listContainer = document.getElementById('schedule-cards-list');
         const emptyView = document.getElementById('no-schedules-view');
@@ -636,12 +628,13 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyView.style.display = 'none';
         
         try {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
 
             const snapshot = await db.collection('schedules')
                 .where('isBooked', '==', false)
-                .where('date', '>=', today)
+                .where('date', '>=', tomorrow)
                 .orderBy('date', 'asc')
                 .get();
 
@@ -705,7 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 await loadUserDashboard(user.uid);
                 showScreen('main-menu-screen');
-                showModal('Успешно!', 'Вы записаны на проверку. Проверка появилось на вашем главном экране.');
+                showModal('Успешно!', 'Вы записаны на проверку. Задание появилось на вашем главном экране.');
 
             } catch (error) {
                 showModal('Ошибка', error.message);
@@ -716,6 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // ИСПРАВЛЕНИЕ №2: Кнопка "Заполнить" активна только в день проверки
     async function loadUserDashboard(userId) {
         const container = document.getElementById('dashboard-info-container');
         container.innerHTML = '<div class="spinner"></div>';
@@ -726,31 +720,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 .orderBy('checkDate', 'asc')
                 .get();
 
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            if (snapshot.empty) {
+                 container.innerHTML = '<div class="empty-state"><p>У вас нет активных проверок. Вы можете записаться на новую проверку.</p></div>';
+                 return;
+            }
 
-            const activeChecks = snapshot.docs.filter(doc => {
-                const checkDate = doc.data().checkDate.toDate();
-                return checkDate >= today;
-            });
+            const activeChecks = snapshot.docs;
 
             if (activeChecks.length === 0) {
                 container.innerHTML = '<div class="empty-state"><p>У вас нет активных проверок. Вы можете записаться на новую проверку.</p></div>';
                 return;
             }
             
-            let html = '<h4>Ваши активные проверки:</h4><ul class="menu-list">';
+            let html = '<h4>Ваши активные задания:</h4><ul class="menu-list">';
             html += activeChecks.map(doc => {
                 const report = doc.data();
                 const ratingBadge = getRatingBadgeHtml(report.rating); 
                 const dateStr = report.checkDate.toDate().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const checkDate = report.checkDate.toDate();
+                checkDate.setHours(0, 0, 0, 0);
+                const isToday = today.getTime() === checkDate.getTime();
+                
+                let actionButtonHtml = '';
+                if (isToday) {
+                    actionButtonHtml = `<button class="btn-fill-checklist" data-id="${doc.id}">Заполнить чек-лист</button>`;
+                } else {
+                    actionButtonHtml = `<small class="info-text">Заполнить можно будет в день проверки</small>`;
+                }
+
                 return `<li class="menu-list-item">
                             <div class="status-indicator booked"></div>
                             <div style="flex-grow: 1;">
                                 <strong>${formatLocationNameForUser(report.locationName)} ${ratingBadge}</strong>
                                 <small>Дата проверки: ${dateStr}</small>
                                 <div class="task-actions">
-                                    <button class="btn-fill-checklist" data-id="${doc.id}">Заполнить чек-лист</button>
+                                    ${actionButtonHtml}
                                     <button class="btn-cancel-booking" data-id="${doc.id}">Отменить</button>
                                 </div>
                             </div>
@@ -764,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("ОШИБКА ЗАГРУЗКИ ДАШБОРДА:", error);
             container.innerHTML = `<div class="empty-state">
-                <p style="color: var(--status-rejected);">Не удалось загрузить ваши проверки.</p>
+                <p style="color: var(--status-rejected);">Не удалось загрузить ваши задания.</p>
                 <small>Это может быть связано с отсутствием необходимого индекса в базе данных Firebase. Проверьте консоль разработчика (F12) для получения подробной ссылки на его создание.</small>
             </div>`;
         }
@@ -871,7 +878,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function openChecklist(id) {
         try {
             const doc = await db.collection('reports').doc(id).get();
-            if (!doc.exists) return showModal('Ошибка', 'Проверка не найдено.');
+            if (!doc.exists) return showModal('Ошибка', 'Задание не найдено.');
             currentReportId = id;
             const report = doc.data();
 
@@ -887,7 +894,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function openChecklistForEdit(id) {
         try {
             const doc = await db.collection('reports').doc(id).get();
-            if (!doc.exists) return showModal('Ошибка', 'Проверка для редактирования не найдена.');
+            if (!doc.exists) return showModal('Ошибка', 'Задание для редактирования не найдено.');
             
             currentReportId = id;
             const report = doc.data();
@@ -940,6 +947,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // ИСПРАВЛЕНИЕ №3: Валидация отчета перед отправкой
     document.getElementById('checklist-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = appState.user;
@@ -947,16 +955,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const form = e.currentTarget;
         const btn = form.querySelector('button[type="submit"]');
-        btn.disabled = true;
-        btn.innerHTML = '<div class="spinner-small"></div>';
+
+        const locationPhotosInput = form.querySelector('#photos_location');
+        const receiptPhotosInput = form.querySelector('#photos_receipt');
+        const dishNameInput = form.querySelector('#dish-evaluation-container [data-property="name"]');
 
         try {
             const reportRef = db.collection('reports').doc(currentReportId);
             const reportDoc = await reportRef.get();
-            const existingData = reportDoc.data();
+            if (!reportDoc.exists) throw new Error("Отчет для отправки не найден.");
             
-            const existingPhotoUrls = existingData.photoUrls || { location: [], receipt: [], dishes: {} };
+            const existingPhotoUrls = reportDoc.data().photoUrls || {};
 
+            if (locationPhotosInput.files.length === 0 && (!existingPhotoUrls.location || existingPhotoUrls.location.length === 0)) {
+                return showModal('Ошибка', 'Пожалуйста, загрузите хотя бы одно фото павильона.');
+            }
+            if (receiptPhotosInput.files.length === 0 && (!existingPhotoUrls.receipt || existingPhotoUrls.receipt.length === 0)) {
+                return showModal('Ошибка', 'Пожалуйста, загрузите фото чека.');
+            }
+            if (!dishNameInput || !dishNameInput.value.trim()) {
+                return showModal('Ошибка', 'Добавьте хотя бы одно блюдо для оценки и укажите его название.');
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner-small"></div>';
+            
             const answers = {};
             const photoUploads = {};
             
