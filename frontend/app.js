@@ -1,79 +1,97 @@
 // =================================================================
-// ФИНАЛЬНАЯ ВЕРСЯ СКРИПТА ПРИЛОЖЕНИЯ (v9.0 - ТАЙМЕР ОБРАТНОГО ОТСЧЕТА)
-// Включает: ВСЕ функции, ВСЕ исправления, без сокращений.
+// ФИНАЛЬНАЯ ВЕРСИЯ СКРИПТА (v10.0 - БЕЗОПАСНЫЕ КЛЮЧИ)
 // =================================================================
 
-// =================================================================
-// КОНФИГУРАЦИЯ И ИНИЦИАЛИЗАЦИЯ FIREBASE
-// =================================================================
-const firebaseConfig = {
-    apiKey: "AIzaSyB0FqDYXnDGRnXVXjkiKbaNNePDvgDXAWc",
-    authDomain: "burzhuy-pro-v2.firebaseapp.com",
-    projectId: "burzhuy-pro-v2",
-    storageBucket: "burzhuy-pro-v2.firebasestorage.app",
-    messagingSenderId: "627105413900",
-    appId: "1:627105413900:web:3e4d8563e50a542f256729",
-    measurementId: "G-YWYR0HFXE4"
-};
+// --- НАЧАЛО: НОВАЯ ЛОГИКА БЕЗОПАСНОЙ ИНИЦИАЛИЗАЦИИ ---
+let app;
+let auth;
+let db;
+let storage;
 
-const app = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
+async function initializeApp() {
+    try {
+        const response = await fetch('/api/config');
+        if (!response.ok) throw new Error('Не удалось загрузить конфигурацию с сервера.');
+        const firebaseConfig = await response.json();
 
-let appState = { user: null, userData: null, unsubscribeUserListener: null };
-let currentReportId = null;
-let activeTimers = []; // Для управления активными таймерами
-const FAKE_EMAIL_DOMAIN = '@burzhuy-pro.app';
+        // Проверяем, что ключи пришли. Если нет - это ошибка.
+        if (!firebaseConfig.apiKey) {
+            throw new Error('Ключ API не был получен с сервера. Проверьте переменные окружения на хостинге.');
+        }
 
-// =================================================================
-// ГЛАВНЫЕ ФУНКЦИИ (ХЕЛПЕРЫ)
-// =================================================================
-function showScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    const targetScreen = document.getElementById(screenId);
-    if (targetScreen) targetScreen.classList.add('active');
-}
-
-function showModal(title, text, type = 'alert', onConfirm = () => {}) {
-    const modalContainer = document.getElementById('modal-container');
-    const modalTitle = document.getElementById('modal-title');
-    const modalText = document.getElementById('modal-text');
-    const confirmBtn = document.getElementById('modal-confirm-btn');
-    const cancelBtn = document.getElementById('modal-cancel-btn');
-    
-    modalTitle.textContent = title;
-    modalText.innerHTML = text;
-    confirmBtn.textContent = (type === 'confirm') ? 'Подтвердить' : 'OK';
-    cancelBtn.style.display = (type === 'confirm') ? 'inline-block' : 'none';
-
-    const newConfirmBtn = confirmBtn.cloneNode(true);
-    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-    const newCancelBtn = cancelBtn.cloneNode(true);
-    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-    
-    newConfirmBtn.addEventListener('click', () => { onConfirm(true); modalContainer.classList.add('modal-hidden'); }, { once: true });
-    if (type === 'confirm') {
-        newCancelBtn.addEventListener('click', () => { onConfirm(false); modalContainer.classList.add('modal-hidden'); }, { once: true });
+        app = firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        db = firebase.firestore();
+        storage = firebase.storage();
+        
+        startApp(); // Запускаем основное приложение
+    } catch (error) {
+        console.error("Критическая ошибка инициализации:", error);
+        document.body.innerHTML = `<div style="padding: 20px; text-align: center;">
+                                     <h1 style="color:red;">Ошибка загрузки приложения.</h1>
+                                     <p>Пожалуйста, проверьте консоль разработчика (F12) для получения дополнительной информации.</p>
+                                   </div>`;
     }
-    
-    modalContainer.classList.remove('modal-hidden');
 }
 
-function formatLocationNameForUser(name) {
-    return name ? name.replace(/^Б\d+\s/, '') : '';
-}
+document.addEventListener('DOMContentLoaded', initializeApp);
+// --- КОНЕЦ: НОВАЯ ЛОГИКА БЕЗОПАСНОЙ ИНИЦИАЛИЗАЦИИ ---
 
-function getRatingBadgeHtml(rating) {
-    if (typeof rating !== 'number') return '';
-    const colorClass = rating >= 85 ? 'green' : rating >= 60 ? 'yellow' : 'red';
-    return `<span class="rating-badge ${colorClass}">${rating}%</span>`;
-}
+// Вся основная логика приложения теперь обернута в эту функцию
+function startApp() {
 
-// =================================================================
-// ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
-// =================================================================
-document.addEventListener('DOMContentLoaded', () => {
+    let appState = { user: null, userData: null, unsubscribeUserListener: null };
+    let currentReportId = null;
+    let activeTimers = []; // Для управления активными таймерами
+    const FAKE_EMAIL_DOMAIN = '@burzhuy-pro.app';
+
+    // =================================================================
+    // ГЛАВНЫЕ ФУНКЦИИ (ХЕЛПЕРЫ)
+    // =================================================================
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        const targetScreen = document.getElementById(screenId);
+        if (targetScreen) targetScreen.classList.add('active');
+    }
+
+    function showModal(title, text, type = 'alert', onConfirm = () => {}) {
+        const modalContainer = document.getElementById('modal-container');
+        const modalTitle = document.getElementById('modal-title');
+        const modalText = document.getElementById('modal-text');
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+        const cancelBtn = document.getElementById('modal-cancel-btn');
+        
+        modalTitle.textContent = title;
+        modalText.innerHTML = text;
+        confirmBtn.textContent = (type === 'confirm') ? 'Подтвердить' : 'OK';
+        cancelBtn.style.display = (type === 'confirm') ? 'inline-block' : 'none';
+
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        
+        newConfirmBtn.addEventListener('click', () => { onConfirm(true); modalContainer.classList.add('modal-hidden'); }, { once: true });
+        if (type === 'confirm') {
+            newCancelBtn.addEventListener('click', () => { onConfirm(false); modalContainer.classList.add('modal-hidden'); }, { once: true });
+        }
+        
+        modalContainer.classList.remove('modal-hidden');
+    }
+
+    function formatLocationNameForUser(name) {
+        return name ? name.replace(/^Б\d+\s/, '') : '';
+    }
+
+    function getRatingBadgeHtml(rating) {
+        if (typeof rating !== 'number') return '';
+        const colorClass = rating >= 85 ? 'green' : rating >= 60 ? 'yellow' : 'red';
+        return `<span class="rating-badge ${colorClass}">${rating}%</span>`;
+    }
+
+    // =================================================================
+    // ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
+    // =================================================================
     const phoneInput = document.getElementById('phone-input');
     if (phoneInput) {
         const formatPhoneNumber = (value) => {
@@ -147,31 +165,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await auth.signInWithEmailAndPassword(email, password);
-
         } catch (error) {
-            console.log("Ошибка входа:", error.code, error.message);
-
             const isUserNotFound = error.code === 'auth/user-not-found' || 
-                                error.code === 'auth/invalid-credential' || 
-                                (error.message && error.message.includes('INVALID_LOGIN_CREDENTIALS'));
-
+                                 error.code === 'auth/invalid-credential' || 
+                                 (error.message && error.message.includes('INVALID_LOGIN_CREDENTIALS'));
             if (isUserNotFound) {
                 try {
                     await auth.createUserWithEmailAndPassword(email, password);
                 } catch (creationError) {
-                    console.error("Ошибка при создании пользователя:", creationError.code);
                     if (creationError.code === 'auth/email-already-in-use') {
                         showModal('Ошибка входа', 'Неверный пароль. Пожалуйста, попробуйте еще раз.');
-                    } else if (creationError.code === 'auth/weak-password') {
-                        showModal('Ошибка регистрации', 'Пароль слишком слабый. Используйте не менее 6 символов.');
                     } else {
                         showModal('Ошибка регистрации', 'Не удалось создать аккаунт. Попробуйте позже.');
                     }
                 }
-            } else if (error.code === 'auth/wrong-password') {
-                showModal('Ошибка входа', 'Неверный пароль. Пожалуйста, попробуйте еще раз.');
             } else {
-                console.error("Непредвиденная ошибка входа:", error);
                 showModal('Ошибка входа', 'Произошла непредвиденная ошибка. Пожалуйста, попробуйте позже.');
             }
         } finally {
@@ -621,7 +629,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ФУНКЦИИ АГЕНТА (ПОЛЬЗОВАТЕЛЯ)
     // =================================================================
     
-    // Функция отображения доступных проверок (с возможностью записи в тот же день)
     async function renderAvailableSchedules() {
         const listContainer = document.getElementById('schedule-cards-list');
         const emptyView = document.getElementById('no-schedules-view');
@@ -672,7 +679,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // ИЗМЕНЕНО: Функция записи на проверку (сохраняет startTime и endTime для таймера)
     async function confirmAndBookSchedule(scheduleId) {
         showModal('Подтверждение', 'Вы уверены, что хотите записаться на эту проверку?', 'confirm', async (confirmed) => {
             if (!confirmed) return;
@@ -717,7 +723,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // ИЗМЕНЕНО: Главный экран пользователя (с логикой для таймера)
     async function loadUserDashboard(userId) {
         activeTimers.forEach(timer => clearInterval(timer));
         activeTimers = [];
@@ -793,7 +798,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // НОВАЯ ФУНКЦИЯ: Запускает таймеры для всех активных проверок
     function startCountdownTimers() {
         const timerElements = document.querySelectorAll('.timer-display');
         timerElements.forEach(el => {
@@ -1291,4 +1295,4 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.textContent = 'Сохранить инструкцию';
         }
     });
-});
+}
